@@ -224,6 +224,28 @@ dialog::backdrop{background:rgba(15,25,20,.45)}
 .toast.ok{background:var(--brand)}
 @media (max-width:900px){#toasts{bottom:84px}}
 
+/* ---------- mis grupos / mi lista ---------- */
+div.f{display:flex;flex-direction:column;align-items:flex-start;gap:6px;font-size:12px;font-weight:600;color:var(--ink-2)}
+.pasos{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.paso{display:flex;align-items:center;gap:8px;padding:8px 14px;border-radius:999px;background:var(--surface);border:1px solid var(--line);font-weight:600;font-size:13px;color:var(--ink-2)}
+.paso b{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:var(--line);font-size:12px}
+.paso.ok{border-color:#c8e3b0;background:#f1f8ea;color:var(--brand)}.paso.ok b{background:var(--brand);color:#fff}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip-g{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border:1px solid var(--line-2);border-radius:999px;cursor:pointer;font-weight:600;font-size:13px;background:#fff;user-select:none}
+.chip-g input{display:none}.chip-g.on{background:var(--brand);border-color:var(--brand);color:#fff}
+.lista-sec{margin-bottom:12px}
+ol.lista,ul.lista{list-style:none;margin:10px 0;padding:0;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.lista li{display:flex;align-items:center;gap:6px;padding:5px 8px;border-bottom:1px solid var(--line);font-size:13px;background:#fff}
+.lista li:last-child{border-bottom:0}
+.lista .n{width:26px;color:var(--muted);font-size:12px;text-align:right}
+.lista .nom{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+select.mini{border:1px solid var(--line-2);border-radius:6px;padding:3px 4px;background:#fff;font-size:12px}
+.ib{width:30px;height:28px;border:1px solid var(--line-2);border-radius:7px;background:#fff;cursor:pointer;font-weight:700}
+.ib:hover:not(:disabled){background:var(--surface-2)}.ib:disabled{opacity:.3;cursor:default}
+.ib.x{color:var(--bad);border-color:#f2c4c3}
+.pick{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:4px 12px;margin-top:8px;max-height:280px;overflow:auto;padding:4px}
+.pick label{display:flex;gap:6px;align-items:center;font-size:13px;padding:3px 0}
+details summary{cursor:pointer;font-weight:600;font-size:13px;color:var(--brand-2);margin-top:10px}
 /* ---------- hoja (formato oficial) ---------- */
 .hoja-wrap{overflow-x:auto;margin:0 -4px 14px;padding:4px}
 .hoja{background:#fff;color:#000;font-family:Arial,Helvetica,sans-serif;min-width:860px;max-width:1040px;margin:0 auto;padding:30px 34px 40px;box-shadow:0 2px 16px rgba(0,0,0,.09);border:1px solid var(--line);border-radius:4px}
@@ -240,9 +262,13 @@ table.h-tab{width:100%;border-collapse:collapse;table-layout:fixed;font-size:12p
 .h-tab td.lbl{text-align:right;font-weight:700;font-size:10.5px;padding-right:5px}
 .h-tab tr.h-sum td{font-weight:700;font-size:11px}
 .h-tab td.prom{font-weight:700}
-.h-tab td.cur{background:#f4fbea}
-.h-tab th.fut,.h-tab td.fut{background:#e9ece6}
-.h-tab th.cur{box-shadow:inset 0 -3px 0 #1d4f33}
+.h-tab th.cur{background:#1d4f33;color:#fff}
+.h-tab td.cur{background:#fff1a8}
+.h-tab th.cur2{background:#4f9a2e;color:#fff}
+.h-tab td.cur2{background:#fffbe0}
+.h-tab th.fut{background:#d9e8cb;color:#7a8a70}
+.h-tab td.fut{background:#fafaf8}
+.h-tab td.fut input.cell:disabled{-webkit-text-fill-color:#bbb}
 .h-tab input.cell{width:100%;height:22px;border:0;border-radius:0;background:transparent;text-align:center;font:inherit;padding:0;color:#000;display:block}
 .h-tab input.cell:focus{outline:2px solid #1d4f33;outline-offset:-2px;background:#fff8d6}
 .h-tab input.cell:disabled{color:#555;cursor:not-allowed;-webkit-text-fill-color:#555;opacity:1}
@@ -256,7 +282,6 @@ table.h-tab{width:100%;border-collapse:collapse;table-layout:fixed;font-size:12p
 .h-firmas .fl span i{display:block;height:40px;border-bottom:1px solid #000;margin:0 4px}
 /* ---------- impresión ---------- */
 @media print{
-  @page{size:letter;margin:12mm}
   body{background:#fff;font-size:11px}
   .top,nav.side,.toolbar,.actions,.filters,.no-print,.back,#toasts,.tabs{display:none!important}
   #app{display:block}
@@ -278,8 +303,8 @@ table.h-tab{width:100%;border-collapse:collapse;table-layout:fixed;font-size:12p
   .h-tab td,.h-tab th{height:16px}
   .h-tab th{font-size:8pt}
   .h-tab tr.h-meta td{font-size:9pt}
-  .h-tab td.cur,.h-tab td.fut{background:none!important}
-  .h-tab th.fut,.h-tab th.cur{background:#92D050!important;box-shadow:none}
+  .h-tab td.cur,.h-tab td.cur2,.h-tab td.fut{background:none!important}
+  .h-tab th.fut,.h-tab th.cur,.h-tab th.cur2{background:#92D050!important;color:#000!important}
   .h-tab input.cell{width:100%!important;height:15px;color:#000!important;-webkit-text-fill-color:#000!important;text-decoration:none!important;font-weight:400!important;background:none!important}
   .h-tab td.rep{color:#000;-webkit-text-fill-color:#000}
   .h-tab tr.h-sum td,.h-tab td.lbl{font-size:8pt}
@@ -289,6 +314,7 @@ table.h-tab{width:100%;border-collapse:collapse;table-layout:fixed;font-size:12p
   .h-firmas .fl span i{height:34px}
 }
 </style>
+<style id="pgsize">@page{size:letter;margin:12mm}</style>
 </head>
 <body>
 <div id="boot" class="boot">Cargando plataforma…</div>
@@ -394,6 +420,7 @@ const CONFIG_DEF = {
   escuela: "21 DE NOVIEMBRE",
   clave: "ES-372-126          20DES01390",
   ciclo: "2026-2027",
+  papel: "oficio",
   turnos: { A:"MATUTINO",B:"MATUTINO",C:"MATUTINO",D:"MATUTINO",E:"MATUTINO",F:"MATUTINO",G:"MIXTO",H:"MIXTO",I:"MIXTO" },
   secretarias: { A:"VÍCTOR", B:"JULIA", C:"ZULMA HERNÁNDEZ MARÍN", D:"DAZA", E:"LAFIT", F:"RUTH", G:"LEONOR", H:"CARMELITA", I:"CARLOS" }
 };
@@ -403,7 +430,7 @@ const CONFIG_DEF = {
    ===================================================================== */
 const S = {
   user: null, perfil: null, cfg: structuredClone(CONFIG_DEF),
-  docentes: {}, asig: {}, alumnos: {}, miembros: {}, calif: {}, usuarios: {}, solicitudes: {},
+  docentes: {}, asig: {}, alumnos: {}, miembros: {}, orden: {}, quitados: {}, calif: {}, usuarios: {}, solicitudes: {},
   ready: false, loaded: new Set(), cur: null, charts: [], capT: "1",
   f: { T: "1", grado: "", grupo: "", materia: "", docente: "", sexo: "", tipo: "", tab: "resumen", q: "" },
   fm: { T: "1", grado: "", grupo: "", materia: "", docente: "", sexo: "", tipo: "", tab: "resumen", q: "" },
@@ -470,12 +497,13 @@ const puedeEditar = aId => esAdmin() || (S.asig[aId] && S.asig[aId].docenteId ==
 
 function secciones(aId) {
   const a = S.asig[aId]; if (!a) return [];
+  const m = S.miembros[aId] || {}, q = S.quitados[aId] || {}, o = S.orden[aId] || {};
   return gruposArr(a).map(g => {
     const gg = a.grado + g, roster = S.alumnos[gg] || {};
-    let ids;
-    if (a.tipo === "taller") { const m = S.miembros[aId] || {}; ids = Object.keys(m).filter(id => m[id] === gg && roster[id] && !roster[id].baja); }
-    else ids = Object.keys(roster).filter(id => !roster[id].baja);
-    return { gg, g, label: `${GRADOS[a.grado]} "${g}"`, alumnos: ids.map(id => ({ id, ...roster[id] })).sort(cmpNombre) };
+    const ids = a.tipo === "taller" ? Object.keys(m).filter(id => m[id] === gg && roster[id] && !roster[id].baja)
+      : Object.keys(roster).filter(id => !roster[id].baja && !q[id]);
+    const al = ids.map(id => ({ id, ...roster[id] })).sort((x, y) => (o[x.id] ?? 1e9) - (o[y.id] ?? 1e9) || cmpNombre(x, y));
+    return { gg, g, label: `${GRADOS[a.grado]} "${g}"`, alumnos: al };
   });
 }
 /* Calificación que cuenta en el trimestre: si hay ER (examen de recuperación, 1° y 2°), cuenta el ER. */
@@ -530,17 +558,19 @@ function listen(path, cb, key) {
 function detenerDatos() {
   unsubs.forEach(u => { try { u(); } catch {} }); unsubs = [];
   Object.values(califSubs).forEach(u => { try { u(); } catch {} }); califSubs = {};
-  Object.assign(S, { docentes: {}, asig: {}, alumnos: {}, miembros: {}, calif: {}, usuarios: {}, solicitudes: {}, ready: false, loaded: new Set(), cur: null });
+  Object.assign(S, { docentes: {}, asig: {}, alumnos: {}, miembros: {}, orden: {}, quitados: {}, calif: {}, usuarios: {}, solicitudes: {}, ready: false, loaded: new Set(), cur: null });
 }
 const leeTodo = () => ["admin", "director", "secretaria"].includes(S.perfil?.rol);
 function iniciarDatos() {
-  const need = ["config", "docentes", "asig", "alumnos", "miembros"];
+  const need = ["config", "docentes", "asig", "alumnos", "miembros", "orden", "quitados"];
   listen("usuarios/" + S.user.uid, v => { if (v) S.perfil = v; });
   listen("config", v => { S.cfg = mergeCfg(v); }, "config");
   listen("docentes", v => { S.docentes = v || {}; }, "docentes");
   listen("asignaciones", v => { S.asig = v || {}; syncCalif(); }, "asig");
   listen("alumnos", v => { S.alumnos = v || {}; }, "alumnos");
   listen("miembros", v => { S.miembros = v || {}; }, "miembros");
+  listen("orden", v => { S.orden = v || {}; }, "orden");
+  listen("quitados", v => { S.quitados = v || {}; }, "quitados");
   if (leeTodo()) { need.push("calif"); listen("calif", v => { S.calif = v || {}; }, "calif"); }
   if (esAdmin()) {
     listen("usuarios", v => { S.usuarios = v || {}; });
@@ -561,20 +591,20 @@ function mergeCfg(v) {
   v = v || {};
   return { ...CONFIG_DEF, ...v, turnos: { ...CONFIG_DEF.turnos, ...(v.turnos || {}) }, secretarias: { ...CONFIG_DEF.secretarias, ...(v.secretarias || {}) } };
 }
-async function cargarSemilla() {
+async function cargarSemilla(conAsignaciones = false) {
   if (!SEED) return 0;
   const upd = {}; let n = 0;
   const actuales = (await get(ref(db, "docentes"))).val() || {};
   const asigAct = (await get(ref(db, "asignaciones"))).val() || {};
   for (const [k, v] of Object.entries(SEED.docentes)) if (!actuales[k]) { upd["docentes/" + k] = v; n++; }
-  for (const [k, v] of Object.entries(SEED.asignaciones)) if (!asigAct[k]) { upd["asignaciones/" + k] = v; n++; }
+  if (conAsignaciones) for (const [k, v] of Object.entries(SEED.asignaciones)) if (!asigAct[k]) { upd["asignaciones/" + k] = v; n++; }
   if (n) await update(ref(db), upd);
   return n;
 }
 async function prepararAdmin() {
   try {
     const d = await get(ref(db, "docentes"));
-    if (!d.exists()) { const n = await cargarSemilla(); if (n) toast("Se cargó el catálogo inicial de docentes y asignaturas.", "ok"); }
+    if (!d.exists()) { const n = await cargarSemilla(); if (n) toast("Se cargó el catálogo de docentes del horario.", "ok"); }
     const c = await get(ref(db, "config"));
     if (!c.exists()) await set(ref(db, "config"), CONFIG_DEF);
   } catch (e) { console.error(e); toast("No se pudo preparar la base: " + e.message, "err"); }
@@ -661,7 +691,7 @@ onAuthStateChanged(auth, async u => {
 function navItems() {
   const p = S.perfil, it = [];
   if (!p) return it;
-  if (p.esProfesor && p.docenteId) it.push(["inicio", "Mis concentrados", ICON.book]);
+  if (p.esProfesor && p.docenteId) { it.push(["inicio", "Mis concentrados", ICON.book]); it.push(["grupos", "Mis grupos", ICON.users]); }
   if (p.esProfesor && p.docenteId && p.rol !== "admin") it.push(["misstats", "Mis estadísticas", ICON.chart]);
   if (p.rol === "admin" || p.rol === "director") { it.push(["stats", "Estadísticas", ICON.chart]); it.push(["avance", "Avance de captura", ICON.check]); }
   if (p.rol === "secretaria") it.push(["secre", "Concentrados de mis grupos", ICON.folder]);
@@ -690,12 +720,16 @@ function render(fromData = false) {
   const items = navItems();
   const permitidas = items.map(i => i[0]).concat(S.perfil.esProfesor || esAdmin() ? ["captura"] : []);
   let [v, arg] = parseHash();
-  if (!permitidas.includes(v)) { v = items[0][0]; arg = undefined; }
+  if (!permitidas.includes(v)) { v = S.perfil.esProfesor && S.perfil.docenteId && !misAsignaciones().length ? "grupos" : items[0][0]; arg = undefined; history.replaceState(null, "", "#/" + v); }
   renderNav(v);
+  if (fromData && S.dlgRefresh && $("#dlg").open) {
+    const ae = document.activeElement;
+    if (!(ae && $("#dlg").contains(ae) && (ae.tagName === "TEXTAREA" || (ae.tagName === "INPUT" && ae.type !== "checkbox")))) S.dlgRefresh();
+  }
   if (fromData && S.cur && S.cur.view === v && S.cur.arg === arg) {
     if (v === "captura") { if (capturaFirma(arg) === S.cur.firma) { refrescarCaptura(); return; } }
     else if (VISTAS_ESTABLES.includes(v)) { $("#btnUpd").hidden = false; return; }
-    else if (document.activeElement && $("#main").contains(document.activeElement) && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) { $("#btnUpd").hidden = false; return; }
+    else { const ae = document.activeElement; if (ae && $("#main").contains(ae) && (ae.tagName === "TEXTAREA" || (ae.tagName === "INPUT" && !["checkbox", "radio", "button", "file"].includes(ae.type)))) { $("#btnUpd").hidden = false; return; } }
   }
   $("#btnUpd").hidden = true;
   destruirGraficas();
@@ -715,6 +749,199 @@ function renderTop() {
 }
 function renderNav(v) {
   $("#nav").innerHTML = navItems().map(([k, t, ic]) => `<a href="#/${k}" class="${k === v || (v === "captura" && k === "inicio") ? "on" : ""}">${ic}<span>${t}</span></a>`).join("") + '<div class="foot powered">powered by elprofe chan</div>';
+}
+
+/* =====================================================================
+   VISTA: MIS GRUPOS (primeros pasos del docente)
+   ===================================================================== */
+const MATERIAS = ["ESPAÑOL", "MATEMÁTICAS", "INGLÉS", "BIOLOGÍA", "FÍSICA", "QUÍMICA", "GEOGRAFÍA", "HISTORIA", "FORMACIÓN CÍVICA Y ÉTICA", "ARTES", "EDUCACIÓN FÍSICA", "TUTORÍA"];
+const idAsig = (did, materia, grado, grupos) => `${did}_${slug(materia)}_${grado}${grupos.join("")}`;
+function otroDueno(materia, grado, g, did) {
+  return Object.entries(S.asig).find(([, a]) => a.docenteId !== did && a.tipo === "regular" && a.materia === materia && a.grado === grado && gruposArr(a).includes(g));
+}
+function vGrupos(main) {
+  const did = S.perfil.docenteId, d = S.docentes[did] || {};
+  const mias = misAsignaciones();
+  const sug = SEED ? Object.entries(SEED.asignaciones).filter(([id, a]) => a.docenteId === did && !S.asig[id]) : [];
+  const f = S.gf ||= { materia: "", otra: "", grado: 1, grupos: [], taller: false, admvo: "" };
+  const esTaller = f.taller || TALLERES.includes(f.materia);
+  const paso = (n, t, ok) => `<div class="paso ${ok ? "ok" : ""}"><b>${ok ? "✓" : n}</b><span>${t}</span></div>`;
+  const opSec = (sel, auto) => `${auto ? `<option value="">${auto}</option>` : ""}${LETRAS.map(l => `<option value="${l}" ${sel === l ? "selected" : ""}>${esc(S.cfg.secretarias[l])} (grupos ${l})</option>`).join("")}`;
+  let h = `<div class="page-head"><div><h1>Mis grupos y secretarías</h1><p class="muted">Primeros pasos: registra los grados y grupos a los que das clase y quién recibe cada concentrado.</p></div>
+    ${mias.length ? `<div class="actions"><button class="btn primary" data-go="inicio">Ir a Mis concentrados →</button></div>` : ""}</div>
+    <div class="pasos">${paso(1, "Tu nombre completo", !!d.nombre)}${paso(2, "Tus grados y grupos", mias.length > 0)}${paso(3, "Tus secretarías", mias.length > 0 && mias.every(([, a]) => admvoNombre(a)))}</div>
+    <div class="grid2" style="align-items:start">
+    <form class="card pad" id="fNom"><h2>1. Tu nombre completo</h2><p class="small muted">Así aparece en el renglón PROFR. de tus concentrados.</p>
+      <div class="row" style="margin-top:10px;flex-wrap:nowrap"><input class="in" name="nombre" value="${esc(d.nombre || "")}" required><button class="btn">Guardar</button></div></form>
+    <form class="card pad" id="fAdd" onsubmit="return false"><h2>2. Agrega tus grados y grupos</h2>
+      <div class="grid2" style="margin-top:10px">
+        <label class="f">Asignatura o taller<select class="in" data-gf="materia"><option value="">Elige…</option>
+          <optgroup label="Asignaturas">${MATERIAS.map(m => `<option ${f.materia === m ? "selected" : ""}>${m}</option>`).join("")}</optgroup>
+          <optgroup label="Talleres">${TALLERES.map(m => `<option ${f.materia === m ? "selected" : ""}>${m}</option>`).join("")}</optgroup>
+          <option value="__otra" ${f.materia === "__otra" ? "selected" : ""}>Otra…</option></select></label>
+        ${f.materia === "__otra" ? `<label class="f">Nombre de la asignatura<input class="in" data-gf="otra" value="${esc(f.otra)}"></label>` : `<span></span>`}
+      </div>
+      <div class="f" style="margin-top:12px"><span>Grado</span><div class="seg">${[1, 2, 3].map(g => `<button type="button" data-gfgrado="${g}" class="${f.grado === g ? "on" : ""}">${g}° ${GRADOS[g]}</button>`).join("")}</div></div>
+      <div class="f" style="margin-top:12px"><span>Grupos</span><div class="chips">${LETRAS.map(l => `<label class="chip-g ${f.grupos.includes(l) ? "on" : ""}"><input type="checkbox" data-gfgrupo="${l}" ${f.grupos.includes(l) ? "checked" : ""}>${f.grado}° ${l}</label>`).join("")}</div></div>
+      <label class="row small" style="margin-top:10px"><input type="checkbox" data-gf="taller" ${esTaller ? "checked" : ""} ${TALLERES.includes(f.materia) ? "disabled" : ""}> Es taller: los grupos marcados se juntan en un solo concentrado</label>
+      <p class="small muted" style="margin:6px 0 0">${esTaller ? `Se creará <b>un</b> concentrado: ${f.grado}° "${f.grupos.join(" Y ") || "…"}".` : `Se creará un concentrado por cada grupo marcado (${f.grupos.map(l => f.grado + "° " + l).join(", ") || "…"}).`}</p>
+      <label class="f" style="margin-top:12px">Secretaría que recibe ${esTaller ? "este taller" : "estos concentrados"}<select class="in" data-gf="admvo">${opSec(f.admvo, esTaller ? "" : "La que atiende cada grupo (automático)")}</select></label>
+      <div class="row" style="margin-top:14px"><button class="btn primary" data-act="gAgregar">Agregar</button><span class="err-msg" id="gErr"></span></div>
+    </form></div>`;
+  if (sug.length) h += `<div class="card pad" style="margin-top:14px;border-color:var(--lime)"><div class="row" style="justify-content:space-between"><div><h2>Según el horario de la escuela</h2><p class="small muted">Estos son los grupos que el horario te asigna. Puedes agregarlos de una vez y después quitar lo que no corresponda.</p></div><button class="btn primary sm" data-act="gSugerencias">Agregar los ${sug.length}</button></div>
+    <div class="chips" style="margin-top:8px">${sug.map(([, a]) => `<span class="badge">${esc(a.materia)} · ${esc(tituloAsig(a))}</span>`).join("")}</div></div>`;
+  h += `<div class="card pad" style="margin-top:14px"><h2>3. Mis concentrados y sus secretarías (${mias.length})</h2>
+    <p class="small muted">La secretaría elegida aparece en el renglón ADMVO. del concentrado de ese grado y grupo.</p>`;
+  if (!mias.length) h += `<div class="empty">Todavía no agregas grupos.</div>`;
+  else h += `<div class="dt-wrap" style="max-height:none"><table class="dt"><thead><tr><th>Asignatura</th><th>Grado y grupos</th><th>Tipo</th><th>Secretaría que recibe</th><th class="n">Alumnos</th><th></th></tr></thead><tbody>
+    ${mias.map(([id, a]) => `<tr><td>${esc(a.materia)}</td><td><b>${esc(tituloAsig(a))}</b></td><td><span class="badge ${a.tipo}">${a.tipo === "taller" ? "Taller" : "Asignatura"}</span></td>
+      <td><select class="in" data-asadmvo="${id}" style="min-width:220px">${opSec(admvoLetra(a))}</select></td>
+      <td class="n">${sum(secciones(id).map(s => s.alumnos.length))}</td>
+      <td style="white-space:nowrap"><button class="btn sm" data-go="captura/${id}">Abrir</button> <button class="btn sm danger" data-act="gQuitar" data-id="${id}">Quitar</button></td></tr>`).join("")}
+    </tbody></table></div>`;
+  h += `</div>`;
+  main.innerHTML = h;
+  $("#fNom").addEventListener("submit", async ev => {
+    ev.preventDefault(); const nombre = new FormData(ev.target).get("nombre").trim().toUpperCase();
+    try { await update(ref(db), { [`docentes/${did}/nombre`]: nombre, [`usuarios/${S.user.uid}/nombre`]: nombre }); toast("Nombre guardado.", "ok"); } catch (e) { toast(msgErr(e), "err"); }
+  });
+}
+async function agregarGrupos() {
+  const did = S.perfil.docenteId, f = S.gf;
+  const materia = (f.materia === "__otra" ? f.otra : f.materia).trim().toUpperCase();
+  const err = t => { const e = $("#gErr"); if (e) e.textContent = t; };
+  if (!materia) return err("Elige la asignatura o el taller.");
+  if (!f.grupos.length) return err("Marca al menos un grupo.");
+  const taller = f.taller || TALLERES.includes(materia), grupos = [...f.grupos].sort();
+  const upd = {}, avisos = [];
+  if (taller) {
+    const id = idAsig(did, materia, f.grado, grupos);
+    if (S.asig[id]) return err("Ese taller ya está registrado.");
+    upd["asignaciones/" + id] = { docenteId: did, materia, grado: f.grado, grupos: grupos.join(","), tipo: "taller", admvo: f.admvo || S.docentes[did]?.admvoTaller || grupos[0] };
+  } else for (const g of grupos) {
+    const id = idAsig(did, materia, f.grado, [g]);
+    if (S.asig[id]) continue;
+    const otro = otroDueno(materia, f.grado, g, did);
+    if (otro) { avisos.push(`${f.grado}° ${g} ya lo tiene ${nombreDocente(otro[1].docenteId)}`); continue; }
+    const a = { docenteId: did, materia, grado: f.grado, grupos: g, tipo: "regular" };
+    if (f.admvo) a.admvo = f.admvo;
+    upd["asignaciones/" + id] = a;
+  }
+  if (!Object.keys(upd).length) return err(avisos.length ? "No se agregó: " + avisos.join("; ") + ". Si es un error, avisa al administrador." : "Esos grupos ya estaban registrados.");
+  try {
+    for (const [k, v] of Object.entries(upd)) await set(ref(db, k), v);
+    S.gf.grupos = [];
+    toast(`Se agregaron ${Object.keys(upd).length} concentrados.` + (avisos.length ? " No se agregó: " + avisos.join("; ") : ""), avisos.length ? "err" : "ok");
+    render();
+  } catch (e) { err(msgErr(e)); }
+}
+async function agregarSugerencias() {
+  const did = S.perfil.docenteId; let n = 0; const avisos = [];
+  for (const [id, a] of Object.entries(SEED.asignaciones)) {
+    if (a.docenteId !== did || S.asig[id]) continue;
+    const otro = a.tipo === "regular" && otroDueno(a.materia, a.grado, a.grupos, did);
+    if (otro) { avisos.push(`${a.materia} ${a.grado}° ${a.grupos}`); continue; }
+    const v = { ...a }; if (a.tipo === "taller") v.admvo = S.docentes[did]?.admvoTaller || gruposArr(a)[0];
+    await set(ref(db, "asignaciones/" + id), v); n++;
+  }
+  toast(`Se agregaron ${n} concentrados del horario.` + (avisos.length ? ` Ya los tenía otro docente: ${avisos.join(", ")}` : ""), "ok");
+}
+async function quitarAsignacion(id) {
+  const a = S.asig[id]; if (!a) return;
+  const n = Object.keys(S.calif[id] || {}).length;
+  if (!await confirmar(`¿Quitar <b>${esc(a.materia)} ${esc(tituloAsig(a))}</b> de tus grupos?${n ? ` Se borrarán las calificaciones capturadas de ${n} alumnos.` : ""}`, "Quitar", "danger")) return;
+  await update(ref(db), { ["asignaciones/" + id]: null, ["calif/" + id]: null, ["miembros/" + id]: null, ["orden/" + id]: null, ["quitados/" + id]: null });
+  toast("Concentrado quitado.", "ok");
+}
+
+/* ---------- mi lista de alumnos (orden, quitar, agregar en talleres) ---------- */
+function otrosTalleres(aId, gg) {
+  const a = S.asig[aId], out = {};
+  for (const [oid, oa] of Object.entries(S.asig)) if (oid !== aId && oa.tipo === "taller" && oa.grado === a.grado)
+    for (const [al, g] of Object.entries(S.miembros[oid] || {})) if (g === gg) (out[al] ??= []).push(oa.materia);
+  return out;
+}
+function listaHTML(aId) {
+  const a = S.asig[aId], taller = a.tipo === "taller", q = S.quitados[aId] || {};
+  S.picks ||= new Set(); S.abiertos ||= new Set();
+  const intro = taller
+    ? `<p class="small muted">Elige de cada grupo a los alumnos que toman ${esc(a.materia)} contigo. Se quedan guardados en tu lista; puedes ordenarlos con ↑ ↓ o quitarlos con ✕.</p>`
+    : `<p class="small muted">La lista se carga sola con los alumnos del grupo (de Credenciales). Puedes cambiar el orden con ↑ ↓ o quitar de tu lista a quien no corresponda con ✕.</p>`;
+  return intro + secciones(aId).map(s => {
+    const roster = Object.entries(S.alumnos[s.gg] || {}).map(([id, x]) => ({ id, ...x })).filter(x => !x.baja).sort(cmpNombre);
+    const dentro = new Set(s.alumnos.map(x => x.id)), otros = taller ? otrosTalleres(aId, s.gg) : {};
+    const disp = taller ? roster.filter(x => !dentro.has(x.id)) : roster.filter(x => q[x.id]);
+    const kD = aId + s.gg + "d", kN = aId + s.gg + "n";
+    return `<section class="card pad lista-sec">
+      <div class="row" style="justify-content:space-between"><h3>${esc(s.label)} <span class="small muted">· ${s.alumnos.length} en tu lista</span></h3>
+        ${s.alumnos.length > 1 ? `<button class="btn sm" data-act="lAlfa" data-a="${aId}" data-gg="${s.gg}">Orden alfabético</button>` : ""}</div>
+      ${s.alumnos.length ? `<ol class="lista">${s.alumnos.map((x, i) => `<li><span class="n">${i + 1}</span><span class="nom">${esc(x.nombre)}</span>
+        <select class="mini" data-rsexo="${x.id}" data-gg="${s.gg}" aria-label="Sexo"><option value="H" ${x.sexo === "H" ? "selected" : ""}>H</option><option value="M" ${x.sexo === "M" ? "selected" : ""}>M</option></select>
+        <button class="ib" data-act="lMover" data-dir="-1" data-a="${aId}" data-gg="${s.gg}" data-al="${x.id}" ${i === 0 ? "disabled" : ""} title="Subir">↑</button>
+        <button class="ib" data-act="lMover" data-dir="1" data-a="${aId}" data-gg="${s.gg}" data-al="${x.id}" ${i === s.alumnos.length - 1 ? "disabled" : ""} title="Bajar">↓</button>
+        <button class="ib x" data-act="lQuitar" data-a="${aId}" data-gg="${s.gg}" data-al="${x.id}" title="Quitar de mi lista">✕</button></li>`).join("")}</ol>`
+        : `<p class="small muted">${taller ? "Aún no eliges alumnos de este grupo." : "No hay alumnos en este grupo; el administrador debe cargarlos desde Credenciales."}</p>`}
+      ${taller ? `<details data-k="${kD}" ${S.abiertos.has(kD) || !s.alumnos.length ? "open" : ""}><summary>Elegir alumnos de ${s.gg[0]}° ${s.gg[1]} (${disp.length} disponibles)</summary>
+          ${disp.length ? `<div class="pick">${disp.map(x => `<label><input type="checkbox" data-pick="${x.id}" ${S.picks.has(x.id) ? "checked" : ""}> <span>${esc(x.nombre)}</span> ${otros[x.id] ? `<span class="tag">en ${esc(otros[x.id].join(", "))}</span>` : ""}</label>`).join("")}</div>
+          <div class="row" style="margin-top:8px"><button class="btn sm primary" data-act="lAgregar" data-a="${aId}" data-gg="${s.gg}">Agregar seleccionados</button><button class="btn sm" data-act="lMarcar" data-gg="${s.gg}">Marcar todos</button></div>` : `<p class="small muted">Ya están todos en tu lista.</p>`}</details>`
+        : (disp.length ? `<details data-k="${kD}" ${S.abiertos.has(kD) ? "open" : ""}><summary>Quitados de tu lista (${disp.length})</summary>
+          <ul class="lista q">${disp.map(x => `<li><span class="nom">${esc(x.nombre)}</span><button class="btn sm" data-act="lRegresar" data-a="${aId}" data-al="${x.id}">Regresar</button></li>`).join("")}</ul></details>` : "")}
+      <details data-k="${kN}" ${S.abiertos.has(kN) ? "open" : ""}><summary>¿No aparece un alumno? Agrégalo</summary>
+        <label class="f" style="margin-top:6px">Uno por renglón (Apellido Apellido Nombre; puedes poner H o M al final). Se agrega a la lista del grupo para todos los docentes.
+        <textarea class="in" data-rpaste="${s.gg}" style="min-height:70px"></textarea></label>
+        <div class="row" style="margin-top:6px"><button class="btn sm" data-act="radd" data-gg="${s.gg}" data-a="${aId}">Agregar a ${s.gg[0]}° ${s.gg[1]}</button></div></details>
+    </section>`;
+  }).join("");
+}
+function dlgLista(aId) {
+  const a = S.asig[aId]; S.picks = new Set();
+  S.dlgRefresh = () => { const b = $("#dlg .dlg-b"); if (b && $("#dlg").open) { const st = b.scrollTop; b.innerHTML = listaHTML(aId); b.scrollTop = st; } };
+  abrirDialogo(`Mi lista de alumnos · ${esc(a.materia)} ${esc(tituloAsig(a))}`, listaHTML(aId)).then(() => { S.dlgRefresh = null; });
+}
+async function moverAlumno(aId, gg, al, dir) {
+  const s = secciones(aId).find(x => x.gg === gg); if (!s) return;
+  const ids = s.alumnos.map(x => x.id), i = ids.indexOf(al), j = i + dir;
+  if (i < 0 || j < 0 || j >= ids.length) return;
+  [ids[i], ids[j]] = [ids[j], ids[i]];
+  const upd = {}; ids.forEach((id, k) => upd[`orden/${aId}/${id}`] = k + 1);
+  await update(ref(db), upd);
+}
+async function quitarDeLista(aId, gg, al) {
+  const a = S.asig[aId], x = S.alumnos[gg]?.[al];
+  if (Object.keys(S.calif[aId]?.[al] || {}).length && !await confirmar(`${esc(x?.nombre || "")} ya tiene datos capturados en este concentrado. ¿Quitarlo de tu lista? (Sus datos se conservan si lo vuelves a agregar.)`, "Quitar", "danger")) { dlgLista(aId); return; }
+  const upd = { [`orden/${aId}/${al}`]: null };
+  if (a.tipo === "taller") upd[`miembros/${aId}/${al}`] = null; else upd[`quitados/${aId}/${al}`] = true;
+  await update(ref(db), upd);
+  if (!$("#dlg").open) dlgLista(aId);
+}
+
+/* ---------- eliminar docente (cambios de personal) ---------- */
+async function dlgBorrarDocente(did) {
+  const d = S.docentes[did]; if (!d) return;
+  const asigs = Object.entries(S.asig).filter(([, a]) => a.docenteId === did);
+  const cuentas = Object.entries(S.usuarios).filter(([, u]) => u.docenteId === did);
+  const docs = Object.entries(S.docentes).filter(([k]) => k !== did).sort((a, b) => a[1].nombre.localeCompare(b[1].nombre));
+  const nCal = sum(asigs.map(([id]) => Object.keys(S.calif[id] || {}).length));
+  abrirDialogo(`Eliminar docente · ${esc(d.nombre)}`, `<p>Se quitará a <b>${esc(d.nombre)}</b> de la plataforma${cuentas.length ? ` y su acceso (${esc(cuentas.map(([, u]) => u.email).join(", "))}) dejará de funcionar` : ""}.</p>
+    ${asigs.length ? `<p>Tiene <b>${asigs.length}</b> concentrados${nCal ? ` con calificaciones de ${nCal} alumnos` : ""}: ${esc(asigs.map(([, a]) => a.materia + " " + tituloAsig(a)).join(", "))}.</p>
+    <label class="row" style="margin-top:10px"><input type="radio" name="dest" value="pasar" checked> Pasar sus concentrados (con lo capturado) a:</label>
+    <select class="in" id="bdDest" style="margin:6px 0 10px 24px;max-width:360px"><option value="">Elige al docente que lo sustituye…</option>${docs.map(([k, x]) => `<option value="${k}">${esc(x.nombre)}</option>`).join("")}</select>
+    <label class="row"><input type="radio" name="dest" value="borrar"> Eliminar sus concentrados y sus calificaciones</label>` : ""}
+    <p class="err-msg" id="bdErr"></p>`, [["Cancelar", "cancel"], ["Eliminar docente", "keep", "danger"]]);
+  const btn = $('#dlg .dlg-f [data-dlg="keep"]');
+  btn.addEventListener("click", async () => {
+    const modo = $('#dlg input[name="dest"]:checked')?.value || "borrar", dest = $("#bdDest")?.value;
+    if (asigs.length && modo === "pasar" && !dest) { $("#bdErr").textContent = "Elige al docente que recibe sus concentrados, o marca eliminarlos."; return; }
+    const upd = { ["docentes/" + did]: null };
+    for (const [uid] of cuentas) upd["usuarios/" + uid] = null;
+    for (const [id] of asigs) {
+      if (modo === "pasar") upd[`asignaciones/${id}/docenteId`] = dest;
+      else Object.assign(upd, { ["asignaciones/" + id]: null, ["calif/" + id]: null, ["miembros/" + id]: null, ["orden/" + id]: null, ["quitados/" + id]: null });
+    }
+    btn.disabled = true;
+    try { await update(ref(db), upd); cerrarDialogo(); toast(`${d.nombre} fue eliminado.` + (cuentas.length ? " Para borrar su correo por completo, elimínalo también en Firebase Authentication." : ""), "ok"); }
+    catch (e) { $("#bdErr").textContent = msgErr(e); btn.disabled = false; }
+  });
 }
 
 /* =====================================================================
@@ -738,13 +965,14 @@ function vInicio(main) {
   const nom = nombreDocente(S.perfil.docenteId);
   let h = `<div class="page-head"><div><h1>Mis concentrados</h1><p class="muted">Profr. ${esc(nom)} · Ciclo escolar ${esc(S.cfg.ciclo)}</p></div>
     <div class="actions">
+      <button class="btn" data-go="grupos">${ICON.users}Mis grupos</button>
       <button class="btn" data-act="importar">${ICON.up}Importar desde Excel</button>
       <button class="btn" data-act="xls" data-ids="*" data-modo="vacio">${ICON.xls}Todos · formato vacío</button>
       <button class="btn primary" data-act="xls" data-ids="*" data-modo="T">${ICON.xls}Todos · ${NOMT[S.capT]}</button>
     </div></div>
     <div class="row" style="margin:-4px 0 6px"><span class="small" style="font-weight:700;color:var(--ink-2)">Trimestre en curso:</span><div class="seg">${[1, 2, 3].map(k => `<button data-act="capT" data-t="${k}" class="${+S.capT === k ? "on" : ""}">${NOMT[k]}</button>`).join("")}</div></div>`;
   if (!mias.length) {
-    h += `<div class="card empty"><b>Aún no tienes grupos asignados</b>Pide al administrador que registre tus asignaturas y grupos.</div>`;
+    h += `<div class="card empty"><b>Aún no registras tus grupos</b>Primero indica a qué grados y grupos das clase y qué secretaría recibe cada concentrado.<p><button class="btn primary" data-go="grupos">Registrar mis grupos</button></p></div>`;
     main.innerHTML = h; return;
   }
   const porMat = {};
@@ -797,7 +1025,7 @@ function vCaptura(main, aId) {
     <span class="small" style="font-weight:700;color:var(--ink-2)">Trimestre:</span>
     <div class="seg" role="tablist">${[1, 2, 3].map(k => `<button data-act="capT" data-t="${k}" class="${T === k ? "on" : ""}">${NOMT[k]}</button>`).join("")}</div>
     <div class="sp"></div>
-    <button class="btn sm" data-act="alumnos" data-a="${aId}">${ICON.users}${a.tipo === "taller" ? "Integrantes" : "Alumnos"}</button>
+    <button class="btn sm" data-act="alumnos" data-a="${aId}">${ICON.users}Mi lista de alumnos</button>
     <button class="btn sm" data-act="llenar" data-a="${aId}" title="Pone 0 inasistencias y conducta B a quien no tenga dato en este trimestre">Rellenar 0 / B</button>
     <button class="btn sm" data-act="importar" data-a="${aId}">${ICON.up}Importar</button>
     <button class="btn sm" data-act="xls" data-ids="${aId}" data-modo="vacio" title="Formato con nombres para llenar a mano">${ICON.xls}Vacío</button>
@@ -809,15 +1037,15 @@ function vCaptura(main, aId) {
     ${!total ? `<br><b>${a.tipo === "taller" ? "Este taller aún no tiene integrantes: usa “Integrantes” para marcarlos." : "Este grupo aún no tiene alumnos: usa “Alumnos” para agregarlos."}</b>` : ""}</div>
   </div>`;
   const W = [5, 32, 6, 5, 6, 5, 6, 8, 5, 5, 5, 5, 5, 5];
-  const cls = f => { const k = triDe(f); return k > T ? "fut" : k === T ? "cur" : ""; };
+  const cls = f => { if (f === "PROM") return T === 3 ? "cur" : "fut"; const k = triDe(f); if (k > T) return "fut"; if (k === T) return /^(t|er)/.test(f) ? "cur" : "cur2"; return ""; };
   h += `<div class="hoja-wrap"><div class="hoja" id="hoja">
     <div class="h-enc"><b class="l1">${esc(cfg.instituto)}</b><b>${esc(cfg.unidad)}</b><b>${esc(cfg.supervision)}</b><b>${esc(cfg.escuela)}</b><b class="sm" style="white-space:pre">${esc(cfg.clave)}</b><b class="sm">CICLO ESCOLAR: ${esc(cfg.ciclo)}</b><b class="l7">CONCENTRADO DE CALIFICACIONES</b></div>
     <table class="h-tab"><colgroup>${W.map(w => `<col style="width:${(w / 103 * 100).toFixed(2)}%">`).join("")}</colgroup><tbody>
     <tr class="h-meta"><td colspan="6">PROFR.:&nbsp;&nbsp;&nbsp;&nbsp;${esc(nombreDocente(a.docenteId))}</td><td colspan="8">ASIGNATURA:&nbsp;&nbsp;&nbsp;&nbsp;${esc(a.materia)}</td></tr>
     <tr class="h-meta"><td colspan="2">TURNO:&nbsp;&nbsp;&nbsp;&nbsp;${esc(turnoDe(a))}</td><td colspan="5">GRADO: ${GRADOS[a.grado]} "${esc(etiquetaGrupos(a))}"</td><td colspan="7">ADMVO.:&nbsp;&nbsp;${esc(admvoNombre(a))}</td></tr>
-    <tr class="h-hd"><th rowspan="3">N/P</th><th rowspan="3">NOMBRE COMPLETO DEL ALUMNO</th><th colspan="5">PERIODOS DE EVALUACION</th><th rowspan="3">PROM.<br>FINAL</th><th colspan="3">INASISTENCIAS</th><th colspan="3">CONDUCTA</th></tr>
-    <tr class="h-hd"><th colspan="2" class="${cls("1")}">1°</th><th colspan="2" class="${cls("2")}">2°</th><th rowspan="2" class="${cls("3")}">3°</th>${[1, 2, 3, 1, 2, 3].map(k => `<th rowspan="2" class="${cls(String(k))}">${k}°</th>`).join("")}</tr>
-    <tr class="h-hd"><th class="${cls("1")}"></th><th class="${cls("1")}">ER</th><th class="${cls("2")}"></th><th class="${cls("2")}">ER</th></tr>`;
+    <tr class="h-hd"><th rowspan="3">N/P</th><th rowspan="3">NOMBRE COMPLETO DEL ALUMNO</th><th colspan="5">PERIODOS DE EVALUACION</th><th rowspan="3" class="${cls("PROM")}">PROM.<br>FINAL</th><th colspan="3">INASISTENCIAS</th><th colspan="3">CONDUCTA</th></tr>
+    <tr class="h-hd"><th colspan="2" class="${cls("t1")}">1°</th><th colspan="2" class="${cls("t2")}">2°</th><th rowspan="2" class="${cls("t3")}">3°</th>${["i1", "i2", "i3", "c1", "c2", "c3"].map(f => `<th rowspan="2" class="${cls(f)}">${triDe(f)}°</th>`).join("")}</tr>
+    <tr class="h-hd"><th class="${cls("t1")}"></th><th class="${cls("er1")}">ER</th><th class="${cls("t2")}"></th><th class="${cls("er2")}">ER</th></tr>`;
   const campos = ["t1", "er1", "t2", "er2", "t3", "PROM", "i1", "i2", "i3", "c1", "c2", "c3"];
   for (const s of secs) {
     h += `<tr class="h-sec"><td colspan="14">${esc(s.label)}</td></tr>`;
@@ -825,7 +1053,7 @@ function vCaptura(main, aId) {
     filas.forEach((al, i) => {
       const c = S.calif[aId]?.[al.id] || {};
       h += `<tr data-al="${al.id}"><td>${i + 1}</td><td class="nm"><span>${esc(al.nombre)}</span><button class="sx ${al.sexo || "q"} no-print" data-act="sexo" data-gg="${s.gg}" data-al="${al.id}" title="Sexo (clic para cambiar)">${al.sexo || "?"}</button></td>
-        ${campos.map(f => f === "PROM" ? `<td class="prom" data-prom="${al.id}"></td>`
+        ${campos.map(f => f === "PROM" ? `<td class="prom ${cls("PROM")}" data-prom="${al.id}"></td>`
           : `<td class="${cls(f)}"><input class="cell" data-a="${aId}" data-al="${al.id}" data-f="${f}" value="${triDe(f) <= T ? esc(fmtVal(c[f])) : ""}" ${f.startsWith("c") ? 'list="dl-conducta" autocapitalize="characters" maxlength="4"' : 'inputmode="numeric" maxlength="2"'} aria-label="${esc(f)} de ${esc(al.nombre)}"></td>`).join("")}</tr>`;
     });
     if (!filas.length) h += `<tr><td></td><td class="nm muted">Sin alumnos</td>${"<td></td>".repeat(12)}</tr>`;
@@ -1282,6 +1510,7 @@ const ADM = {
     const campo = (k, t) => `<label class="f">${t}<input class="in" name="${k}" value="${esc(c[k])}"></label>`;
     el.innerHTML = `<form class="card pad" id="fEsc"><h2>Encabezado del concentrado</h2><p class="small muted">Estos datos aparecen en la parte superior de cada hoja de Excel.</p>
       <div class="grid2" style="margin-top:12px">${campo("instituto", "Instituto")}${campo("unidad", "Unidad")}${campo("supervision", "Supervisión")}${campo("escuela", "Nombre de la escuela")}${campo("clave", "Claves (ES / CCT)")}${campo("ciclo", "Ciclo escolar")}</div>
+      <label class="f" style="margin-top:12px;max-width:320px">Tamaño de hoja del concentrado (Excel e impresión)<select class="in" name="papel"><option value="oficio" ${c.papel !== "carta" ? "selected" : ""}>Oficio</option><option value="carta" ${c.papel === "carta" ? "selected" : ""}>Carta</option></select></label>
       <h2 style="margin-top:20px">Turno por grupo</h2><p class="small muted">Se usa en el renglón TURNO (cada asignación puede cambiarlo).</p>
       <div class="grid3" style="margin-top:10px">${LETRAS.map(l => `<label class="f">Grupos ${l}<select class="in" name="turno_${l}">${["MATUTINO", "VESPERTINO", "MIXTO"].map(t => `<option ${c.turnos[l] === t ? "selected" : ""}>${t}</option>`).join("")}</select></label>`).join("")}</div>
       <div class="row" style="margin-top:16px"><button class="btn primary">Guardar</button></div></form>`;
@@ -1289,6 +1518,7 @@ const ADM = {
       ev.preventDefault(); const fd = new FormData(ev.target), upd = {};
       for (const k of ["instituto", "unidad", "supervision", "escuela", "clave", "ciclo"]) upd[k] = fd.get(k).trim();
       upd.turnos = Object.fromEntries(LETRAS.map(l => [l, fd.get("turno_" + l)]));
+      upd.papel = fd.get("papel");
       try { await update(ref(db, "config"), upd); toast("Configuración guardada.", "ok"); } catch (e) { toast(msgErr(e), "err"); }
     });
   },
@@ -1311,7 +1541,7 @@ const ADM = {
       ${lista.map(([id, d]) => `<tr><td><input class="in" data-docnom="${id}" value="${esc(d.nombre)}"></td>
         <td>${cuenta[id] ? `<span class="small">${esc(cuenta[id].email)}</span>` : `<button class="btn sm" data-act="crearAcceso" data-d="${id}">Crear acceso</button>`}</td>
         <td class="n">${nAs[id] || 0}</td>
-        <td><button class="btn sm" data-act="verAsig" data-d="${id}">Ver</button> ${nAs[id] ? "" : `<button class="btn sm danger" data-act="borrarDoc" data-d="${id}">Eliminar</button>`}</td></tr>`).join("")}
+        <td style="white-space:nowrap"><button class="btn sm" data-act="verAsig" data-d="${id}">Ver</button> ${id === S.perfil.docenteId ? "" : `<button class="btn sm danger" data-act="borrarDoc" data-d="${id}">Eliminar</button>`}</td></tr>`).join("")}
       </tbody></table></div></div>`;
   },
   asignaciones(el) {
@@ -1352,7 +1582,7 @@ const ADM = {
   datos(el) {
     el.innerHTML = `<div class="grid2">
       <div class="card pad" style="border-color:var(--lime)"><h2>Alumnos desde Credenciales</h2><p class="small muted">Carga las listas de todos los grupos con el respaldo JSON del sistema de Credenciales (nombre, grado, grupo y matrícula). Puedes repetirlo cuando haya altas o cambios de grupo.</p><button class="btn primary" data-act="credenciales">${ICON.up}Importar alumnos</button></div>
-      <div class="card pad"><h2>Catálogo del horario</h2><p class="small muted">Agrega los docentes y asignaturas por grupo tomados del horario “Grupos de alumnos” (sin tutoría) y los talleres de Informática. Solo agrega lo que falte; no borra nada.</p><button class="btn" data-act="semilla">Cargar catálogo faltante</button></div>
+      <div class="card pad"><h2>Catálogo del horario</h2><p class="small muted">Los docentes del horario “Grupos de alumnos”. Cada docente registra sus propios grupos en “Mis grupos” (el horario se le sugiere). Si prefieres, puedes cargar desde aquí las asignaciones de todos. Solo agrega lo que falte; no borra nada.</p><div class="row"><button class="btn" data-act="semilla">Cargar docentes faltantes</button><button class="btn" data-act="semillaAsig">Cargar asignaciones de todos</button></div></div>
       <div class="card pad"><h2>Respaldo</h2><p class="small muted">Descarga una copia completa (JSON) de configuración, docentes, asignaciones, alumnos y calificaciones.</p><button class="btn" data-act="respaldo">Descargar respaldo</button></div>
       <div class="card pad"><h2>Listas de alumnos</h2><p class="small muted">Excel con todos los alumnos por grupo y su sexo.</p><button class="btn" data-act="xlsAlumnos">${ICON.xls}Exportar alumnos</button></div>
     </div>`;
@@ -1428,13 +1658,6 @@ function abrirDialogo(titulo, cuerpo, botones = [["Cerrar", "cancel"]]) {
 const cerrarDialogo = () => { const d = $("#dlg"); if (d.open) d.close(); };
 async function confirmar(msg, ok = "Aceptar", cls = "primary") { return (await abrirDialogo("Confirmar", `<p>${msg}</p>`, [["Cancelar", "cancel"], [ok, "ok", cls]])) === "ok"; }
 
-function dlgAlumnos(aId) {
-  const a = S.asig[aId];
-  const cuerpo = () => (a.tipo === "taller" ? `<p class="small muted">Marca a los alumnos de cada grupo que toman ${esc(a.materia)} contigo. Los nombres y el sexo se comparten con los demás docentes del grupo.</p>` : `<p class="small muted">Esta lista la comparten todos los docentes de ${esc(tituloAsig(a))}. Los cambios se guardan al instante.</p>`)
-    + gruposArr(a).map(g => `<div class="card pad" style="margin-bottom:12px" data-rbox="${a.grado + g}">${rosterHTML(a.grado + g, aId)}</div>`).join("");
-  S.dlgRefresh = () => { const b = $("#dlg .dlg-b"); if (b && $("#dlg").open) { const st = b.scrollTop; b.innerHTML = cuerpo(); b.scrollTop = st; } };
-  abrirDialogo(a.tipo === "taller" ? `Integrantes · ${esc(a.materia)} ${esc(tituloAsig(a))}` : `Lista de alumnos · ${esc(tituloAsig(a))}`, cuerpo()).then(() => { S.dlgRefresh = null; });
-}
 async function crearCuentaAuth(email, pass) {
   const sec = initializeApp(firebaseConfig, "alta-" + Date.now());
   try { const sa = getAuth(sec); const cred = await createUserWithEmailAndPassword(sa, email, pass); const uid = cred.user.uid; await signOut(sa); return uid; }
@@ -1807,7 +2030,7 @@ function hojaConcentrado(ws, aId, modo) {
   area(r, 2, r, 2, "1er. TRIMESTRE", { bold: true }); area(r, 3, r, 7, "2o. TRIMESTRE", { bold: true }); area(r, 8, r, 14, "3er. TRIMESTRE", { bold: true }); r++;
   area(r, 2, r + 1, 2, "", { bottom: true }); area(r, 3, r + 1, 7, "", { bottom: true }); area(r, 8, r + 1, 14, "", { bottom: true });
   ws.getRow(r).height = 20; ws.getRow(r + 1).height = 20;
-  ws.pageSetup = { paperSize: 1, orientation: "portrait", fitToPage: true, fitToWidth: 1, fitToHeight: 0, horizontalCentered: true,
+  ws.pageSetup = { paperSize: S.cfg.papel === "carta" ? 1 : 5, orientation: "portrait", fitToPage: true, fitToWidth: 1, fitToHeight: 0, horizontalCentered: true,
     margins: { left: 0.5, right: 0.5, top: 0.6, bottom: 0.6, header: 0.3, footer: 0.3 }, printArea: `A1:N${r + 1}` };
 }
 const ABREV = { "FORMACIÓN CÍVICA Y ÉTICA": "FCYE", "EDUCACIÓN FÍSICA": "ED FIS", "MATEMÁTICAS": "MAT", "CIRCUITOS ELÉCTRICOS": "CIRC" };
@@ -1870,9 +2093,11 @@ async function exportarAlumnos() {
 /* =====================================================================
    EVENTOS
    ===================================================================== */
-const VISTAS = { inicio: vInicio, captura: vCaptura, stats: m => vStats(m, null), misstats: m => vStats(m, S.perfil.docenteId), avance: vAvance, secre: vSecre, perfil: vPerfil, admin: vAdmin };
+const VISTAS = { grupos: vGrupos, inicio: vInicio, captura: vCaptura, stats: m => vStats(m, null), misstats: m => vStats(m, S.perfil.docenteId), avance: vAvance, secre: vSecre, perfil: vPerfil, admin: vAdmin };
 
 document.addEventListener("click", async ev => {
+  const gg2 = ev.target.closest("[data-gfgrado]");
+  if (gg2) { S.gf.grado = +gg2.dataset.gfgrado; S.gf.grupos = []; render(); return; }
   const goEl = ev.target.closest("[data-go]");
   if (goEl) { ev.preventDefault(); const [v, ...r] = goEl.dataset.go.split("/"); cerrarDialogo(); go(v, r.join("/")); return; }
   const t = ev.target.closest("[data-filtro-t]");
@@ -1887,7 +2112,11 @@ document.addEventListener("click", async ev => {
     switch (d.act) {
       case "capT": S.capT = d.t; render(); break;
       case "avT": S.avT = d.t; render(); break;
-      case "print": { const c = document.body.classList; if (S.cur?.view === "captura") c.add("imp-hoja"); window.print(); setTimeout(() => c.remove("imp-hoja"), 500); break; }
+      case "print": {
+        const c = document.body.classList, hoja = S.cur?.view === "captura";
+        $("#pgsize").textContent = hoja ? `@page{size:${S.cfg.papel === "carta" ? "letter" : "legal"};margin:9mm}` : "@page{size:letter;margin:12mm}";
+        if (hoja) c.add("imp-hoja"); window.print(); setTimeout(() => c.remove("imp-hoja"), 500); break;
+      }
       case "xls": {
         const ids = d.ids === "*" ? misAsignaciones().map(([id]) => id) : d.ids.split(",");
         b.disabled = true; await exportarConcentrado(ids, d.modo === "vacio" ? "vacio" : (d.t || S.capT)); b.disabled = false; break;
@@ -1895,7 +2124,7 @@ document.addEventListener("click", async ev => {
       case "xls-stats": await exportarStats(); break;
       case "xlsAlumnos": await exportarAlumnos(); break;
       case "importar": prepararImportacion(d.a || null); break;
-      case "alumnos": dlgAlumnos(d.a); break;
+      case "alumnos": dlgLista(d.a); break;
       case "llenar": await rellenar(d.a); break;
       case "sexo": { const al = S.alumnos[d.gg]?.[d.al]; await update(ref(db, `alumnos/${d.gg}/${d.al}`), { sexo: al?.sexo === "H" ? "M" : "H" }); break; }
       case "limpiar": { const F = S.cur?.view === "misstats" ? S.fm : S.f; Object.assign(F, { grado: "", grupo: "", materia: "", docente: "", sexo: "", tipo: "", q: "" }); render(); break; }
@@ -1913,11 +2142,12 @@ document.addEventListener("click", async ev => {
       }
       case "rbaja": {
         const al = S.alumnos[d.gg]?.[d.al]; if (!al) break;
-        if (!al.baja && !await confirmar(`¿Dar de baja a <b>${esc(al.nombre)}</b>? Dejará de aparecer en todas las asignaturas de ${d.gg[0]}° ${d.gg[1]} (sus calificaciones no se borran).`, "Dar de baja", "danger")) { if (S.dlgRefresh) dlgAlumnos(S.cur.arg); break; }
+        if (!al.baja && !await confirmar(`¿Dar de baja a <b>${esc(al.nombre)}</b>? Dejará de aparecer en todas las asignaturas de ${d.gg[0]}° ${d.gg[1]} (sus calificaciones no se borran).`, "Dar de baja", "danger")) { if (S.dlgRefresh) dlgLista(S.cur.arg); break; }
         await update(ref(db, `alumnos/${d.gg}/${d.al}`), { baja: al.baja ? null : true });
-        if (S.dlgRefresh) setTimeout(() => dlgAlumnos(S.cur.arg), 300);
+        if (S.dlgRefresh) setTimeout(() => dlgLista(S.cur.arg), 300);
         break;
       }
+      case "semillaAsig": { if (!await confirmar("¿Cargar las asignaciones del horario para todos los docentes? Normalmente cada docente lo hace en “Mis grupos”.")) break; const n = await cargarSemilla(true); toast(n ? `Se agregaron ${n} registros.` : "Ya estaban todas.", "ok"); break; }
       case "semilla": { const n = await cargarSemilla(); toast(n ? `Se agregaron ${n} registros del catálogo.` : "El catálogo ya estaba completo.", "ok"); break; }
       case "respaldo": {
         const out = {}; for (const k of ["config", "docentes", "asignaciones", "alumnos", "miembros", "calif", "usuarios"]) out[k] = (await get(ref(db, k))).val();
@@ -1945,7 +2175,21 @@ document.addEventListener("click", async ev => {
         break;
       }
       case "verAsig": S.admDoc = d.d; S.adminTab = "asignaciones"; render(); break;
-      case "borrarDoc": if (await confirmar(`¿Eliminar a ${esc(nombreDocente(d.d))}?`, "Eliminar", "danger")) await remove(ref(db, "docentes/" + d.d)); break;
+      case "borrarDoc": dlgBorrarDocente(d.d); break;
+      case "gAgregar": await agregarGrupos(); break;
+      case "gSugerencias": b.disabled = true; await agregarSugerencias(); break;
+      case "gQuitar": await quitarAsignacion(d.id); break;
+      case "lMover": await moverAlumno(d.a, d.gg, d.al, +d.dir); break;
+      case "lAlfa": { const s2 = secciones(d.a).find(x => x.gg === d.gg); const upd = {}; for (const x of s2?.alumnos || []) upd[`orden/${d.a}/${x.id}`] = null; await update(ref(db), upd); break; }
+      case "lQuitar": await quitarDeLista(d.a, d.gg, d.al); break;
+      case "lRegresar": await update(ref(db), { [`quitados/${d.a}/${d.al}`]: null }); break;
+      case "lMarcar": { const box = b.closest("details"); $$("[data-pick]", box).forEach(i => { i.checked = true; S.picks.add(i.dataset.pick); }); break; }
+      case "lAgregar": {
+        const box = b.closest("details"), ids = $$("[data-pick]", box).filter(i => i.checked).map(i => i.dataset.pick);
+        if (!ids.length) { toast("Marca primero a los alumnos."); break; }
+        const upd = {}; for (const id of ids) { upd[`miembros/${d.a}/${id}`] = d.gg; S.picks.delete(id); }
+        await update(ref(db), upd); toast(`${ids.length} alumnos agregados a tu lista.`, "ok"); break;
+      }
       case "editAsig": dlgAsignacion(d.id || null); break;
       case "borrarAsig": {
         const a = S.asig[d.id];
@@ -1980,6 +2224,10 @@ document.addEventListener("change", async ev => {
       if (v) upd[`docentes/${v}/email`] = u.email;
       await update(ref(db), upd); toast("Vinculación guardada.", "ok"); return;
     }
+    if (d.gf) { S.gf[d.gf] = el.type === "checkbox" ? el.checked : el.value; if (d.gf === "materia") S.gf.taller = TALLERES.includes(el.value); render(); return; }
+    if (d.gfgrupo) { const g = S.gf.grupos; el.checked ? g.push(d.gfgrupo) : g.splice(g.indexOf(d.gfgrupo), 1); render(); return; }
+    if (d.asadmvo) { await update(ref(db, "asignaciones/" + d.asadmvo), { admvo: el.value }); toast("Secretaría actualizada.", "ok"); return; }
+    if (d.pick) { el.checked ? S.picks.add(d.pick) : S.picks.delete(d.pick); return; }
     if (d.uletra) { await update(ref(db, "usuarios/" + d.uletra), { letra: el.value }); toast("Guardado.", "ok"); return; }
   } catch (e) { console.error(e); toast("No se pudo guardar: " + msgErr(e), "err"); }
 });
@@ -2003,6 +2251,7 @@ document.addEventListener("keydown", ev => {
     if (sig) { sig.focus(); sig.select(); } else el.blur();
   }
 });
+document.addEventListener("toggle", ev => { const k = ev.target?.dataset?.k; if (!k) return; S.abiertos ||= new Set(); ev.target.open ? S.abiertos.add(k) : S.abiertos.delete(k); }, true);
 document.addEventListener("focusin", ev => { if (ev.target.classList?.contains("cell")) ev.target.select(); });
 window.addEventListener("beforeprint", () => S.charts.forEach(c => c.resize()));
 </script>
