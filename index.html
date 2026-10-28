@@ -1,0 +1,1802 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#1d4f33">
+<title>Concentrado de Calificaciones · 21 de Noviembre</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+<style>
+:root{
+  --paper:#f3f4ef; --surface:#fcfcfb; --surface-2:#f7f8f4; --ink:#15201a; --ink-2:#4b5650; --muted:#7a837c;
+  --line:#e0e3da; --line-2:#cfd4c8; --brand:#1d4f33; --brand-2:#2c6e47; --brand-soft:#e5efe3; --lime:#92d050;
+  --ok:#2a78d6; --ok-soft:#e3eefb; --bad:#e34948; --bad-soft:#fdeceb; --warn:#c98500; --warn-soft:#fdf3dc;
+  --radius:12px; --shadow:0 1px 2px rgba(20,32,26,.06),0 4px 14px rgba(20,32,26,.05);
+  --font:"Plus Jakarta Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:var(--font);background:var(--paper);color:var(--ink);font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+h1,h2,h3{margin:0;line-height:1.2}
+h1{font-size:22px;font-weight:800;letter-spacing:-.01em}
+h2{font-size:16px;font-weight:700}
+h3{font-size:15px;font-weight:700}
+a{color:var(--brand-2)}
+[hidden]{display:none!important}
+.muted{color:var(--muted)} .small{font-size:12px} .num{font-variant-numeric:tabular-nums}
+.boot{display:grid;place-items:center;min-height:100vh;color:var(--muted)}
+
+/* ---------- botones / campos ---------- */
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line-2);background:var(--surface);padding:8px 12px;border-radius:9px;cursor:pointer;font-weight:600;font-size:13px;white-space:nowrap;transition:background .15s,border-color .15s}
+.btn:hover{background:var(--surface-2);border-color:var(--muted)}
+.btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
+.btn.primary:hover{background:var(--brand-2)}
+.btn.danger{color:var(--bad);border-color:#f2c4c3}
+.btn.ghost{border-color:transparent;background:transparent}
+.btn.sm{padding:5px 9px;font-size:12px;border-radius:7px}
+.btn svg{width:16px;height:16px;flex:none}
+.btn:disabled{opacity:.5;cursor:default}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:600;color:var(--ink-2)}
+.in, select.in, textarea.in{border:1px solid var(--line-2);background:#fff;border-radius:8px;padding:8px 10px;font-size:14px;min-width:0;width:100%}
+.in:focus, .cell:focus{outline:2px solid var(--lime);outline-offset:-1px;border-color:var(--brand-2)}
+textarea.in{min-height:110px;resize:vertical}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+@media (max-width:720px){.grid2,.grid3{grid-template-columns:1fr}}
+
+/* ---------- login ---------- */
+#login{min-height:100vh;display:grid;grid-template-columns:1.1fr 1fr}
+.login-art{background:var(--brand);color:#fff;padding:48px;display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden}
+.login-art::after{content:"";position:absolute;right:-120px;bottom:-120px;width:420px;height:420px;border-radius:50%;border:56px solid rgba(146,208,80,.18)}
+.login-art .k{font-size:12px;letter-spacing:.14em;text-transform:uppercase;opacity:.75;font-weight:700}
+.login-art h1{font-size:40px;line-height:1.05;margin:14px 0 12px;max-width:12ch;color:#fff}
+.login-art p{max-width:42ch;opacity:.85;margin:0}
+.login-art .sheet{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;max-width:300px;margin-top:28px;position:relative;z-index:1}
+.login-art .sheet span{height:16px;border-radius:3px;background:rgba(255,255,255,.12)}
+.login-art .sheet span.l{background:var(--lime)} .login-art .sheet span.r{background:#f08a89}
+.login-box{display:grid;place-items:center;padding:32px 20px}
+.login-card{width:100%;max-width:380px}
+.login-card h2{font-size:22px;margin-bottom:6px}
+.login-card form{display:flex;flex-direction:column;gap:14px;margin-top:22px}
+.err-msg{color:var(--bad);font-size:13px;min-height:18px}
+.powered{font-size:11px;color:var(--muted);letter-spacing:.04em}
+.login-art .powered{color:rgba(255,255,255,.6)}
+@media (max-width:860px){#login{grid-template-columns:1fr}.login-art{padding:28px 20px}.login-art h1{font-size:28px}.login-art .sheet{display:none}}
+
+/* ---------- shell ---------- */
+#app{min-height:100vh;display:grid;grid-template-columns:240px 1fr;grid-template-rows:auto 1fr}
+.top{grid-column:1/-1;background:var(--brand);color:#fff;display:flex;align-items:center;gap:14px;padding:10px 20px;position:sticky;top:0;z-index:20}
+.top .brand{display:flex;flex-direction:column;line-height:1.15}
+.top .brand b{font-size:15px;font-weight:800}
+.top .brand span{font-size:11.5px;opacity:.75}
+.top .sp{flex:1}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;padding:4px 10px;border-radius:999px;background:rgba(255,255,255,.14)}
+.chip.upd{background:var(--lime);color:#14301e;cursor:pointer;border:0}
+.top .who{font-size:12.5px;text-align:right;line-height:1.2}
+.top .who small{display:block;opacity:.7}
+.top .btn{background:transparent;color:#fff;border-color:rgba(255,255,255,.3)}
+.top .btn:hover{background:rgba(255,255,255,.1)}
+nav.side{background:var(--surface);border-right:1px solid var(--line);padding:16px 10px;display:flex;flex-direction:column;gap:2px;position:sticky;top:56px;height:calc(100vh - 56px)}
+nav.side a{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:9px;color:var(--ink-2);text-decoration:none;font-weight:600;font-size:13.5px}
+nav.side a svg{width:18px;height:18px;flex:none}
+nav.side a:hover{background:var(--surface-2)}
+nav.side a.on{background:var(--brand-soft);color:var(--brand)}
+nav.side .foot{margin-top:auto;padding:10px 12px}
+main{padding:24px clamp(16px,3vw,32px) 64px;min-width:0;max-width:1400px;width:100%}
+@media (max-width:900px){
+  #app{grid-template-columns:1fr}
+  nav.side{position:fixed;bottom:0;top:auto;left:0;right:0;height:auto;flex-direction:row;justify-content:space-around;border-right:0;border-top:1px solid var(--line);padding:6px;z-index:30}
+  nav.side a{flex-direction:column;gap:2px;font-size:10.5px;padding:6px 4px;text-align:center}
+  nav.side .foot{display:none}
+  main{padding-bottom:96px}
+  .top .who{display:none}
+  .toolbar{position:static}
+  .top .brand span{display:none}
+  h1{font-size:19px}
+}
+
+/* ---------- page parts ---------- */
+.page-head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:18px}
+.page-head p{margin:4px 0 0}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+.pad{padding:16px 18px}
+.empty{padding:40px 20px;text-align:center;color:var(--muted)}
+.empty b{display:block;color:var(--ink);font-size:16px;margin-bottom:6px}
+.badge{display:inline-flex;align-items:center;font-size:11px;font-weight:700;padding:3px 8px;border-radius:999px;background:var(--surface-2);color:var(--ink-2);border:1px solid var(--line);letter-spacing:.02em}
+.badge.taller{background:#eef6e3;color:#3f6b16;border-color:#d6e9bd}
+.badge.regular{background:var(--ok-soft);color:#1d5aa3;border-color:#cfe0f6}
+.back{margin-bottom:10px}
+.seg{display:inline-flex;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:3px;gap:2px;flex-wrap:wrap}
+.seg button{border:0;background:transparent;padding:6px 12px;border-radius:7px;font-weight:600;font-size:13px;cursor:pointer;color:var(--ink-2)}
+.seg button.on{background:var(--surface);color:var(--brand);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:14px;overflow-x:auto}
+.tabs button{border:0;background:none;padding:10px 12px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap}
+.tabs button.on{color:var(--brand);border-color:var(--brand)}
+
+/* ---------- tarjetas de asignaciones ---------- */
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px}
+.asig{padding:16px;display:flex;flex-direction:column;gap:8px}
+.asig .g{font-size:24px;font-weight:800;letter-spacing:-.02em}
+.asig .mat{font-weight:700;color:var(--brand)}
+.prog{display:grid;grid-template-columns:auto 1fr auto;gap:4px 8px;align-items:center;font-size:11.5px;color:var(--ink-2)}
+.bar{height:6px;border-radius:99px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--brand-2);border-radius:99px}
+.asig .acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.sec-title{margin:22px 0 10px;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:700}
+
+/* ---------- captura ---------- */
+.meta{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13px;color:var(--ink-2);margin-top:6px;align-items:center}
+.meta select{border:1px solid var(--line-2);border-radius:7px;padding:3px 6px;background:#fff;max-width:280px}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px;position:sticky;top:56px;background:var(--paper);padding:8px 0;z-index:10}
+.toolbar .sp{flex:1}
+.capsec{margin-bottom:18px;overflow:hidden}
+.capsec>header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:linear-gradient(0deg,var(--surface-2),var(--surface));border-bottom:1px solid var(--line)}
+.capsec>header h2{display:flex;align-items:center;gap:10px}
+.capsec>header h2::before{content:"";width:10px;height:10px;border-radius:3px;background:var(--lime)}
+.tbl-wrap{overflow-x:auto}
+table.cap{border-collapse:collapse;width:100%;min-width:560px}
+table.cap th{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-2);background:#eef4e6;border-bottom:1px solid var(--line-2);padding:7px 6px;font-weight:700;text-align:center}
+table.cap td{border-bottom:1px solid var(--line);padding:3px 4px;text-align:center}
+table.cap td.np{width:38px;color:var(--muted);font-size:12px}
+table.cap td.nm{text-align:left;font-weight:500;min-width:220px;padding-left:8px;position:sticky;left:0;background:var(--surface)}
+table.cap th.nm{text-align:left;position:sticky;left:0;z-index:1}
+table.cap tr:hover td{background:#fafbf7}
+table.cap tr:hover td.nm{background:#fafbf7}
+.cell{width:58px;border:1px solid transparent;background:var(--surface-2);border-radius:6px;text-align:center;padding:6px 2px;font-variant-numeric:tabular-nums;font-weight:600}
+.cell.wide{width:70px}
+.cell:hover{border-color:var(--line-2)}
+.cell.rep{color:var(--bad);background:var(--bad-soft)}
+.cell.saving{border-color:var(--warn)}
+.cell.ok{border-color:var(--lime)}
+.cell.err{border-color:var(--bad);background:#fff}
+td.calc{font-weight:700;font-variant-numeric:tabular-nums}
+td.calc.rep{color:var(--bad)}
+.sx{border:1px solid var(--line-2);background:#fff;border-radius:6px;width:30px;height:28px;font-weight:700;cursor:pointer;font-size:12px}
+.sx.H{color:#1d5aa3;background:var(--ok-soft);border-color:#cfe0f6}
+.sx.M{color:#9c2f5c;background:#fbe8f0;border-color:#f3cadb}
+.sx.q{color:var(--warn);background:var(--warn-soft)}
+.sum{display:flex;flex-wrap:wrap;gap:4px 16px;padding:10px 16px;font-size:12px;color:var(--ink-2);background:var(--surface-2);border-top:1px solid var(--line)}
+.sum b{color:var(--ink);font-variant-numeric:tabular-nums}
+.sum .t{font-weight:800;color:var(--brand);min-width:62px}
+.sum .r b{color:var(--bad)}
+.sum-line{display:flex;flex-wrap:wrap;gap:4px 16px;width:100%}
+.save-status{font-size:12px;color:var(--muted)}
+.hint{font-size:12.5px;color:var(--ink-2);background:var(--warn-soft);border:1px solid #f1dfb1;padding:10px 12px;border-radius:10px;margin-bottom:12px}
+
+/* ---------- estadísticas ---------- */
+.filters{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;padding:14px 16px;margin-bottom:16px}
+.filters label.f{flex:1 1 150px;max-width:260px}
+.filters .seg{align-self:flex-end}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:16px}
+.kpi{padding:14px 16px;display:flex;flex-direction:column;gap:2px}
+.kpi .k-l{font-size:12px;color:var(--ink-2);font-weight:600;display:flex;align-items:center;gap:6px}
+.kpi .k-v{font-size:28px;font-weight:800;letter-spacing:-.02em;line-height:1.1}
+.kpi .k-s{font-size:12px;color:var(--muted)}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+.charts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-bottom:16px}
+.charts .wide{grid-column:1/-1}
+.chart-card{padding:14px 16px}
+.chart-card h3{font-size:14px;margin-bottom:2px}
+.chart-card p{margin:0 0 10px;font-size:12px;color:var(--muted)}
+.chart-box{position:relative}
+@media (max-width:900px){.charts{grid-template-columns:1fr}}
+table.dt{border-collapse:collapse;width:100%;font-size:13px}
+table.dt th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-2);padding:8px 10px;border-bottom:1px solid var(--line-2);background:var(--surface-2);position:sticky;top:0}
+table.dt td{padding:7px 10px;vertical-align:top;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+table.dt td.n, table.dt th.n{text-align:right}
+table.dt tr:hover td{background:#fafbf7}
+.dt-wrap{max-height:560px;overflow:auto;border:1px solid var(--line);border-radius:10px}
+.pill-bad{color:var(--bad);font-weight:700}
+.pill-ok{color:#1d5aa3;font-weight:700}
+.mbar{display:flex;align-items:center;gap:8px;min-width:140px}
+.mbar .bar{flex:1}
+.filtros-print{display:none}
+
+/* ---------- admin ---------- */
+.adm-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.gtile{padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);cursor:pointer;text-align:left}
+.gtile.on{border-color:var(--brand);background:var(--brand-soft)}
+.gtile b{display:block;font-size:16px}
+table.roster{width:100%;border-collapse:collapse}
+table.roster td{padding:4px 6px;border-bottom:1px solid var(--line)}
+table.roster .in{padding:5px 8px;font-size:13px}
+table.roster tr.baja td{opacity:.45}
+.tag{font-size:11px;color:var(--muted)}
+
+/* ---------- diálogo / toast ---------- */
+dialog{border:0;border-radius:16px;padding:0;width:min(760px,calc(100vw - 24px));max-height:calc(100vh - 40px);box-shadow:0 20px 60px rgba(0,0,0,.25);background:var(--surface);color:var(--ink)}
+dialog::backdrop{background:rgba(15,25,20,.45)}
+.dlg-h{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--surface);z-index:2}
+.dlg-b{padding:16px 20px;overflow:auto;max-height:calc(100vh - 190px)}
+.dlg-f{display:flex;justify-content:flex-end;gap:8px;padding:12px 20px;border-top:1px solid var(--line);background:var(--surface-2)}
+#toasts{position:fixed;right:16px;bottom:16px;display:flex;flex-direction:column;gap:8px;z-index:100}
+.toast{background:var(--ink);color:#fff;padding:10px 14px;border-radius:10px;font-size:13px;box-shadow:var(--shadow);max-width:360px}
+.toast.err{background:#a52a2a}
+.toast.ok{background:var(--brand)}
+@media (max-width:900px){#toasts{bottom:84px}}
+
+/* ---------- impresión ---------- */
+@media print{
+  @page{size:letter;margin:12mm}
+  body{background:#fff;font-size:11px}
+  .top,nav.side,.toolbar,.actions,.filters,.no-print,.back,#toasts,.tabs{display:none!important}
+  #app{display:block}
+  main{padding:0;max-width:none}
+  .card{box-shadow:none;border-color:#bbb;break-inside:avoid}
+  .filtros-print{display:block;margin:0 0 10px;font-size:11px}
+  .charts{grid-template-columns:1fr 1fr}
+  .chart-card{break-inside:avoid}
+  .dt-wrap{max-height:none;overflow:visible}
+  .cell{border:0!important;background:none!important;width:auto}
+  table.cap td.nm{position:static}
+  .capsec{break-inside:auto}
+}
+</style>
+</head>
+<body>
+<div id="boot" class="boot">Cargando plataforma…</div>
+
+<section id="login" hidden>
+  <div class="login-art">
+    <div>
+      <div class="k">Esc. Sec. Gral. “21 de Noviembre” · IEEPO</div>
+      <h1>Concentrado de Calificaciones</h1>
+      <p>Captura por trimestre, descarga del formato oficial en Excel y estadísticas de aprobación para la dirección.</p>
+      <div class="sheet" aria-hidden="true">
+        <span class="l"></span><span></span><span></span><span></span><span></span><span></span>
+        <span></span><span class="l"></span><span></span><span class="r"></span><span></span><span></span>
+        <span></span><span></span><span class="l"></span><span></span><span></span><span class="l"></span>
+        <span class="r"></span><span></span><span></span><span class="l"></span><span></span><span></span>
+      </div>
+    </div>
+    <div class="powered">powered by elprofe chan</div>
+  </div>
+  <div class="login-box">
+    <div class="login-card">
+      <h2>Iniciar sesión</h2>
+      <p class="muted">Entra con el correo y la contraseña que te asignó la administración.</p>
+      <form id="loginForm" autocomplete="on">
+        <label class="f">Correo electrónico<input class="in" type="email" name="email" required autocomplete="username"></label>
+        <label class="f">Contraseña<input class="in" type="password" name="pass" required autocomplete="current-password"></label>
+        <div class="err-msg" id="loginErr"></div>
+        <button class="btn primary" type="submit" style="justify-content:center;padding:11px">Entrar</button>
+        <button class="btn ghost sm" type="button" id="olvide" style="align-self:center">Olvidé mi contraseña</button>
+      </form>
+    </div>
+  </div>
+</section>
+
+<section id="noacceso" hidden class="boot">
+  <div class="card pad" style="max-width:440px;text-align:center">
+    <h2>Tu cuenta aún no tiene acceso</h2>
+    <p class="muted" id="noaccesoMsg">Se envió una solicitud al administrador. Cuando te asigne un rol, vuelve a entrar.</p>
+    <button class="btn" id="noaccesoSalir">Cerrar sesión</button>
+  </div>
+</section>
+
+<div id="app" hidden>
+  <header class="top">
+    <div class="brand"><b>Concentrado de Calificaciones</b><span id="topEsc">Esc. Sec. Gral. 21 de Noviembre</span></div>
+    <span class="chip" id="topRol"></span>
+    <button class="chip upd" id="btnUpd" hidden>Hay datos nuevos · Actualizar</button>
+    <div class="sp"></div>
+    <div class="who"><span id="topNombre"></span><small id="topEmail"></small></div>
+    <button class="btn sm" id="btnSalir">Salir</button>
+  </header>
+  <nav class="side" id="nav"></nav>
+  <main id="main"></main>
+</div>
+
+<dialog id="dlg"></dialog>
+<div id="toasts"></div>
+<datalist id="dl-conducta"><option value="E"><option value="MB"><option value="B"><option value="R"><option value="D"></datalist>
+
+<script type="module">
+import { initializeApp, deleteApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, updatePassword, EmailAuthProvider, reauthenticateWithCredential, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getDatabase, ref, get, set, update, remove, push, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import { getAnalytics, isSupported } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics.js";
+
+/* =====================================================================
+   CONFIGURACIÓN DE FIREBASE (proyecto: registro-de-calificaciones-21)
+   ===================================================================== */
+const firebaseConfig = {
+  apiKey: "AIzaSyCieOcnwj5agryRahFCqtsAwXtYJqlbsjk",
+  authDomain: "registro-de-calificaciones-21.firebaseapp.com",
+  databaseURL: "https://registro-de-calificaciones-21-default-rtdb.firebaseio.com",
+  projectId: "registro-de-calificaciones-21",
+  storageBucket: "registro-de-calificaciones-21.firebasestorage.app",
+  messagingSenderId: "836837098139",
+  appId: "1:836837098139:web:8a6bbd37d26fc2ce7efc3e",
+  measurementId: "G-5906NH8NC7"
+};
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getDatabase(app);
+isSupported().then(ok => { if (ok) getAnalytics(app); }).catch(() => {});
+
+/* Cuentas que se dan de alta solas la primera vez que entran (las contraseñas NO se guardan aquí). */
+const CUENTAS_INICIALES = {
+  "elprofechan@gmail.com": { rol: "admin", esProfesor: true, docenteId: "chan", nombre: "JOSÉ EMMANUEL CHAN IBÁÑEZ" },
+  "melchor21@21nov.com":   { rol: "director", esProfesor: false, nombre: "MELCHOR SÁNCHEZ" }
+};
+
+/* Catálogo inicial tomado del horario "Grupos de alumnos" (docentes y asignaturas por grupo, sin tutoría). */
+const SEED = {"docentes":{"amanda":{"nombre":"AMANDA GARNICA MARTINEZ","alias":"AMANDA"},"emilio":{"nombre":"EMILIO ELISEO CORTES TRUJILLO","alias":"EMILIO"},"gilberto":{"nombre":"GILBERTO SANTIAGO LESCAS","alias":"GILBERTO"},"juan":{"nombre":"JUAN JAVIER MOSQUEDA CORTES","alias":"JUAN"},"perla":{"nombre":"LUZ PERLA REBOLLAR CERVANTES","alias":"PERLA"},"parra":{"nombre":"RUBEN PARRA URDIANA","alias":"PARRA"},"sela":{"nombre":"SELA ABIGAIL REYES COLLI","alias":"SELA"},"sofia":{"nombre":"SOFIA ESTHER CRUZ MARTINEZ","alias":"SOFIA"},"tania":{"nombre":"TANIA VILLEGAS APARICIO","alias":"TANIA"},"carlos":{"nombre":"CARLOS GOMEZ LOPEZ","alias":"CARLOS"},"carmela":{"nombre":"CARMELA ALONSO MARTINEZ","alias":"CARMELA"},"legaspi":{"nombre":"GUADALUPE EDITH LEGASPI CRUZ","alias":"LEGASPI"},"damian":{"nombre":"DAMIAN RUIZ FLORES","alias":"DAMIAN"},"teresa":{"nombre":"TERESA ANTONIO GARCIA","alias":"TERESA"},"erick":{"nombre":"ERICK PEREZ ROQUE","alias":"ERICK"},"ramon":{"nombre":"RAMON MARTINEZ VASQUEZ","alias":"RAMON"},"gardenia":{"nombre":"LUZ GARDENIA SANTIAGO PERALTA","alias":"GARDENIA"},"vacante":{"nombre":"VACANTE","alias":"VACANTE"},"wendy":{"nombre":"WENDY LILIANA VARGAS PEÑA","alias":"WENDY"},"blas":{"nombre":"BLAS CABALLERO CABALLERO","alias":"BLAS"},"manuela":{"nombre":"MANUELA SANTIAGO MORALES","alias":"MANUELA"},"silvia":{"nombre":"SILVIA MARTINEZ SANCHEZ","alias":"SILVIA"},"mesinas":{"nombre":"ENRIQUE MESINAS DE JESUS","alias":"MESINAS"},"abraham":{"nombre":"ABRAHAM SOLIS MARTINEZ","alias":"ABRAHAM"},"carlos-h":{"nombre":"CARLOS HERNANDEZ","alias":"CARLOS H"},"gloria":{"nombre":"GLORIA MARINA CAMACHO VASQUEZ","alias":"GLORIA"},"ishelt":{"nombre":"ISHELT GONZALEZ PINEDA","alias":"ISHELT"},"omar":{"nombre":"ANGEL OMAR GUZMAN LOPEZ","alias":"OMAR"},"elideth":{"nombre":"ELIDETH ZAMORA LOPEZ","alias":"ELIDETH"},"chan":{"nombre":"JOSÉ EMMANUEL CHAN IBÁÑEZ","alias":"CHAN","admvoTaller":"C"}},"asignaciones":{"amanda_geografia_1A":{"docenteId":"amanda","materia":"GEOGRAFÍA","grado":1,"grupos":"A","tipo":"regular"},"emilio_ingles_1A":{"docenteId":"emilio","materia":"INGLÉS","grado":1,"grupos":"A","tipo":"regular"},"gilberto_formacion-civica-y-etica_1A":{"docenteId":"gilberto","materia":"FORMACIÓN CÍVICA Y ÉTICA","grado":1,"grupos":"A","tipo":"regular"},"juan_historia_1A":{"docenteId":"juan","materia":"HISTORIA","grado":1,"grupos":"A","tipo":"regular"},"perla_biologia_1A":{"docenteId":"perla","materia":"BIOLOGÍA","grado":1,"grupos":"A","tipo":"regular"},"parra_educacion-fisica_1A":{"docenteId":"parra","materia":"EDUCACIÓN FÍSICA","grado":1,"grupos":"A","tipo":"regular"},"sela_matematicas_1A":{"docenteId":"sela","materia":"MATEMÁTICAS","grado":1,"grupos":"A","tipo":"regular"},"sofia_espanol_1A":{"docenteId":"sofia","materia":"ESPAÑOL","grado":1,"grupos":"A","tipo":"regular"},"tania_artes_1A":{"docenteId":"tania","materia":"ARTES","grado":1,"grupos":"A","tipo":"regular"},"amanda_geografia_1B":{"docenteId":"amanda","materia":"GEOGRAFÍA","grado":1,"grupos":"B","tipo":"regular"},"carlos_historia_1B":{"docenteId":"carlos","materia":"HISTORIA","grado":1,"grupos":"B","tipo":"regular"},"emilio_ingles_1B":{"docenteId":"emilio","materia":"INGLÉS","grado":1,"grupos":"B","tipo":"regular"},"gilberto_formacion-civica-y-etica_1B":{"docenteId":"gilberto","materia":"FORMACIÓN CÍVICA Y ÉTICA","grado":1,"grupos":"B","tipo":"regular"},"perla_biologia_1B":{"docenteId":"perla","materia":"BIOLOGÍA","grado":1,"grupos":"B","tipo":"regular"},"parra_educacion-fisica_1B":{"docenteId":"parra","materia":"EDUCACIÓN FÍSICA","grado":1,"grupos":"B","tipo":"regular"},"sela_matematicas_1B":{"docenteId":"sela","materia":"MATEMÁTICAS","grado":1,"grupos":"B","tipo":"regular"},"sofia_espanol_1B":{"docenteId":"sofia","materia":"ESPAÑOL","grado":1,"grupos":"B","tipo":"regular"},"tania_artes_1B":{"docenteId":"tania","materia":"ARTES","grado":1,"grupos":"B","tipo":"regular"},"amanda_geografia_1C":{"docenteId":"amanda","materia":"GEOGRAFÍA","grado":1,"grupos":"C","tipo":"regular"},"carmela_historia_1C":{"docenteId":"carmela","materia":"HISTORIA","grado":1,"grupos":"C","tipo":"regular"},"emilio_ingles_1C":{"docenteId":"emilio","materia":"INGLÉS","grado":1,"grupos":"C","tipo":"regular"},"gilberto_formacion-civica-y-etica_1C":{"docenteId":"gilberto","materia":"FORMACIÓN CÍVICA Y ÉTICA","grado":1,"grupos":"C","tipo":"regular"},"perla_biologia_1C":{"docenteId":"perla","materia":"BIOLOGÍA","grado":1,"grupos":"C","tipo":"regular"},"parra_educacion-fisica_1C":{"docenteId":"parra","materia":"EDUCACIÓN FÍSICA","grado":1,"grupos":"C","tipo":"regular"},"sela_matematicas_1C":{"docenteId":"sela","materia":"MATEMÁTICAS","grado":1,"grupos":"C","tipo":"regular"},"sofia_espanol_1C":{"docenteId":"sofia","materia":"ESPAÑOL","grado":1,"grupos":"C","tipo":"regular"},"tania_artes_1C":{"docenteId":"tania","materia":"ARTES","grado":1,"grupos":"C","tipo":"regular"},"amanda_geografia_1D":{"docenteId":"amanda","materia":"GEOGRAFÍA","grado":1,"grupos":"D","tipo":"regular"},"carmela_historia_1D":{"docenteId":"carmela","materia":"HISTORIA","grado":1,"grupos":"D","tipo":"regular"},"emilio_ingles_1D":{"docenteId":"emilio","materia":"INGLÉS","grado":1,"grupos":"D","tipo":"regular"},"gilberto_formacion-civica-y-etica_1D":{"docenteId":"gilberto","materia":"FORMACIÓN CÍVICA Y ÉTICA","grado":1,"grupos":"D","tipo":"regular"},"perla_biologia_1D":{"docenteId":"perla","materia":"BIOLOGÍA","grado":1,"grupos":"D","tipo":"regular"},"parra_educacion-fisica_1D":{"docenteId":"parra","materia":"EDUCACIÓN FÍSICA","grado":1,"grupos":"D","tipo":"regular"},"sela_matematicas_1D":{"docenteId":"sela","materia":"MATEMÁTICAS","grado":1,"grupos":"D","tipo":"regular"},"sofia_espanol_1D":{"docenteId":"sofia","materia":"ESPAÑOL","grado":1,"grupos":"D","tipo":"regular"},"tania_artes_1D":{"docenteId":"tania","materia":"ARTES","grado":1,"grupos":"D","tipo":"regular"},"amanda_geografia_1E":{"docenteId":"amanda","materia":"GEOGRAFÍA","grado":1,"grupos":"E","tipo":"regular"},"emilio_ingles_1E":{"docenteId":"emilio","materia":"INGLÉS","grado":1,"grupos":"E","tipo":"regular"},"gilberto_formacion-civica-y-etica_1E":{"docenteId":"gilberto","materia":"FORMACIÓN CÍVICA Y ÉTICA","grado":1,"grupos":"E","tipo":"regular"},"legaspi_biologia_1E":{"docenteId":"legaspi","materia":"BIOLOGÍA","grado":1,"grupos":"E","tipo":"regular"},"perla_historia_1E":{"docenteId":"perla","materia":"HISTORIA","grado":1,"grupos":"E","tipo":"regular"},"parra_educacion-fisica_1E":{"docenteId":"parra","materia":"EDUCACIÓN FÍSICA","grado":1,"grupos":"E","tipo":"regular"},"sela_matematicas_1E":{"docenteId":"sela","materia":"MATEMÁTICAS","grado":1,"grupos":"E","tipo":"regular"},"sofia_espanol_1E":{"docenteId":"sofia","materia":"ESPAÑOL","grado":1,"grupos":"E","tipo":"regular"},"tania_artes_1E":{"docenteId":"tania","materia":"ARTES","grado":1,"grupos":"E","tipo":"regular"},"amanda_geografia_1F":{"docenteId":"amanda","materia":"GEOGRAFÍA","grado":1,"grupos":"F","tipo":"regular"},"damian_educacion-fisica_1F":{"docenteId":"damian","materia":"EDUCACIÓN FÍSICA","grado":1,"grupos":"F","tipo":"regular"},"gilberto_formacion-civica-y-etica_1F":{"docenteId":"gilberto","materia":"FORMACIÓN CÍVICA Y ÉTICA","grado":1,"grupos":"F","tipo":"regular"},"legaspi_biologia_1F":{"docenteId":"legaspi","materia":"BIOLOGÍA","grado":1,"grupos":"F","tipo":"regular"},"perla_historia_1F":{"docenteId":"perla","materia":"HISTORIA","grado":1,"grupos":"F","tipo":"regular"},"sela_matematicas_1F":{"docenteId":"sela","materia":"MATEMÁTICAS","grado":1,"grupos":"F","tipo":"regular"},"sofia_espanol_1F":{"docenteId":"sofia","materia":"ESPAÑOL","grado":1,"grupos":"F","tipo":"regular"},"tania_artes_1F":{"docenteId":"tania","materia":"ARTES","grado":1,"grupos":"F","tipo":"regular"},"teresa_ingles_1F":{"docenteId":"teresa","materia":"INGLÉS","grado":1,"grupos":"F","tipo":"regular"},"amanda_geografia_1G":{"docenteId":"amanda","materia":"GEOGRAFÍA","grado":1,"grupos":"G","tipo":"regular"},"damian_educacion-fisica_1G":{"docenteId":"damian","materia":"EDUCACIÓN FÍSICA","grado":1,"grupos":"G","tipo":"regular"},"erick_matematicas_1G":{"docenteId":"erick","materia":"MATEMÁTICAS","grado":1,"grupos":"G","tipo":"regular"},"gilberto_formacion-civica-y-etica_1G":{"docenteId":"gilberto","materia":"FORMACIÓN CÍVICA Y ÉTICA","grado":1,"grupos":"G","tipo":"regular"},"legaspi_biologia_1G":{"docenteId":"legaspi","materia":"BIOLOGÍA","grado":1,"grupos":"G","tipo":"regular"},"perla_historia_1G":{"docenteId":"perla","materia":"HISTORIA","grado":1,"grupos":"G","tipo":"regular"},"ramon_ingles_1G":{"docenteId":"ramon","materia":"INGLÉS","grado":1,"grupos":"G","tipo":"regular"},"sofia_espanol_1G":{"docenteId":"sofia","materia":"ESPAÑOL","grado":1,"grupos":"G","tipo":"regular"},"tania_artes_1G":{"docenteId":"tania","materia":"ARTES","grado":1,"grupos":"G","tipo":"regular"},"amanda_geografia_1H":{"docenteId":"amanda","materia":"GEOGRAFÍA","grado":1,"grupos":"H","tipo":"regular"},"damian_educacion-fisica_1H":{"docenteId":"damian","materia":"EDUCACIÓN FÍSICA","grado":1,"grupos":"H","tipo":"regular"},"erick_matematicas_1H":{"docenteId":"erick","materia":"MATEMÁTICAS","grado":1,"grupos":"H","tipo":"regular"},"gilberto_artes_1H":{"docenteId":"gilberto","materia":"ARTES","grado":1,"grupos":"H","tipo":"regular"},"gilberto_formacion-civica-y-etica_1H":{"docenteId":"gilberto","materia":"FORMACIÓN CÍVICA Y ÉTICA","grado":1,"grupos":"H","tipo":"regular"},"gardenia_biologia_1H":{"docenteId":"gardenia","materia":"BIOLOGÍA","grado":1,"grupos":"H","tipo":"regular"},"ramon_ingles_1H":{"docenteId":"ramon","materia":"INGLÉS","grado":1,"grupos":"H","tipo":"regular"},"sofia_espanol_1H":{"docenteId":"sofia","materia":"ESPAÑOL","grado":1,"grupos":"H","tipo":"regular"},"vacante_historia_1H":{"docenteId":"vacante","materia":"HISTORIA","grado":1,"grupos":"H","tipo":"regular"},"amanda_geografia_1I":{"docenteId":"amanda","materia":"GEOGRAFÍA","grado":1,"grupos":"I","tipo":"regular"},"erick_matematicas_1I":{"docenteId":"erick","materia":"MATEMÁTICAS","grado":1,"grupos":"I","tipo":"regular"},"gilberto_formacion-civica-y-etica_1I":{"docenteId":"gilberto","materia":"FORMACIÓN CÍVICA Y ÉTICA","grado":1,"grupos":"I","tipo":"regular"},"gardenia_biologia_1I":{"docenteId":"gardenia","materia":"BIOLOGÍA","grado":1,"grupos":"I","tipo":"regular"},"ramon_ingles_1I":{"docenteId":"ramon","materia":"INGLÉS","grado":1,"grupos":"I","tipo":"regular"},"parra_educacion-fisica_1I":{"docenteId":"parra","materia":"EDUCACIÓN FÍSICA","grado":1,"grupos":"I","tipo":"regular"},"vacante_artes_1I":{"docenteId":"vacante","materia":"ARTES","grado":1,"grupos":"I","tipo":"regular"},"vacante_historia_1I":{"docenteId":"vacante","materia":"HISTORIA","grado":1,"grupos":"I","tipo":"regular"},"wendy_espanol_1I":{"docenteId":"wendy","materia":"ESPAÑOL","grado":1,"grupos":"I","tipo":"regular"},"blas_fisica_2A":{"docenteId":"blas","materia":"FÍSICA","grado":2,"grupos":"A","tipo":"regular"},"carmela_espanol_2A":{"docenteId":"carmela","materia":"ESPAÑOL","grado":2,"grupos":"A","tipo":"regular"},"emilio_ingles_2A":{"docenteId":"emilio","materia":"INGLÉS","grado":2,"grupos":"A","tipo":"regular"},"erick_matematicas_2A":{"docenteId":"erick","materia":"MATEMÁTICAS","grado":2,"grupos":"A","tipo":"regular"},"manuela_formacion-civica-y-etica_2A":{"docenteId":"manuela","materia":"FORMACIÓN CÍVICA Y ÉTICA","grado":2,"grupos":"A","tipo":"regular"},"parra_educacion-fisica_2A":{"docenteId":"parra","materia":"EDUCACIÓN FÍSICA","grado":2,"grupos":"A","tipo":"regular"},"silvia_historia_2A":{"docenteId":"silvia","materia":"HISTORIA","grado":2,"grupos":"A","tipo":"regular"},"tania_artes_2A":{"docenteId":"tania","materia":"ARTES","grado":2,"grupos":"A","tipo":"regular"},"blas_fisica_2B":{"docenteId":"blas","materia":"FÍSICA","grado":2,"grupos":"B","tipo":"regular"},"carmela_espanol_2B":{"docenteId":"carmela","materia":"ESPAÑOL","grado":2,"grupos":"B","tipo":"regular"},"emilio_ingles_2B":{"docenteId":"emilio","materia":"INGLÉS","grado":2,"grupos":"B","tipo":"regular"},"erick_matematicas_2B":{"docenteId":"erick","materia":"MATEMÁTICAS","grado":2,"grupos":"B","tipo":"regular"},"manuela_formacion-civica-y-etica_2B":{"docenteId":"manuela","materia":"FORMACIÓN CÍVICA Y ÉTICA","grado":2,"grupos":"B","tipo":"regular"},"parra_educacion-fisica_2B":{"docenteId":"parra","materia":"EDUCACIÓN FÍSICA","grado":2,"grupos":"B","tipo":"regular"},"silvia_historia_2B":{"docenteId":"silvia","materia":"HISTORIA","grado":2,"grupos":"B","tipo":"regular"},"tania_artes_2B":{"docenteId":"tania","materia":"ARTES","grado":2,"grupos":"B","tipo":"regular"},"blas_fisica_2C":{"docenteId":"blas","materia":"FÍSICA","grado":2,"grupos":"C","tipo":"regular"},"carmela_espanol_2C":{"docenteId":"carmela","materia":"ESPAÑOL","grado":2,"grupos":"C","tipo":"regular"},"emilio_ingles_2C":{"docenteId":"emilio","materia":"INGLÉS","grado":2,"grupos":"C","tipo":"regular"},"erick_matematicas_2C":{"docenteId":"erick","materia":"MATEMÁTICAS","grado":2,"grupos":"C","tipo":"regular"},"gilberto_formacion-civica-y-etica_2C":{"docenteId":"gilberto","materia":"FORMACIÓN CÍVICA Y ÉTICA","grado":2,"grupos":"C","tipo":"regular"},"parra_educacion-fisica_2C":{"docenteId":"parra","materia":"EDUCACIÓN FÍSICA","grado":2,"grupos":"C","tipo":"regular"},"silvia_historia_2C":{"docenteId":"silvia","materia":"HISTORIA","grado":2,"grupos":"C","tipo":"regular"},"tania_artes_2C":{"docenteId":"tania","materia":"ARTES","grado":2,"grupos":"C","tipo":"regular"},"blas_fisica_2D":{"docenteId":"blas","materia":"FÍSICA","grado":2,"grupos":"D","tipo":"regular"},"carmela_espanol_2D":{"docenteId":"carmela","materia":"ESPAÑOL","grado":2,"grupos":"D","tipo":"regular"},"emilio_ingles_2D":{"docenteId":"emilio","materia":"INGLÉS","grado":2,"grupos":"D","tipo":"regular"},"erick_matematicas_2D":{"docenteId":"erick","materia":"MATEMÁTICAS","grado":2,"grupos":"D","tipo":"regular"},"juan_formacion-civica-y-etica_2D":{"docenteId":"juan","materia":"FORMACIÓN CÍVICA Y ÉTICA","grado":2,"grupos":"D","tipo":"regular"},"parra_educacion-fisica_2D":{"docenteId":"parra","materia":"EDUCACIÓN FÍSICA","grado":2,"grupos":"D","tipo":"regular"},"silvia_historia_2D":{"docenteId":"silvia","materia":"HISTORIA","grado":2,"grupos":"D","tipo":"regular"},"tania_artes_2D":{"docenteId":"tania","materia":"ARTES","grado":2,"grupos":"D","tipo":"regular"},"emilio_ingles_2E":{"docenteId":"emilio","materia":"INGLÉS","grado":2,"grupos":"E","tipo":"regular"},"mesinas_fisica_2E":{"docenteId":"mesinas","materia":"FÍSICA","grado":2,"grupos":"E","tipo":"regular"},"juan_formacion-civica-y-etica_2E":{"docenteId":"juan","materia":"FORMACIÓN CÍVICA Y ÉTICA","grado":2,"grupos":"E","tipo":"regular"},"parra_educacion-fisica_2E":{"docenteId":"parra","materia":"EDUCACIÓN FÍSICA","grado":2,"grupos":"E","tipo":"regular"},"sela_matematicas_2E":{"docenteId":"sela","materia":"MATEMÁTICAS","grado":2,"grupos":"E","tipo":"regular"},"silvia_historia_2E":{"docenteId":"silvia","materia":"HISTORIA","grado":2,"grupos":"E","tipo":"regular"},"tania_artes_2E":{"docenteId":"tania","materia":"ARTES","grado":2,"grupos":"E","tipo":"regular"},"wendy_espanol_2E":{"docenteId":"wendy","materia":"ESPAÑOL","grado":2,"grupos":"E","tipo":"regular"},"abraham_matematicas_2F":{"docenteId":"abraham","materia":"MATEMÁTICAS","grado":2,"grupos":"F","tipo":"regular"},"blas_fisica_2F":{"docenteId":"blas","materia":"FÍSICA","grado":2,"grupos":"F","tipo":"regular"},"emilio_ingles_2F":{"docenteId":"emilio","materia":"INGLÉS","grado":2,"grupos":"F","tipo":"regular"},"juan_formacion-civica-y-etica_2F":{"docenteId":"juan","materia":"FORMACIÓN CÍVICA Y ÉTICA","grado":2,"grupos":"F","tipo":"regular"},"parra_educacion-fisica_2F":{"docenteId":"parra","materia":"EDUCACIÓN FÍSICA","grado":2,"grupos":"F","tipo":"regular"},"silvia_historia_2F":{"docenteId":"silvia","materia":"HISTORIA","grado":2,"grupos":"F","tipo":"regular"},"tania_artes_2F":{"docenteId":"tania","materia":"ARTES","grado":2,"grupos":"F","tipo":"regular"},"wendy_espanol_2F":{"docenteId":"wendy","materia":"ESPAÑOL","grado":2,"grupos":"F","tipo":"regular"},"damian_educacion-fisica_2G":{"docenteId":"damian","materia":"EDUCACIÓN FÍSICA","grado":2,"grupos":"G","tipo":"regular"},"emilio_ingles_2G":{"docenteId":"emilio","materia":"INGLÉS","grado":2,"grupos":"G","tipo":"regular"},"mesinas_fisica_2G":{"docenteId":"mesinas","materia":"FÍSICA","grado":2,"grupos":"G","tipo":"regular"},"gilberto_artes_2G":{"docenteId":"gilberto","materia":"ARTES","grado":2,"grupos":"G","tipo":"regular"},"gloria_historia_2G":{"docenteId":"gloria","materia":"HISTORIA","grado":2,"grupos":"G","tipo":"regular"},"juan_formacion-civica-y-etica_2G":{"docenteId":"juan","materia":"FORMACIÓN CÍVICA Y ÉTICA","grado":2,"grupos":"G","tipo":"regular"},"ramon_espanol_2G":{"docenteId":"ramon","materia":"ESPAÑOL","grado":2,"grupos":"G","tipo":"regular"},"sela_matematicas_2G":{"docenteId":"sela","materia":"MATEMÁTICAS","grado":2,"grupos":"G","tipo":"regular"},"damian_educacion-fisica_2H":{"docenteId":"damian","materia":"EDUCACIÓN FÍSICA","grado":2,"grupos":"H","tipo":"regular"},"emilio_ingles_2H":{"docenteId":"emilio","materia":"INGLÉS","grado":2,"grupos":"H","tipo":"regular"},"gilberto_formacion-civica-y-etica_2H":{"docenteId":"gilberto","materia":"FORMACIÓN CÍVICA Y ÉTICA","grado":2,"grupos":"H","tipo":"regular"},"gloria_historia_2H":{"docenteId":"gloria","materia":"HISTORIA","grado":2,"grupos":"H","tipo":"regular"},"ishelt_matematicas_2H":{"docenteId":"ishelt","materia":"MATEMÁTICAS","grado":2,"grupos":"H","tipo":"regular"},"gardenia_fisica_2H":{"docenteId":"gardenia","materia":"FÍSICA","grado":2,"grupos":"H","tipo":"regular"},"ramon_espanol_2H":{"docenteId":"ramon","materia":"ESPAÑOL","grado":2,"grupos":"H","tipo":"regular"},"vacante_artes_2H":{"docenteId":"vacante","materia":"ARTES","grado":2,"grupos":"H","tipo":"regular"},"damian_educacion-fisica_2I":{"docenteId":"damian","materia":"EDUCACIÓN FÍSICA","grado":2,"grupos":"I","tipo":"regular"},"emilio_ingles_2I":{"docenteId":"emilio","materia":"INGLÉS","grado":2,"grupos":"I","tipo":"regular"},"gilberto_formacion-civica-y-etica_2I":{"docenteId":"gilberto","materia":"FORMACIÓN CÍVICA Y ÉTICA","grado":2,"grupos":"I","tipo":"regular"},"gloria_historia_2I":{"docenteId":"gloria","materia":"HISTORIA","grado":2,"grupos":"I","tipo":"regular"},"ishelt_matematicas_2I":{"docenteId":"ishelt","materia":"MATEMÁTICAS","grado":2,"grupos":"I","tipo":"regular"},"gardenia_fisica_2I":{"docenteId":"gardenia","materia":"FÍSICA","grado":2,"grupos":"I","tipo":"regular"},"ramon_espanol_2I":{"docenteId":"ramon","materia":"ESPAÑOL","grado":2,"grupos":"I","tipo":"regular"},"vacante_artes_2I":{"docenteId":"vacante","materia":"ARTES","grado":2,"grupos":"I","tipo":"regular"},"abraham_matematicas_3A":{"docenteId":"abraham","materia":"MATEMÁTICAS","grado":3,"grupos":"A","tipo":"regular"},"carlos_espanol_3A":{"docenteId":"carlos","materia":"ESPAÑOL","grado":3,"grupos":"A","tipo":"regular"},"mesinas_quimica_3A":{"docenteId":"mesinas","materia":"QUÍMICA","grado":3,"grupos":"A","tipo":"regular"},"manuela_formacion-civica-y-etica_3A":{"docenteId":"manuela","materia":"FORMACIÓN CÍVICA Y ÉTICA","grado":3,"grupos":"A","tipo":"regular"},"parra_educacion-fisica_3A":{"docenteId":"parra","materia":"EDUCACIÓN FÍSICA","grado":3,"grupos":"A","tipo":"regular"},"silvia_historia_3A":{"docenteId":"silvia","materia":"HISTORIA","grado":3,"grupos":"A","tipo":"regular"},"tania_artes_3A":{"docenteId":"tania","materia":"ARTES","grado":3,"grupos":"A","tipo":"regular"},"teresa_ingles_3A":{"docenteId":"teresa","materia":"INGLÉS","grado":3,"grupos":"A","tipo":"regular"},"abraham_matematicas_3B":{"docenteId":"abraham","materia":"MATEMÁTICAS","grado":3,"grupos":"B","tipo":"regular"},"omar_quimica_3B":{"docenteId":"omar","materia":"QUÍMICA","grado":3,"grupos":"B","tipo":"regular"},"juan_historia_3B":{"docenteId":"juan","materia":"HISTORIA","grado":3,"grupos":"B","tipo":"regular"},"manuela_formacion-civica-y-etica_3B":{"docenteId":"manuela","materia":"FORMACIÓN CÍVICA Y ÉTICA","grado":3,"grupos":"B","tipo":"regular"},"parra_educacion-fisica_3B":{"docenteId":"parra","materia":"EDUCACIÓN FÍSICA","grado":3,"grupos":"B","tipo":"regular"},"tania_artes_3B":{"docenteId":"tania","materia":"ARTES","grado":3,"grupos":"B","tipo":"regular"},"teresa_ingles_3B":{"docenteId":"teresa","materia":"INGLÉS","grado":3,"grupos":"B","tipo":"regular"},"wendy_espanol_3B":{"docenteId":"wendy","materia":"ESPAÑOL","grado":3,"grupos":"B","tipo":"regular"},"abraham_matematicas_3C":{"docenteId":"abraham","materia":"MATEMÁTICAS","grado":3,"grupos":"C","tipo":"regular"},"omar_quimica_3C":{"docenteId":"omar","materia":"QUÍMICA","grado":3,"grupos":"C","tipo":"regular"},"carlos_espanol_3C":{"docenteId":"carlos","materia":"ESPAÑOL","grado":3,"grupos":"C","tipo":"regular"},"manuela_formacion-civica-y-etica_3C":{"docenteId":"manuela","materia":"FORMACIÓN CÍVICA Y ÉTICA","grado":3,"grupos":"C","tipo":"regular"},"parra_educacion-fisica_3C":{"docenteId":"parra","materia":"EDUCACIÓN FÍSICA","grado":3,"grupos":"C","tipo":"regular"},"silvia_historia_3C":{"docenteId":"silvia","materia":"HISTORIA","grado":3,"grupos":"C","tipo":"regular"},"tania_artes_3C":{"docenteId":"tania","materia":"ARTES","grado":3,"grupos":"C","tipo":"regular"},"teresa_ingles_3C":{"docenteId":"teresa","materia":"INGLÉS","grado":3,"grupos":"C","tipo":"regular"},"abraham_matematicas_3D":{"docenteId":"abraham","materia":"MATEMÁTICAS","grado":3,"grupos":"D","tipo":"regular"},"omar_quimica_3D":{"docenteId":"omar","materia":"QUÍMICA","grado":3,"grupos":"D","tipo":"regular"},"carlos_espanol_3D":{"docenteId":"carlos","materia":"ESPAÑOL","grado":3,"grupos":"D","tipo":"regular"},"juan_historia_3D":{"docenteId":"juan","materia":"HISTORIA","grado":3,"grupos":"D","tipo":"regular"},"manuela_formacion-civica-y-etica_3D":{"docenteId":"manuela","materia":"FORMACIÓN CÍVICA Y ÉTICA","grado":3,"grupos":"D","tipo":"regular"},"parra_educacion-fisica_3D":{"docenteId":"parra","materia":"EDUCACIÓN FÍSICA","grado":3,"grupos":"D","tipo":"regular"},"tania_artes_3D":{"docenteId":"tania","materia":"ARTES","grado":3,"grupos":"D","tipo":"regular"},"teresa_ingles_3D":{"docenteId":"teresa","materia":"INGLÉS","grado":3,"grupos":"D","tipo":"regular"},"abraham_matematicas_3E":{"docenteId":"abraham","materia":"MATEMÁTICAS","grado":3,"grupos":"E","tipo":"regular"},"omar_quimica_3E":{"docenteId":"omar","materia":"QUÍMICA","grado":3,"grupos":"E","tipo":"regular"},"juan_historia_3E":{"docenteId":"juan","materia":"HISTORIA","grado":3,"grupos":"E","tipo":"regular"},"manuela_formacion-civica-y-etica_3E":{"docenteId":"manuela","materia":"FORMACIÓN CÍVICA Y ÉTICA","grado":3,"grupos":"E","tipo":"regular"},"parra_educacion-fisica_3E":{"docenteId":"parra","materia":"EDUCACIÓN FÍSICA","grado":3,"grupos":"E","tipo":"regular"},"tania_artes_3E":{"docenteId":"tania","materia":"ARTES","grado":3,"grupos":"E","tipo":"regular"},"teresa_ingles_3E":{"docenteId":"teresa","materia":"INGLÉS","grado":3,"grupos":"E","tipo":"regular"},"wendy_espanol_3E":{"docenteId":"wendy","materia":"ESPAÑOL","grado":3,"grupos":"E","tipo":"regular"},"abraham_matematicas_3F":{"docenteId":"abraham","materia":"MATEMÁTICAS","grado":3,"grupos":"F","tipo":"regular"},"omar_quimica_3F":{"docenteId":"omar","materia":"QUÍMICA","grado":3,"grupos":"F","tipo":"regular"},"elideth_espanol_3F":{"docenteId":"elideth","materia":"ESPAÑOL","grado":3,"grupos":"F","tipo":"regular"},"gilberto_artes_3F":{"docenteId":"gilberto","materia":"ARTES","grado":3,"grupos":"F","tipo":"regular"},"juan_historia_3F":{"docenteId":"juan","materia":"HISTORIA","grado":3,"grupos":"F","tipo":"regular"},"manuela_formacion-civica-y-etica_3F":{"docenteId":"manuela","materia":"FORMACIÓN CÍVICA Y ÉTICA","grado":3,"grupos":"F","tipo":"regular"},"parra_educacion-fisica_3F":{"docenteId":"parra","materia":"EDUCACIÓN FÍSICA","grado":3,"grupos":"F","tipo":"regular"},"teresa_ingles_3F":{"docenteId":"teresa","materia":"INGLÉS","grado":3,"grupos":"F","tipo":"regular"},"abraham_matematicas_3G":{"docenteId":"abraham","materia":"MATEMÁTICAS","grado":3,"grupos":"G","tipo":"regular"},"damian_educacion-fisica_3G":{"docenteId":"damian","materia":"EDUCACIÓN FÍSICA","grado":3,"grupos":"G","tipo":"regular"},"elideth_espanol_3G":{"docenteId":"elideth","materia":"ESPAÑOL","grado":3,"grupos":"G","tipo":"regular"},"mesinas_quimica_3G":{"docenteId":"mesinas","materia":"QUÍMICA","grado":3,"grupos":"G","tipo":"regular"},"manuela_formacion-civica-y-etica_3G":{"docenteId":"manuela","materia":"FORMACIÓN CÍVICA Y ÉTICA","grado":3,"grupos":"G","tipo":"regular"},"silvia_historia_3G":{"docenteId":"silvia","materia":"HISTORIA","grado":3,"grupos":"G","tipo":"regular"},"teresa_ingles_3G":{"docenteId":"teresa","materia":"INGLÉS","grado":3,"grupos":"G","tipo":"regular"},"vacante_artes_3G":{"docenteId":"vacante","materia":"ARTES","grado":3,"grupos":"G","tipo":"regular"},"omar_quimica_3H":{"docenteId":"omar","materia":"QUÍMICA","grado":3,"grupos":"H","tipo":"regular"},"damian_educacion-fisica_3H":{"docenteId":"damian","materia":"EDUCACIÓN FÍSICA","grado":3,"grupos":"H","tipo":"regular"},"elideth_espanol_3H":{"docenteId":"elideth","materia":"ESPAÑOL","grado":3,"grupos":"H","tipo":"regular"},"ishelt_matematicas_3H":{"docenteId":"ishelt","materia":"MATEMÁTICAS","grado":3,"grupos":"H","tipo":"regular"},"manuela_formacion-civica-y-etica_3H":{"docenteId":"manuela","materia":"FORMACIÓN CÍVICA Y ÉTICA","grado":3,"grupos":"H","tipo":"regular"},"teresa_ingles_3H":{"docenteId":"teresa","materia":"INGLÉS","grado":3,"grupos":"H","tipo":"regular"},"vacante_historia_3H":{"docenteId":"vacante","materia":"HISTORIA","grado":3,"grupos":"H","tipo":"regular"},"vacante_artes_3H":{"docenteId":"vacante","materia":"ARTES","grado":3,"grupos":"H","tipo":"regular"},"omar_quimica_3I":{"docenteId":"omar","materia":"QUÍMICA","grado":3,"grupos":"I","tipo":"regular"},"damian_artes_3I":{"docenteId":"damian","materia":"ARTES","grado":3,"grupos":"I","tipo":"regular"},"damian_educacion-fisica_3I":{"docenteId":"damian","materia":"EDUCACIÓN FÍSICA","grado":3,"grupos":"I","tipo":"regular"},"elideth_espanol_3I":{"docenteId":"elideth","materia":"ESPAÑOL","grado":3,"grupos":"I","tipo":"regular"},"gilberto_formacion-civica-y-etica_3I":{"docenteId":"gilberto","materia":"FORMACIÓN CÍVICA Y ÉTICA","grado":3,"grupos":"I","tipo":"regular"},"ishelt_matematicas_3I":{"docenteId":"ishelt","materia":"MATEMÁTICAS","grado":3,"grupos":"I","tipo":"regular"},"teresa_ingles_3I":{"docenteId":"teresa","materia":"INGLÉS","grado":3,"grupos":"I","tipo":"regular"},"vacante_historia_3I":{"docenteId":"vacante","materia":"HISTORIA","grado":3,"grupos":"I","tipo":"regular"},"chan_informatica_1AB":{"docenteId":"chan","materia":"INFORMÁTICA","grado":1,"grupos":"A,B","tipo":"taller","turno":"MATUTINO"},"chan_informatica_1C":{"docenteId":"chan","materia":"INFORMÁTICA","grado":1,"grupos":"C","tipo":"taller","turno":"MATUTINO"},"chan_informatica_1GH":{"docenteId":"chan","materia":"INFORMÁTICA","grado":1,"grupos":"G,H","tipo":"taller","turno":"MATUTINO"},"chan_informatica_1I":{"docenteId":"chan","materia":"INFORMÁTICA","grado":1,"grupos":"I","tipo":"taller","turno":"MATUTINO"},"chan_informatica_2AB":{"docenteId":"chan","materia":"INFORMÁTICA","grado":2,"grupos":"A,B","tipo":"taller","turno":"MATUTINO"},"chan_informatica_2C":{"docenteId":"chan","materia":"INFORMÁTICA","grado":2,"grupos":"C","tipo":"taller","turno":"MATUTINO"},"chan_informatica_2GH":{"docenteId":"chan","materia":"INFORMÁTICA","grado":2,"grupos":"G,H","tipo":"taller","turno":"MATUTINO"},"chan_informatica_2I":{"docenteId":"chan","materia":"INFORMÁTICA","grado":2,"grupos":"I","tipo":"taller","turno":"MATUTINO"},"chan_informatica_3DE":{"docenteId":"chan","materia":"INFORMÁTICA","grado":3,"grupos":"D,E","tipo":"taller","turno":"MATUTINO"},"chan_informatica_3F":{"docenteId":"chan","materia":"INFORMÁTICA","grado":3,"grupos":"F","tipo":"taller","turno":"MATUTINO"},"chan_informatica_3GH":{"docenteId":"chan","materia":"INFORMÁTICA","grado":3,"grupos":"G,H","tipo":"taller","turno":"MATUTINO"},"chan_informatica_3I":{"docenteId":"chan","materia":"INFORMÁTICA","grado":3,"grupos":"I","tipo":"taller","turno":"MATUTINO"}}};
+
+const GRADOS = { 1: "PRIMERO", 2: "SEGUNDO", 3: "TERCERO" };
+const LETRAS = ["A","B","C","D","E","F","G","H","I"];
+const ROLES = { admin: "Administrador", profesor: "Docente", director: "Dirección", secretaria: "Secretaría" };
+const TALLERES = ["INFORMÁTICA","OFIMÁTICA","CIRCUITOS ELÉCTRICOS","TURISMO"];
+const CONFIG_DEF = {
+  instituto: "INSTITUTO ESTATAL DE EDUCACIÓN PÚBLICA DE OAXACA",
+  unidad: "UNIDAD DE EDUCACIÓN SECUNDARIA",
+  supervision: "SUPERVISIÓN ESCOLAR ZONA 014",
+  escuela: "21 DE NOVIEMBRE",
+  clave: "ES-372-126          20DES01390",
+  ciclo: "2026-2027",
+  turnos: { A:"MATUTINO",B:"MATUTINO",C:"MATUTINO",D:"MATUTINO",E:"MATUTINO",F:"MATUTINO",G:"MIXTO",H:"MIXTO",I:"MIXTO" },
+  secretarias: { A:"VÍCTOR", B:"JULIA", C:"ZULMA HERNÁNDEZ MARÍN", D:"DAZA", E:"LAFIT", F:"RUTH", G:"LEONOR", H:"CARMELITA", I:"CARLOS" }
+};
+
+/* =====================================================================
+   ESTADO
+   ===================================================================== */
+const S = {
+  user: null, perfil: null, cfg: structuredClone(CONFIG_DEF),
+  docentes: {}, asig: {}, alumnos: {}, miembros: {}, calif: {}, usuarios: {}, solicitudes: {},
+  ready: false, loaded: new Set(), cur: null, charts: [], capT: "1",
+  f: { T: "1", grado: "", grupo: "", materia: "", docente: "", sexo: "", tipo: "", tab: "resumen", q: "" },
+  fm: { T: "1", grado: "", grupo: "", materia: "", docente: "", sexo: "", tipo: "", tab: "resumen", q: "" },
+  avT: "1", adminTab: "escuela", admGG: "1A", admDoc: "", admGrado: "", secreSel: ""
+};
+let unsubs = [], califSubs = {};
+
+/* =====================================================================
+   UTILIDADES
+   ===================================================================== */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+const norm = s => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/\s+/g, " ").trim();
+const cmpNombre = (a, b) => (a.nombre || "").localeCompare(b.nombre || "", "es", { sensitivity: "base" });
+const num = v => (v === "" || v == null || isNaN(+v)) ? null : +v;
+const f1 = v => v == null || v === "" ? "" : (Math.round(v * 10) / 10).toFixed(1);
+const pct = v => (v == null || isNaN(v)) ? "—" : (Math.round(v * 10) / 10).toFixed(1) + "%";
+const fmtCal = v => v == null ? "" : (Number.isInteger(v) ? String(v) : String(Math.round(v * 10) / 10));
+const slug = s => norm(s).replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+const sum = arr => arr.reduce((a, b) => a + b, 0);
+
+function toast(msg, tipo = "") {
+  const t = document.createElement("div");
+  t.className = "toast " + tipo; t.textContent = msg;
+  $("#toasts").appendChild(t);
+  setTimeout(() => t.remove(), tipo === "err" ? 6500 : 3200);
+}
+function descargar(blob, nombre) {
+  const u = URL.createObjectURL(blob);
+  const a = document.createElement("a"); a.href = u; a.download = nombre;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(u), 4000);
+}
+const ICON = {
+  book: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5V5a2 2 0 0 1 2-2h14v16H6.5A2.5 2.5 0 0 0 4 21.5"/><path d="M8 7h8M8 11h6"/></svg>',
+  chart: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
+  check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>',
+  folder: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>',
+  gear: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>',
+  user: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>',
+  xls: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M9 13l5 5M14 13l-5 5"/></svg>',
+  print: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v7H6z"/></svg>',
+  up: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M7 9l5-5 5 5M4 20h16"/></svg>',
+  users: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M21.5 20a6.5 6.5 0 0 0-4-6"/></svg>'
+};
+
+/* ---------- modelo ---------- */
+const gruposArr = a => String(a?.grupos || "").split(",").map(s => s.trim()).filter(Boolean);
+function etiquetaGrupos(a) { const g = gruposArr(a); return g.length > 1 ? g.slice(0, -1).join(", ") + " Y " + g[g.length - 1] : (g[0] || ""); }
+const nombreDocente = id => S.docentes[id]?.nombre || (id ? id.toUpperCase() : "—");
+function admvoLetra(a) {
+  if (a.admvo) return a.admvo;
+  if (a.tipo === "taller") return S.docentes[a.docenteId]?.admvoTaller || gruposArr(a)[0];
+  return gruposArr(a)[0];
+}
+const admvoNombre = a => S.cfg.secretarias?.[admvoLetra(a)] || "";
+const turnoDe = a => a.turno || S.cfg.turnos?.[gruposArr(a)[0]] || "MATUTINO";
+const tituloAsig = a => `${a.grado}° "${etiquetaGrupos(a)}"`;
+const ordenAsig = ([, a], [, b]) => (a.grado - b.grado) || a.grupos.localeCompare(b.grupos) || a.materia.localeCompare(b.materia);
+const misAsignaciones = () => Object.entries(S.asig).filter(([, a]) => S.perfil?.docenteId && a.docenteId === S.perfil.docenteId).sort(ordenAsig);
+const esAdmin = () => S.perfil?.rol === "admin";
+const puedeEditar = aId => esAdmin() || (S.asig[aId] && S.asig[aId].docenteId === S.perfil?.docenteId);
+
+function secciones(aId) {
+  const a = S.asig[aId]; if (!a) return [];
+  return gruposArr(a).map(g => {
+    const gg = a.grado + g, roster = S.alumnos[gg] || {};
+    let ids;
+    if (a.tipo === "taller") { const m = S.miembros[aId] || {}; ids = Object.keys(m).filter(id => m[id] === gg && roster[id] && !roster[id].baja); }
+    else ids = Object.keys(roster).filter(id => !roster[id].baja);
+    return { gg, g, label: `${GRADOS[a.grado]} "${g}"`, alumnos: ids.map(id => ({ id, ...roster[id] })).sort(cmpNombre) };
+  });
+}
+const calTri = (c, t) => num(c?.["t" + t]);
+function promFinal(c) { const v = [1, 2, 3].map(t => calTri(c, t)).filter(x => x != null); return v.length ? sum(v) / v.length : null; }
+const calDe = (c, T) => T === "F" ? promFinal(c) : calTri(c, T);
+
+/* Sexo sugerido a partir del primer nombre (formato: Apellido Apellido Nombre(s)). Siempre editable. */
+const FEM = new Set("abigail isabel itzel yaretzi naomi noemi mei belen carmen ruth guadalupe dulce beatriz raquel citlali citlaly yatziri yoatzin marjoie denisse denise ivonne nicole michelle danae zoe joselin jocelyn yoselin evelyn karen lizbeth elizabeth ingrid astrid yamileth areli arely sherlyn monserrat montserrat allison dayan liz luz flor sol miriam ruby jazmin yazmin jasmin esther rosario consuelo pilar mercedes ines abril britany brittany kimberly ashley madeleine nayeli anahi itzayana xochitl quetzalli aimee renee jade estefany estephany suri iris maite emily wendy nancy mary shirley betty kelly lucy deisy daisy keily nelly yuliet juliet janeth yaneth lisbeth marisol maribel mabel raquel edith judith lilian lilia jennifer jenifer melany melanie nahomi naomy aylin ailyn heidi yuridia arlet arleth emyli patsy azul hefziba yaquelin jaqueline jaquelin alisson alison anel avril ashli leilany amy jennyfer jenny maytte leslie nicol yatzil itzia ximena".split(" "));
+const MASC = new Set("jeshua joshua josua luca lucca bautista nikita jona elias matias tobias isaias".split(" "));
+const PARTICULAS = new Set(["de","la","del","los","las","y","san","santa","mc","van","von"]);
+function adivinarSexo(nombre) {
+  const t = norm(nombre).replace(/[^a-zñ ]/g, "").split(" ").filter(Boolean);
+  const base = t.filter(x => !PARTICULAS.has(x));
+  const dado = base.length >= 3 ? base[2] : base[0] || "";
+  if (FEM.has(dado)) return "M";
+  if (MASC.has(dado)) return "H";
+  return dado.endsWith("a") ? "M" : "H";
+}
+
+/* =====================================================================
+   DATOS EN TIEMPO REAL
+   ===================================================================== */
+function listen(path, cb, key) {
+  const u = onValue(ref(db, path), snap => {
+    cb(snap.val());
+    if (key) S.loaded.add(key);
+    scheduleRender(true);
+  }, err => { console.error(path, err); toast("Sin permiso para leer " + path + ". Revisa las reglas de la base de datos.", "err"); if (key) S.loaded.add(key); scheduleRender(true); });
+  unsubs.push(u);
+}
+function detenerDatos() {
+  unsubs.forEach(u => { try { u(); } catch {} }); unsubs = [];
+  Object.values(califSubs).forEach(u => { try { u(); } catch {} }); califSubs = {};
+  Object.assign(S, { docentes: {}, asig: {}, alumnos: {}, miembros: {}, calif: {}, usuarios: {}, solicitudes: {}, ready: false, loaded: new Set(), cur: null });
+}
+const leeTodo = () => ["admin", "director", "secretaria"].includes(S.perfil?.rol);
+function iniciarDatos() {
+  const need = ["config", "docentes", "asig", "alumnos", "miembros"];
+  listen("usuarios/" + S.user.uid, v => { if (v) S.perfil = v; });
+  listen("config", v => { S.cfg = mergeCfg(v); }, "config");
+  listen("docentes", v => { S.docentes = v || {}; }, "docentes");
+  listen("asignaciones", v => { S.asig = v || {}; syncCalif(); }, "asig");
+  listen("alumnos", v => { S.alumnos = v || {}; }, "alumnos");
+  listen("miembros", v => { S.miembros = v || {}; }, "miembros");
+  if (leeTodo()) { need.push("calif"); listen("calif", v => { S.calif = v || {}; }, "calif"); }
+  if (esAdmin()) {
+    listen("usuarios", v => { S.usuarios = v || {}; });
+    listen("solicitudes", v => { S.solicitudes = v || {}; });
+  }
+  S.need = need;
+}
+function syncCalif() {
+  if (leeTodo()) return;
+  const mias = new Set(misAsignaciones().map(([id]) => id));
+  for (const id of Object.keys(califSubs)) if (!mias.has(id)) { califSubs[id](); delete califSubs[id]; delete S.calif[id]; }
+  for (const id of mias) if (!califSubs[id]) {
+    califSubs[id] = onValue(ref(db, "calif/" + id), s => { S.calif[id] = s.val() || {}; scheduleRender(true); },
+      err => console.warn("calif", id, err));
+  }
+}
+function mergeCfg(v) {
+  v = v || {};
+  return { ...CONFIG_DEF, ...v, turnos: { ...CONFIG_DEF.turnos, ...(v.turnos || {}) }, secretarias: { ...CONFIG_DEF.secretarias, ...(v.secretarias || {}) } };
+}
+async function cargarSemilla() {
+  if (!SEED) return 0;
+  const upd = {}; let n = 0;
+  const actuales = (await get(ref(db, "docentes"))).val() || {};
+  const asigAct = (await get(ref(db, "asignaciones"))).val() || {};
+  for (const [k, v] of Object.entries(SEED.docentes)) if (!actuales[k]) { upd["docentes/" + k] = v; n++; }
+  for (const [k, v] of Object.entries(SEED.asignaciones)) if (!asigAct[k]) { upd["asignaciones/" + k] = v; n++; }
+  if (n) await update(ref(db), upd);
+  return n;
+}
+async function prepararAdmin() {
+  try {
+    const d = await get(ref(db, "docentes"));
+    if (!d.exists()) { const n = await cargarSemilla(); if (n) toast("Se cargó el catálogo inicial de docentes y asignaturas.", "ok"); }
+    const c = await get(ref(db, "config"));
+    if (!c.exists()) await set(ref(db, "config"), CONFIG_DEF);
+  } catch (e) { console.error(e); toast("No se pudo preparar la base: " + e.message, "err"); }
+}
+
+/* =====================================================================
+   AUTENTICACIÓN
+   ===================================================================== */
+const MSG_AUTH = {
+  "auth/invalid-credential": "Correo o contraseña incorrectos.",
+  "auth/invalid-login-credentials": "Correo o contraseña incorrectos.",
+  "auth/wrong-password": "Contraseña incorrecta.",
+  "auth/user-not-found": "No existe una cuenta con ese correo.",
+  "auth/too-many-requests": "Demasiados intentos. Espera unos minutos.",
+  "auth/network-request-failed": "Sin conexión a internet.",
+  "auth/operation-not-allowed": "Activa el acceso con Correo/Contraseña en Firebase Authentication.",
+  "auth/weak-password": "La contraseña debe tener al menos 6 caracteres.",
+  "auth/email-already-in-use": "Ese correo ya tiene una cuenta.",
+  "auth/invalid-email": "Correo no válido.",
+  "auth/requires-recent-login": "Vuelve a iniciar sesión para hacer este cambio."
+};
+const msgErr = e => MSG_AUTH[e?.code] || e?.message || String(e);
+
+async function entrar(email, pass) {
+  email = email.trim().toLowerCase();
+  try { await signInWithEmailAndPassword(auth, email, pass); }
+  catch (e) {
+    const boot = CUENTAS_INICIALES[email];
+    if (boot && ["auth/invalid-credential", "auth/user-not-found", "auth/invalid-login-credentials"].includes(e.code)) {
+      try { await createUserWithEmailAndPassword(auth, email, pass); return; }
+      catch (e2) { if (e2.code === "auth/email-already-in-use") throw { code: "auth/wrong-password" }; throw e2; }
+    }
+    throw e;
+  }
+}
+$("#loginForm").addEventListener("submit", async ev => {
+  ev.preventDefault();
+  const fd = new FormData(ev.target), btn = ev.target.querySelector("[type=submit]");
+  $("#loginErr").textContent = ""; btn.disabled = true; btn.textContent = "Entrando…";
+  try { await entrar(fd.get("email"), fd.get("pass")); }
+  catch (e) { $("#loginErr").textContent = msgErr(e); }
+  finally { btn.disabled = false; btn.textContent = "Entrar"; }
+});
+$("#olvide").addEventListener("click", async () => {
+  const email = $("#loginForm [name=email]").value.trim();
+  if (!email) { $("#loginErr").textContent = "Escribe tu correo y vuelve a presionar."; return; }
+  try { await sendPasswordResetEmail(auth, email); $("#loginErr").textContent = ""; toast("Te enviamos un correo para restablecer la contraseña.", "ok"); }
+  catch (e) { $("#loginErr").textContent = msgErr(e); }
+});
+$("#btnSalir").addEventListener("click", () => signOut(auth));
+$("#noaccesoSalir").addEventListener("click", () => signOut(auth));
+$("#btnUpd").addEventListener("click", () => { $("#btnUpd").hidden = true; render(); });
+
+function mostrar(id) { for (const x of ["boot", "login", "noacceso", "app"]) $("#" + x).hidden = x !== id; }
+
+onAuthStateChanged(auth, async u => {
+  detenerDatos();
+  if (!u) { S.user = null; S.perfil = null; mostrar("login"); return; }
+  S.user = u; mostrar("boot");
+  try {
+    let p = (await get(ref(db, "usuarios/" + u.uid))).val();
+    const boot = CUENTAS_INICIALES[(u.email || "").toLowerCase()];
+    if (!p && boot) { p = { email: u.email.toLowerCase(), ...boot, creado: Date.now() }; await set(ref(db, "usuarios/" + u.uid), p); }
+    if (!p) {
+      try { await set(ref(db, "solicitudes/" + u.uid), { email: u.email, fecha: Date.now() }); } catch {}
+      $("#noaccesoMsg").textContent = `La cuenta ${u.email} aún no tiene un rol asignado. Se envió una solicitud al administrador; cuando te asigne un rol, vuelve a entrar.`;
+      mostrar("noacceso"); return;
+    }
+    S.perfil = p;
+    if (p.rol === "admin") await prepararAdmin();
+    iniciarDatos();
+    mostrar("app");
+    render();
+  } catch (e) {
+    console.error(e);
+    $("#noaccesoMsg").textContent = "No se pudo leer tu perfil: " + (e.message || e) + ". Revisa que las reglas de la base de datos estén publicadas.";
+    mostrar("noacceso");
+  }
+});
+
+/* =====================================================================
+   NAVEGACIÓN Y RENDER
+   ===================================================================== */
+function navItems() {
+  const p = S.perfil, it = [];
+  if (!p) return it;
+  if (p.esProfesor && p.docenteId) it.push(["inicio", "Mis concentrados", ICON.book]);
+  if (p.esProfesor && p.docenteId && p.rol !== "admin") it.push(["misstats", "Mis estadísticas", ICON.chart]);
+  if (p.rol === "admin" || p.rol === "director") { it.push(["stats", "Estadísticas", ICON.chart]); it.push(["avance", "Avance de captura", ICON.check]); }
+  if (p.rol === "secretaria") it.push(["secre", "Concentrados de mis grupos", ICON.folder]);
+  if (p.rol === "admin") it.push(["admin", "Administración", ICON.gear]);
+  it.push(["perfil", "Configuración", ICON.user]);
+  return it;
+}
+const parseHash = () => location.hash.replace(/^#\/?/, "").split("/").map(decodeURIComponent);
+const go = (v, arg) => { location.hash = "#/" + v + (arg ? "/" + encodeURIComponent(arg) : ""); };
+window.addEventListener("hashchange", () => render());
+
+let rTimer = null;
+function scheduleRender(fromData) {
+  clearTimeout(rTimer);
+  rTimer = setTimeout(() => render(fromData), 90);
+}
+const VISTAS_ESTABLES = ["stats", "misstats", "avance", "secre"];
+function render(fromData = false) {
+  if (!S.perfil || $("#app").hidden) return;
+  if (!S.ready) {
+    if (S.need && S.need.every(k => S.loaded.has(k))) S.ready = true;
+    else { $("#main").innerHTML = '<div class="empty">Cargando información…</div>'; renderTop(); return; }
+    fromData = false;
+  }
+  renderTop();
+  const items = navItems();
+  const permitidas = items.map(i => i[0]).concat(S.perfil.esProfesor || esAdmin() ? ["captura"] : []);
+  let [v, arg] = parseHash();
+  if (!permitidas.includes(v)) { v = items[0][0]; arg = undefined; }
+  renderNav(v);
+  if (fromData && S.cur && S.cur.view === v && S.cur.arg === arg) {
+    if (v === "captura") { if (capturaFirma(arg) === S.cur.firma) { refrescarCaptura(); return; } }
+    else if (VISTAS_ESTABLES.includes(v)) { $("#btnUpd").hidden = false; return; }
+    else if (document.activeElement && $("#main").contains(document.activeElement) && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) { $("#btnUpd").hidden = false; return; }
+  }
+  $("#btnUpd").hidden = true;
+  destruirGraficas();
+  const main = $("#main");
+  const scroll = S.cur && S.cur.view === v && S.cur.arg === arg ? window.scrollY : 0;
+  S.cur = { view: v, arg };
+  VISTAS[v](main, arg);
+  if (v === "captura") S.cur.firma = capturaFirma(arg);
+  window.scrollTo(0, scroll);
+}
+function renderTop() {
+  const p = S.perfil;
+  $("#topRol").textContent = ROLES[p.rol] + (p.rol === "admin" && p.esProfesor ? " · Docente" : "") + (p.rol === "secretaria" && p.letra ? ` · Grupos ${p.letra}` : "");
+  $("#topNombre").textContent = p.docenteId ? nombreDocente(p.docenteId) : (p.nombre || "");
+  $("#topEmail").textContent = p.email || S.user?.email || "";
+  $("#topEsc").textContent = `Esc. Sec. Gral. "${S.cfg.escuela}" · Ciclo ${S.cfg.ciclo}`;
+}
+function renderNav(v) {
+  $("#nav").innerHTML = navItems().map(([k, t, ic]) => `<a href="#/${k}" class="${k === v || (v === "captura" && k === "inicio") ? "on" : ""}">${ic}<span>${t}</span></a>`).join("") + '<div class="foot powered">powered by elprofe chan</div>';
+}
+
+/* =====================================================================
+   VISTA: MIS CONCENTRADOS (docente)
+   ===================================================================== */
+function progresoAsig(aId) {
+  const secs = secciones(aId), al = secs.flatMap(s => s.alumnos), c = S.calif[aId] || {};
+  const r = { n: al.length };
+  for (const t of [1, 2, 3]) {
+    const cap = al.filter(x => calTri(c[x.id], t) != null);
+    r["p" + t] = al.length ? cap.length / al.length * 100 : 0;
+    r["a" + t] = cap.length ? cap.filter(x => calTri(c[x.id], t) >= 6).length / cap.length * 100 : null;
+  }
+  return r;
+}
+function barrasProgreso(pr) {
+  return `<div class="prog">${[1, 2, 3].map(t => `<span>${t}° T</span><div class="bar"><i style="width:${pr["p" + t].toFixed(0)}%"></i></div><span class="num">${pr["p" + t].toFixed(0)}%</span>`).join("")}</div>`;
+}
+function vInicio(main) {
+  const mias = misAsignaciones();
+  const nom = nombreDocente(S.perfil.docenteId);
+  let h = `<div class="page-head"><div><h1>Mis concentrados</h1><p class="muted">Profr. ${esc(nom)} · Ciclo escolar ${esc(S.cfg.ciclo)}</p></div>
+    <div class="actions">
+      <button class="btn" data-act="importar">${ICON.up}Importar desde Excel</button>
+      <button class="btn" data-act="xls" data-ids="*" data-modo="vacio">${ICON.xls}Todos · formato vacío</button>
+      <button class="btn primary" data-act="xls" data-ids="*" data-modo="lleno">${ICON.xls}Todos · con calificaciones</button>
+    </div></div>`;
+  if (!mias.length) {
+    h += `<div class="card empty"><b>Aún no tienes grupos asignados</b>Pide al administrador que registre tus asignaturas y grupos.</div>`;
+    main.innerHTML = h; return;
+  }
+  const porMat = {};
+  for (const [id, a] of mias) (porMat[a.materia + "|" + a.tipo] ??= []).push([id, a]);
+  for (const [k, lista] of Object.entries(porMat)) {
+    const [mat, tipo] = k.split("|");
+    h += `<div class="sec-title">${esc(mat)} · ${tipo === "taller" ? "Taller (grupos juntos)" : "Asignatura por grado y grupo"}</div><div class="cards">`;
+    for (const [id, a] of lista) {
+      const pr = progresoAsig(id);
+      h += `<article class="card asig">
+        <div class="row" style="justify-content:space-between"><span class="badge ${a.tipo}">${a.tipo === "taller" ? "Taller" : "Asignatura"}</span><span class="small muted">${esc(turnoDe(a))}</span></div>
+        <div class="g">${esc(tituloAsig(a))}</div>
+        <div class="mat">${esc(a.materia)}</div>
+        <div class="small muted">Admvo.: ${esc(admvoNombre(a) || "—")} · ${pr.n} alumnos</div>
+        ${barrasProgreso(pr)}
+        <div class="acts">
+          <button class="btn primary sm" data-go="captura/${id}">Capturar</button>
+          <button class="btn sm" data-act="xls" data-ids="${id}" data-modo="vacio" title="Formato para llenado manual">${ICON.xls}Vacío</button>
+          <button class="btn sm" data-act="xls" data-ids="${id}" data-modo="lleno" title="Formato con calificaciones">${ICON.xls}Lleno</button>
+        </div></article>`;
+    }
+    h += `</div>`;
+  }
+  main.innerHTML = h;
+}
+
+/* =====================================================================
+   VISTA: CAPTURA
+   ===================================================================== */
+const camposT = T => T === "C" ? ["t1", "er1", "t2", "er2", "t3", "PROM", "i1", "i2", "i3", "c1", "c2", "c3"] : ["t" + T].concat(T !== "3" ? ["er" + T] : []).concat(["i" + T, "c" + T]);
+const ETQ = { t1: "1° Trim.", er1: "ER", t2: "2° Trim.", er2: "ER", t3: "3° Trim.", PROM: "Prom. final", i1: "Inasist. 1°", i2: "Inasist. 2°", i3: "Inasist. 3°", c1: "Cond. 1°", c2: "Cond. 2°", c3: "Cond. 3°" };
+function etq(f, T) {
+  if (T === "C") return ETQ[f];
+  if (f.startsWith("t")) return "Calificación"; if (f.startsWith("er")) return "ER (recuperación)";
+  if (f.startsWith("i")) return "Inasistencias"; return "Conducta";
+}
+function capturaFirma(aId) {
+  const a = S.asig[aId]; if (!a) return "x";
+  return JSON.stringify([a, S.capT, secciones(aId).map(s => s.alumnos.map(x => [x.id, x.nombre, x.sexo])), S.cfg.secretarias, S.docentes[a.docenteId]]);
+}
+function vCaptura(main, aId) {
+  const a = S.asig[aId];
+  if (!a || !puedeEditar(aId)) { main.innerHTML = `<div class="card empty"><b>Concentrado no disponible</b>No existe o no pertenece a tu cuenta. <p><a href="#/inicio">Volver</a></p></div>`; return; }
+  const T = S.capT, secs = secciones(aId), total = sum(secs.map(s => s.alumnos.length));
+  const opAdm = LETRAS.map(l => `<option value="${l}" ${admvoLetra(a) === l ? "selected" : ""}>${l} · ${esc(S.cfg.secretarias[l])}</option>`).join("");
+  let h = `<button class="btn ghost sm back" data-go="${S.perfil.docenteId === a.docenteId ? "inicio" : "avance"}">← Volver</button>
+  <div class="page-head"><div>
+    <h1>${esc(a.materia)} · ${esc(tituloAsig(a))}</h1>
+    <div class="meta"><span class="badge ${a.tipo}">${a.tipo === "taller" ? "Taller" : "Asignatura"}</span>
+      <span>Profr.: <b>${esc(nombreDocente(a.docenteId))}</b></span><span>Turno: <b>${esc(turnoDe(a))}</b></span>
+      <span>Admvo.: <select data-act="admvo" data-a="${aId}" aria-label="Secretaría que recibe">${opAdm}</select></span>
+      <span>${total} alumnos</span></div>
+  </div></div>
+  <div class="toolbar">
+    <div class="seg" role="tablist">${[["1", "1er trimestre"], ["2", "2o trimestre"], ["3", "3er trimestre"], ["C", "Completo"]].map(([k, t]) => `<button data-act="capT" data-t="${k}" class="${T === k ? "on" : ""}">${t}</button>`).join("")}</div>
+    <div class="sp"></div>
+    <button class="btn sm" data-act="alumnos" data-a="${aId}">${ICON.users}${a.tipo === "taller" ? "Integrantes del taller" : "Lista de alumnos"}</button>
+    ${T !== "C" ? `<button class="btn sm" data-act="llenar" data-a="${aId}" title="Pone 0 inasistencias y conducta B a quien no tenga dato">Rellenar 0 / B</button>` : ""}
+    <button class="btn sm" data-act="importar" data-a="${aId}">${ICON.up}Importar Excel</button>
+    <button class="btn sm" data-act="xls" data-ids="${aId}" data-modo="vacio">${ICON.xls}Vacío</button>
+    <button class="btn sm primary" data-act="xls" data-ids="${aId}" data-modo="lleno">${ICON.xls}Lleno</button>
+    <button class="btn sm" data-act="print">${ICON.print}Imprimir</button>
+  </div>`;
+  if (!total) {
+    h += `<div class="hint">${a.tipo === "taller"
+      ? "Este taller todavía no tiene integrantes. Usa <b>Integrantes del taller</b> para marcar a tus alumnos de cada grupo (o agregarlos), o <b>Importar Excel</b> si ya tienes tu concentrado."
+      : "Este grupo aún no tiene alumnos registrados. Usa <b>Lista de alumnos</b> para pegar los nombres, o <b>Importar Excel</b>. La lista se comparte con los demás docentes del grupo."}</div>`;
+  }
+  const campos = camposT(T);
+  for (const s of secs) {
+    h += `<section class="card capsec" data-gg="${s.gg}"><header><h2>${esc(s.label)}</h2><span class="small muted">${s.alumnos.length} alumnos</span></header>
+      <div class="tbl-wrap"><table class="cap"><thead><tr><th>N/P</th><th class="nm">Nombre completo del alumno</th><th>Sexo</th>${campos.map(f => `<th>${etq(f, T)}</th>`).join("")}</tr></thead><tbody>`;
+    s.alumnos.forEach((al, i) => {
+      const c = S.calif[aId]?.[al.id] || {};
+      h += `<tr data-al="${al.id}"><td class="np">${i + 1}</td><td class="nm">${esc(al.nombre)}</td>
+        <td><button class="sx ${al.sexo || "q"}" data-act="sexo" data-gg="${s.gg}" data-al="${al.id}" title="Cambiar sexo">${al.sexo || "?"}</button></td>
+        ${campos.map(f => f === "PROM" ? `<td class="calc" data-prom="${al.id}"></td>` : `<td><input class="cell${f.startsWith("c") ? " wide" : ""}" data-a="${aId}" data-al="${al.id}" data-f="${f}" value="${esc(fmtVal(c[f]))}" ${f.startsWith("c") ? 'list="dl-conducta" autocapitalize="characters"' : 'inputmode="decimal"'} aria-label="${esc(etq(f, T))} de ${esc(al.nombre)}"></td>`).join("")}</tr>`;
+    });
+    h += `</tbody></table></div><div class="sum" data-sum="${s.gg}"></div></section>`;
+  }
+  h += `<p class="save-status" id="saveStatus">Los cambios se guardan automáticamente al salir de cada casilla. Usa Enter o ↑ ↓ para moverte.</p>`;
+  main.innerHTML = h;
+  refrescarCalculos();
+}
+const fmtVal = v => v == null ? "" : String(v);
+function resumenSec(aId, s, T) {
+  const c = S.calif[aId] || {};
+  const vals = s.alumnos.map(x => calDe(c[x.id], T)).filter(v => v != null);
+  const h = s.alumnos.filter(x => x.sexo === "H").length, m = s.alumnos.filter(x => x.sexo === "M").length, tot = h + m;
+  const ap = vals.filter(v => v >= 6).length, rp = vals.length - ap;
+  return { h, m, tot, ap, rp, pa: tot ? ap / tot * 100 : 0, pr: tot ? rp / tot * 100 : 0, suma: sum(vals), prom: vals.length ? sum(vals) / vals.length : null, cap: vals.length, n: s.alumnos.length };
+}
+function lineaResumen(r, titulo) {
+  return `<div class="sum-line"><span class="t">${titulo}</span><span>Hombres <b>${r.h}</b></span><span>Mujeres <b>${r.m}</b></span><span>Total <b>${r.tot}</b></span>
+    <span>Aprobados <b>${r.ap}</b></span><span class="r">Reprobados <b>${r.rp}</b></span><span>% Aprob. <b>${f1(r.pa)}</b></span><span class="r">% Reprob. <b>${f1(r.pr)}</b></span>
+    <span>Suma <b>${fmtCal(r.suma)}</b></span><span>Promedio <b>${r.prom == null ? "—" : f1(r.prom)}</b></span><span class="muted">Capturados ${r.cap}/${r.n}</span></div>`;
+}
+function refrescarCalculos() {
+  const aId = S.cur?.arg; if (!S.asig[aId]) return;
+  const c = S.calif[aId] || {};
+  $$("td[data-prom]").forEach(td => { const p = promFinal(c[td.dataset.prom]); td.textContent = p == null ? "" : f1(p); td.classList.toggle("rep", p != null && p < 6); });
+  $$("input.cell").forEach(el => { const f = el.dataset.f; if (/^(t|er)/.test(f)) { const v = num(el.value); el.classList.toggle("rep", v != null && v < 6); } });
+  for (const s of secciones(aId)) {
+    const box = $(`[data-sum="${s.gg}"]`); if (!box) continue;
+    box.innerHTML = S.capT === "C"
+      ? ["1", "2", "3", "F"].map(t => lineaResumen(resumenSec(aId, s, t), t === "F" ? "Final" : t + "° Trim.")).join("")
+      : lineaResumen(resumenSec(aId, s, S.capT), S.capT + "° Trim.");
+  }
+}
+function refrescarCaptura() {
+  const aId = S.cur?.arg, c = S.calif[aId] || {};
+  $$("input.cell").forEach(el => {
+    if (el === document.activeElement || el.classList.contains("saving")) return;
+    const v = fmtVal(c[el.dataset.al]?.[el.dataset.f]);
+    if (el.value !== v) el.value = v;
+  });
+  refrescarCalculos();
+}
+function setStatus(t) { const s = $("#saveStatus"); if (s) s.textContent = t; }
+async function guardarCelda(el) {
+  const { a: aId, al, f } = el.dataset;
+  const raw = el.value.trim();
+  let val = null;
+  el.classList.remove("err", "ok");
+  if (raw !== "") {
+    if (/^(t|er)/.test(f)) {
+      const n = parseFloat(raw.replace(",", "."));
+      if (isNaN(n) || n < 0 || n > 10) { el.classList.add("err"); toast("Calificación no válida: escribe un número de 0 a 10.", "err"); return; }
+      val = Math.round(n * 10) / 10;
+    } else if (f.startsWith("i")) {
+      const n = parseInt(raw, 10);
+      if (isNaN(n) || n < 0 || n > 200) { el.classList.add("err"); toast("Inasistencias: escribe un número entero.", "err"); return; }
+      val = n;
+    } else val = raw.toUpperCase().slice(0, 4);
+  }
+  el.value = fmtVal(val);
+  const actual = S.calif[aId]?.[al]?.[f] ?? null;
+  if (actual === val) return;
+  S.calif[aId] ??= {}; S.calif[aId][al] ??= {};
+  if (val == null) delete S.calif[aId][al][f]; else S.calif[aId][al][f] = val;
+  refrescarCalculos();
+  el.classList.add("saving"); setStatus("Guardando…");
+  try {
+    await update(ref(db, `calif/${aId}/${al}`), { [f]: val });
+    el.classList.remove("saving"); el.classList.add("ok"); setTimeout(() => el.classList.remove("ok"), 900);
+    setStatus("Guardado a las " + new Date().toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
+  } catch (e) { el.classList.remove("saving"); el.classList.add("err"); toast("No se pudo guardar: " + msgErr(e), "err"); setStatus("Error al guardar"); }
+}
+async function rellenar(aId) {
+  const T = S.capT, upd = {}; let n = 0;
+  for (const s of secciones(aId)) for (const al of s.alumnos) {
+    const c = S.calif[aId]?.[al.id] || {};
+    if (c["i" + T] == null) { upd[`calif/${aId}/${al.id}/i${T}`] = 0; n++; }
+    if (c["c" + T] == null) { upd[`calif/${aId}/${al.id}/c${T}`] = "B"; n++; }
+  }
+  if (!n) { toast("Ya todos tienen inasistencias y conducta."); return; }
+  await update(ref(db), upd); toast(`Se completaron ${n} casillas.`, "ok");
+}
+
+/* =====================================================================
+   VISTA: ESTADÍSTICAS (dirección / admin / docente)
+   ===================================================================== */
+function registros(F, lockDoc) {
+  const out = [];
+  const doc = lockDoc || F.docente;
+  for (const [aId, a] of Object.entries(S.asig)) {
+    if (doc && a.docenteId !== doc) continue;
+    if (F.materia && a.materia !== F.materia) continue;
+    if (F.grado && String(a.grado) !== F.grado) continue;
+    if (F.tipo && a.tipo !== F.tipo) continue;
+    for (const s of secciones(aId)) {
+      if (F.grupo && s.g !== F.grupo) continue;
+      for (const al of s.alumnos) {
+        if (F.sexo && al.sexo !== F.sexo) continue;
+        out.push({ aId, docenteId: a.docenteId, materia: a.materia, tipo: a.tipo, grado: a.grado, grupo: s.g, gg: s.gg, alumnoId: al.id, nombre: al.nombre, sexo: al.sexo || "?", cal: calDe(S.calif[aId]?.[al.id], F.T) });
+      }
+    }
+  }
+  return out;
+}
+function agg(rs) {
+  const ev = rs.filter(r => r.cal != null), n = ev.length, ap = ev.filter(r => r.cal >= 6).length;
+  const H = ev.filter(r => r.sexo === "H"), M = ev.filter(r => r.sexo === "M");
+  return {
+    total: rs.length, n, ap, rp: n - ap, pa: n ? ap / n * 100 : null, pr: n ? (n - ap) / n * 100 : null,
+    prom: n ? sum(ev.map(r => r.cal)) / n : null, cap: rs.length ? n / rs.length * 100 : 0,
+    h: H.length, m: M.length, hAp: H.filter(r => r.cal >= 6).length, mAp: M.filter(r => r.cal >= 6).length,
+    hRp: H.filter(r => r.cal < 6).length, mRp: M.filter(r => r.cal < 6).length
+  };
+}
+function agrupar(rs, fn) { const m = new Map(); for (const r of rs) { const k = fn(r); if (!m.has(k)) m.set(k, []); m.get(k).push(r); } return m; }
+const nomT = T => T === "F" ? "Promedio final" : `${T}er trimestre`.replace("2er", "2o").replace("3er", "3er");
+
+function tablasStats(rs, F) {
+  const T = {};
+  // Resumen por grupo y asignatura (equivale al pie de cada concentrado)
+  T.resumen = {
+    titulo: "Resumen por grupo y asignatura",
+    head: ["Grupo", "Asignatura", "Profesor", "Hombres", "Mujeres", "Total", "Evaluados", "Aprobados", "Reprobados", "% Aprob.", "% Reprob.", "Promedio"],
+    num: [3, 4, 5, 6, 7, 8, 9, 10, 11],
+    rows: [...agrupar(rs, r => r.gg + "|" + r.aId)].map(([k, l]) => {
+      const g = agg(l), r0 = l[0];
+      return [`${r0.grado}° ${r0.grupo}`, r0.materia, nombreDocente(r0.docenteId), l.filter(x => x.sexo === "H").length, l.filter(x => x.sexo === "M").length, l.length, g.n, g.ap, g.rp, g.pa, g.pr, g.prom];
+    }).sort((a, b) => a[0].localeCompare(b[0]) || a[1].localeCompare(b[1]))
+  };
+  const q = norm(F.q);
+  T.reprobados = {
+    titulo: "Alumnos reprobados",
+    head: ["Alumno", "Grupo", "Sexo", "Asignatura", "Profesor", "Calificación"], num: [5],
+    rows: rs.filter(r => r.cal != null && r.cal < 6 && (!q || norm(r.nombre).includes(q)))
+      .sort((a, b) => a.gg.localeCompare(b.gg) || a.nombre.localeCompare(b.nombre, "es"))
+      .map(r => [r.nombre, `${r.grado}° ${r.grupo}`, r.sexo, r.materia, nombreDocente(r.docenteId), r.cal])
+  };
+  T.aprobados = {
+    titulo: "Alumnos aprobados",
+    head: ["Alumno", "Grupo", "Sexo", "Asignatura", "Profesor", "Calificación"], num: [5],
+    rows: rs.filter(r => r.cal != null && r.cal >= 6 && (!q || norm(r.nombre).includes(q)))
+      .sort((a, b) => a.gg.localeCompare(b.gg) || a.nombre.localeCompare(b.nombre, "es"))
+      .map(r => [r.nombre, `${r.grado}° ${r.grupo}`, r.sexo, r.materia, nombreDocente(r.docenteId), r.cal])
+  };
+  const porAl = agrupar(rs.filter(r => r.cal != null && r.cal < 6), r => r.alumnoId);
+  T.riesgo = {
+    titulo: "Alumnos con asignaturas reprobadas",
+    head: ["Alumno", "Grupo", "Sexo", "Núm. reprobadas", "Asignaturas"], num: [3],
+    rows: [...porAl].map(([, l]) => [l[0].nombre, `${l[0].grado}° ${l[0].grupo}`, l[0].sexo, l.length, l.map(x => `${x.materia} (${fmtCal(x.cal)})`).join(", ")])
+      .filter(r => !q || norm(r[0]).includes(q)).sort((a, b) => b[3] - a[3] || a[1].localeCompare(b[1]) || a[0].localeCompare(b[0], "es"))
+  };
+  const filaG = (k, l) => { const g = agg(l); return [k, g.h, g.m, g.n, g.hAp, g.mAp, g.hRp, g.mRp, g.ap, g.rp, g.pa, g.prom]; };
+  const headG = ["", "Hombres", "Mujeres", "Evaluados", "Aprob. H", "Aprob. M", "Reprob. H", "Reprob. M", "Aprobados", "Reprobados", "% Aprob.", "Promedio"];
+  T.grupo = { titulo: "Por grado y grupo", head: ["Grupo", ...headG.slice(1)], num: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+    rows: [...agrupar(rs, r => `${r.grado}° ${r.grupo}`)].map(([k, l]) => filaG(k, l)).sort((a, b) => a[0].localeCompare(b[0])) };
+  T.materia = { titulo: "Por asignatura", head: ["Asignatura", ...headG.slice(1)], num: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+    rows: [...agrupar(rs, r => r.materia)].map(([k, l]) => filaG(k, l)).sort((a, b) => a[0].localeCompare(b[0])) };
+  T.profesor = { titulo: "Por profesor", head: ["Profesor", "Asignaciones", "Alumnos", "Evaluados", "% Capturado", "Aprobados", "Reprobados", "% Aprob.", "Promedio"], num: [1, 2, 3, 4, 5, 6, 7, 8],
+    rows: [...agrupar(rs, r => r.docenteId)].map(([k, l]) => { const g = agg(l); return [nombreDocente(k), new Set(l.map(x => x.aId)).size, l.length, g.n, g.cap, g.ap, g.rp, g.pa, g.prom]; }).sort((a, b) => a[0].localeCompare(b[0])) };
+  return T;
+}
+const PCT_COLS = { resumen: [9, 10], grupo: [10], materia: [10], profesor: [4, 7] };
+function celdaTabla(v, i, key) {
+  if (v == null) return "—";
+  if ((PCT_COLS[key] || []).includes(i)) return pct(v);
+  if (typeof v === "number" && !Number.isInteger(v)) return f1(v);
+  return esc(v);
+}
+function htmlTabla(t, key) {
+  if (!t.rows.length) return `<div class="empty">Sin datos para los filtros seleccionados.</div>`;
+  return `<div class="dt-wrap"><table class="dt"><thead><tr>${t.head.map((h, i) => `<th class="${t.num.includes(i) ? "n" : ""}">${esc(h)}</th>`).join("")}</tr></thead><tbody>${t.rows.map(r => `<tr>${r.map((v, i) => {
+    let cls = t.num.includes(i) ? "n" : "";
+    if ((key === "reprobados" && i === 5) || (key === "riesgo" && i === 3)) cls += " pill-bad";
+    return `<td class="${cls}">${celdaTabla(v, i, key)}</td>`;
+  }).join("")}</tr>`).join("")}</tbody></table></div><p class="small muted">${t.rows.length} filas</p>`;
+}
+
+function filtrosHTML(F, lock) {
+  const mats = [...new Set(Object.values(S.asig).filter(a => !lock || a.docenteId === lock).map(a => a.materia))].sort();
+  const docs = [...new Set(Object.values(S.asig).map(a => a.docenteId))].filter(Boolean).sort((a, b) => nombreDocente(a).localeCompare(nombreDocente(b)));
+  const sel = (k, lbl, ops) => `<label class="f">${lbl}<select class="in" data-filtro="${k}">${ops.map(([v, t]) => `<option value="${esc(v)}" ${F[k] === v ? "selected" : ""}>${esc(t)}</option>`).join("")}</select></label>`;
+  return `<div class="card filters">
+    <div class="seg">${[["1", "1er trim."], ["2", "2o trim."], ["3", "3er trim."], ["F", "Final"]].map(([k, t]) => `<button data-filtro-t="${k}" class="${F.T === k ? "on" : ""}">${t}</button>`).join("")}</div>
+    ${lock ? "" : sel("docente", "Profesor", [["", "Todos los profesores"], ...docs.map(d => [d, nombreDocente(d)])])}
+    ${sel("grado", "Grado", [["", "Todos"], ["1", "1°"], ["2", "2°"], ["3", "3°"]])}
+    ${sel("grupo", "Grupo", [["", "Todos"], ...LETRAS.map(l => [l, l])])}
+    ${sel("materia", "Asignatura", [["", "Todas"], ...mats.map(m => [m, m])])}
+    ${sel("tipo", "Tipo", [["", "Asignaturas y talleres"], ["regular", "Solo asignaturas"], ["taller", "Solo talleres"]])}
+    ${sel("sexo", "Sexo", [["", "Ambos"], ["H", "Hombres"], ["M", "Mujeres"]])}
+    <button class="btn sm" data-act="limpiar">Limpiar</button>
+  </div>`;
+}
+function textoFiltros(F, lock) {
+  const p = [nomT(F.T)];
+  if (lock || F.docente) p.push("Profr. " + nombreDocente(lock || F.docente));
+  if (F.grado) p.push(F.grado + "° grado"); if (F.grupo) p.push("Grupo " + F.grupo);
+  if (F.materia) p.push(F.materia); if (F.tipo) p.push(F.tipo === "taller" ? "Talleres" : "Asignaturas");
+  if (F.sexo) p.push(F.sexo === "H" ? "Hombres" : "Mujeres");
+  return p.join(" · ");
+}
+function vStats(main, lockDoc) {
+  const F = lockDoc ? S.fm : S.f;
+  const rs = registros(F, lockDoc), g = agg(rs);
+  const alumnosU = new Map(rs.map(r => [r.alumnoId, r.sexo]));
+  const uH = [...alumnosU.values()].filter(s => s === "H").length, uM = [...alumnosU.values()].filter(s => s === "M").length;
+  const enRiesgo = new Set(rs.filter(r => r.cal != null && r.cal < 6).map(r => r.alumnoId)).size;
+  const tablas = tablasStats(rs, F);
+  S.ultTablas = { tablas, F, lockDoc, g, uH, uM, enRiesgo, total: alumnosU.size };
+  const tab = F.tab;
+  let h = `<div class="page-head"><div><h1>${lockDoc ? "Mis estadísticas" : "Estadísticas de aprovechamiento"}</h1><p class="muted">Esc. Sec. Gral. "${esc(S.cfg.escuela)}" · Ciclo ${esc(S.cfg.ciclo)} · se actualiza conforme los docentes capturan</p></div>
+    <div class="actions"><button class="btn" data-act="print">${ICON.print}Imprimir</button><button class="btn primary" data-act="xls-stats">${ICON.xls}Exportar a Excel</button></div></div>
+    ${filtrosHTML(F, lockDoc)}
+    <p class="filtros-print"><b>Estadísticas · ${esc(S.cfg.escuela)} · Ciclo ${esc(S.cfg.ciclo)}</b><br>Filtros: ${esc(textoFiltros(F, lockDoc))} · Impreso el ${new Date().toLocaleDateString("es-MX")}</p>
+    <div class="kpis">
+      <div class="card kpi"><span class="k-l">Alumnos</span><span class="k-v num">${alumnosU.size}</span><span class="k-s">${uH} hombres · ${uM} mujeres</span></div>
+      <div class="card kpi"><span class="k-l">Evaluaciones capturadas</span><span class="k-v num">${g.n}</span><span class="k-s">de ${g.total} (${pct(g.cap)}) alumno × asignatura</span></div>
+      <div class="card kpi"><span class="k-l"><i class="dot" style="background:var(--ok)"></i>Aprobados</span><span class="k-v num">${g.ap}</span><span class="k-s">${pct(g.pa)} · H ${g.hAp} · M ${g.mAp}</span></div>
+      <div class="card kpi"><span class="k-l"><i class="dot" style="background:var(--bad)"></i>Reprobados</span><span class="k-v num">${g.rp}</span><span class="k-s">${pct(g.pr)} · H ${g.hRp} · M ${g.mRp}</span></div>
+      <div class="card kpi"><span class="k-l">Promedio general</span><span class="k-v num">${g.prom == null ? "—" : f1(g.prom)}</span><span class="k-s">${esc(nomT(F.T))}</span></div>
+      <div class="card kpi"><span class="k-l">Alumnos con al menos una reprobada</span><span class="k-v num">${enRiesgo}</span><span class="k-s">${alumnosU.size ? pct(enRiesgo / alumnosU.size * 100) : "—"} del total</span></div>
+    </div>`;
+  if (!rs.length) {
+    h += `<div class="card empty"><b>No hay alumnos para estos filtros</b>Cuando los docentes registren sus listas y calificaciones aparecerán aquí.</div>`;
+    main.innerHTML = h; return;
+  }
+  h += `<div class="charts">
+    <div class="card chart-card"><h3>Aprobación por grado</h3><p>% de evaluaciones aprobadas y reprobadas</p><div class="chart-box" style="height:190px"><canvas id="chGrado"></canvas></div></div>
+    <div class="card chart-card"><h3>Aprobados y reprobados por sexo</h3><p>Número de evaluaciones</p><div class="chart-box" style="height:190px"><canvas id="chSexo"></canvas></div></div>
+    <div class="card chart-card wide"><h3>Aprobación por grupo</h3><p>% por grado y grupo</p><div class="chart-box" style="height:260px"><canvas id="chGrupo"></canvas></div></div>
+    <div class="card chart-card"><h3>Reprobación por asignatura</h3><p>% de evaluaciones reprobadas, de mayor a menor</p><div class="chart-box" id="bxMat"><canvas id="chMat"></canvas></div></div>
+    <div class="card chart-card"><h3>Distribución de calificaciones</h3><p>${esc(nomT(F.T))}</p><div class="chart-box" style="height:240px"><canvas id="chDist"></canvas></div></div>
+    ${lockDoc ? "" : `<div class="card chart-card"><h3>Aprobación por profesor</h3><p>% de evaluaciones aprobadas</p><div class="chart-box" id="bxProf"><canvas id="chProf"></canvas></div></div>`}
+    <div class="card chart-card"><h3>Evolución por trimestre</h3><p>% de aprobación con los mismos filtros</p><div class="chart-box" style="height:240px"><canvas id="chEvol"></canvas></div></div>
+  </div>
+  <div class="card pad">
+    <div class="tabs">${[["resumen", "Resumen por grupo"], ["grupo", "Por grupo"], ["materia", "Por asignatura"], ...(lockDoc ? [] : [["profesor", "Por profesor"]]), ["reprobados", "Reprobados"], ["aprobados", "Aprobados"], ["riesgo", "Alumnos en riesgo"]].map(([k, t]) => `<button data-tab="${k}" class="${tab === k ? "on" : ""}">${t}</button>`).join("")}</div>
+    ${["reprobados", "aprobados", "riesgo"].includes(tab) ? `<div class="row no-print" style="margin-bottom:10px"><input class="in" style="max-width:320px" placeholder="Buscar alumno…" data-filtro="q" value="${esc(F.q)}"></div>` : ""}
+    <h3 class="filtros-print">${esc(tablas[tab].titulo)}</h3>
+    ${htmlTabla(tablas[tab], tab)}
+  </div>`;
+  main.innerHTML = h;
+  dibujarGraficas(rs, F, lockDoc);
+}
+
+/* ---------- gráficas ---------- */
+const COL = { ok: "#2a78d6", bad: "#e34948", ink2: "#52514e", muted: "#898781", grid: "#e1e0d9", surface: "#fcfcfb" };
+function destruirGraficas() { S.charts.forEach(c => { try { c.destroy(); } catch {} }); S.charts = []; }
+function baseOpts(extra = {}) {
+  return Object.assign({
+    responsive: true, maintainAspectRatio: false, animation: { duration: 250 },
+    plugins: { legend: { position: "bottom", labels: { usePointStyle: true, pointStyle: "rectRounded", boxWidth: 8, boxHeight: 8, color: COL.ink2 } }, tooltip: { backgroundColor: "#15201a", padding: 10, cornerRadius: 8 } },
+  }, extra);
+}
+function chart(id, cfg) { const el = document.getElementById(id); if (!el || !window.Chart) return; S.charts.push(new Chart(el, cfg)); }
+function pctStack(id, labels, grupos, horizontal) {
+  const datos = grupos.map(l => agg(l));
+  const pa = datos.map(d => d.n ? d.ap / d.n * 100 : 0), pr = datos.map(d => d.n ? d.rp / d.n * 100 : 0);
+  const ax = horizontal ? "y" : "x", vx = horizontal ? "x" : "y";
+  chart(id, {
+    type: "bar",
+    data: { labels, datasets: [
+      { label: "Aprobados", data: pa, backgroundColor: COL.ok, borderColor: COL.surface, borderWidth: horizontal ? { right: 2 } : { top: 2 }, maxBarThickness: 30, borderRadius: 0 },
+      { label: "Reprobados", data: pr, backgroundColor: COL.bad, maxBarThickness: 30, borderRadius: horizontal ? { topRight: 4, bottomRight: 4 } : { topLeft: 4, topRight: 4 }, borderSkipped: false }
+    ] },
+    options: baseOpts({
+      indexAxis: ax,
+      scales: { [ax]: { stacked: true, grid: { display: false }, ticks: { color: COL.ink2 } }, [vx]: { stacked: true, max: 100, grid: { color: COL.grid }, border: { display: false }, ticks: { color: COL.muted, callback: v => v + "%" } } },
+      plugins: { ...baseOpts().plugins, tooltip: { ...baseOpts().plugins.tooltip, callbacks: { label: c => { const d = datos[c.dataIndex]; return ` ${c.dataset.label}: ${pct(c.raw)} (${c.datasetIndex ? d.rp : d.ap} de ${d.n})`; } } } }
+    })
+  });
+}
+function barrasH(id, boxId, labels, valores, color, tip) {
+  const box = document.getElementById(boxId); if (box) box.style.height = Math.max(160, labels.length * 26 + 50) + "px";
+  chart(id, {
+    type: "bar",
+    data: { labels, datasets: [{ data: valores, backgroundColor: color, borderRadius: { topRight: 4, bottomRight: 4 }, borderSkipped: false, maxBarThickness: 18 }] },
+    options: baseOpts({
+      indexAxis: "y",
+      scales: { x: { min: 0, max: 100, grid: { color: COL.grid }, border: { display: false }, ticks: { color: COL.muted, callback: v => v + "%" } }, y: { grid: { display: false }, ticks: { color: COL.ink2, font: { size: 11 } } } },
+      plugins: { ...baseOpts().plugins, legend: { display: false }, tooltip: { ...baseOpts().plugins.tooltip, callbacks: { label: tip } } }
+    })
+  });
+}
+function dibujarGraficas(rs, F, lockDoc) {
+  if (!window.Chart) { toast("No se pudo cargar la librería de gráficas (revisa tu conexión).", "err"); return; }
+  Chart.defaults.font.family = '"Plus Jakarta Sans", system-ui, sans-serif';
+  Chart.defaults.color = COL.ink2;
+  // por grado
+  const pg = [...agrupar(rs, r => r.grado)].sort((a, b) => a[0] - b[0]);
+  pctStack("chGrado", pg.map(([k]) => k + "° grado"), pg.map(([, l]) => l), true);
+  // por grupo
+  const pgr = [...agrupar(rs, r => `${r.grado}° ${r.grupo}`)].sort((a, b) => a[0].localeCompare(b[0]));
+  pctStack("chGrupo", pgr.map(([k]) => k), pgr.map(([, l]) => l), false);
+  // por sexo
+  const gs = agg(rs);
+  chart("chSexo", {
+    type: "bar",
+    data: { labels: ["Hombres", "Mujeres"], datasets: [
+      { label: "Aprobados", data: [gs.hAp, gs.mAp], backgroundColor: COL.ok, borderRadius: { topLeft: 4, topRight: 4 }, borderSkipped: false, maxBarThickness: 44 },
+      { label: "Reprobados", data: [gs.hRp, gs.mRp], backgroundColor: COL.bad, borderRadius: { topLeft: 4, topRight: 4 }, borderSkipped: false, maxBarThickness: 44 }
+    ] },
+    options: baseOpts({ scales: { x: { grid: { display: false } }, y: { beginAtZero: true, grid: { color: COL.grid }, border: { display: false }, ticks: { color: COL.muted, precision: 0 } } } })
+  });
+  // por materia (% reprobados)
+  const pm = [...agrupar(rs, r => r.materia)].map(([k, l]) => [k, agg(l)]).filter(([, g]) => g.n).sort((a, b) => b[1].pr - a[1].pr);
+  barrasH("chMat", "bxMat", pm.map(([k]) => k), pm.map(([, g]) => g.pr), COL.bad, c => { const g = pm[c.dataIndex][1]; return ` ${pct(c.raw)} reprobados (${g.rp} de ${g.n})`; });
+  // distribución
+  const ev = rs.filter(r => r.cal != null);
+  const bins = ["5 o menos", "6", "7", "8", "9", "10"];
+  const cnt = [ev.filter(r => r.cal < 6).length, ...[6, 7, 8, 9].map(v => ev.filter(r => r.cal >= v && r.cal < v + 1).length), ev.filter(r => r.cal >= 10).length];
+  chart("chDist", {
+    type: "bar",
+    data: { labels: bins, datasets: [{ label: "Evaluaciones", data: cnt, backgroundColor: bins.map((_, i) => i === 0 ? COL.bad : COL.ok), borderRadius: { topLeft: 4, topRight: 4 }, borderSkipped: false, maxBarThickness: 46 }] },
+    options: baseOpts({ plugins: { ...baseOpts().plugins, legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { beginAtZero: true, grid: { color: COL.grid }, border: { display: false }, ticks: { color: COL.muted, precision: 0 } } } })
+  });
+  // por profesor
+  if (!lockDoc) {
+    const pp = [...agrupar(rs, r => r.docenteId)].map(([k, l]) => [k, agg(l)]).filter(([, g]) => g.n).sort((a, b) => b[1].pa - a[1].pa);
+    barrasH("chProf", "bxProf", pp.map(([k]) => nombreDocente(k)), pp.map(([, g]) => g.pa), COL.ok, c => { const g = pp[c.dataIndex][1]; return ` ${pct(c.raw)} aprobados (${g.ap} de ${g.n})`; });
+  }
+  // evolución
+  const ev3 = ["1", "2", "3"].map(t => agg(registros({ ...F, T: t }, lockDoc)));
+  chart("chEvol", {
+    type: "bar",
+    data: { labels: ["1er trimestre", "2o trimestre", "3er trimestre"], datasets: [{ label: "% aprobación", data: ev3.map(g => g.pa ?? 0), backgroundColor: COL.ok, borderRadius: { topLeft: 4, topRight: 4 }, borderSkipped: false, maxBarThickness: 56 }] },
+    options: baseOpts({
+      plugins: { ...baseOpts().plugins, legend: { display: false }, tooltip: { ...baseOpts().plugins.tooltip, callbacks: { label: c => { const g = ev3[c.dataIndex]; return g.n ? ` ${pct(g.pa)} aprobados (${g.ap} de ${g.n}) · promedio ${f1(g.prom)}` : " Sin capturas"; } } } },
+      scales: { x: { grid: { display: false } }, y: { min: 0, max: 100, grid: { color: COL.grid }, border: { display: false }, ticks: { color: COL.muted, callback: v => v + "%" } } }
+    })
+  });
+}
+
+/* =====================================================================
+   VISTA: AVANCE DE CAPTURA
+   ===================================================================== */
+function vAvance(main) {
+  const porDoc = {};
+  for (const [id, a] of Object.entries(S.asig).sort(ordenAsig)) (porDoc[a.docenteId] ??= []).push(id);
+  const docs = Object.keys(porDoc).sort((a, b) => nombreDocente(a).localeCompare(nombreDocente(b)));
+  const T = S.avT;
+  const filas = docs.map(d => {
+    const ids = porDoc[d], prs = ids.map(id => [id, progresoAsig(id)]);
+    const n = sum(prs.map(([, p]) => p.n));
+    const capt = t => n ? sum(prs.map(([, p]) => p["p" + t] * p.n / 100)) / n * 100 : 0;
+    return { d, ids, prs, n, c: { 1: capt(1), 2: capt(2), 3: capt(3) }, sinAl: prs.filter(([, p]) => !p.n).length };
+  });
+  const tot = sum(filas.map(f => f.n)), totCap = tot ? sum(filas.map(f => f.c[T] * f.n / 100)) / tot * 100 : 0;
+  const completos = filas.filter(f => f.n && f.c[T] >= 99.9).length;
+  let h = `<div class="page-head"><div><h1>Avance de captura</h1><p class="muted">Qué tanto ha subido cada docente en el trimestre seleccionado</p></div>
+    <div class="actions"><div class="seg">${["1", "2", "3"].map(t => `<button data-act="avT" data-t="${t}" class="${T === t ? "on" : ""}">${t}° trimestre</button>`).join("")}</div><button class="btn" data-act="print">${ICON.print}Imprimir</button></div></div>
+    <p class="filtros-print"><b>Avance de captura · ${T}° trimestre · ${esc(S.cfg.escuela)}</b></p>
+    <div class="kpis">
+      <div class="card kpi"><span class="k-l">Avance general</span><span class="k-v num">${pct(totCap)}</span><span class="k-s">${T}° trimestre</span></div>
+      <div class="card kpi"><span class="k-l">Docentes al 100%</span><span class="k-v num">${completos}</span><span class="k-s">de ${filas.length}</span></div>
+      <div class="card kpi"><span class="k-l">Asignaciones sin alumnos</span><span class="k-v num">${sum(filas.map(f => f.sinAl))}</span><span class="k-s">falta registrar lista</span></div>
+    </div>
+    <div class="card pad"><div class="dt-wrap" style="max-height:none"><table class="dt"><thead><tr><th>Profesor</th><th class="n">Asignaciones</th><th class="n">Alumnos</th><th>1° trim.</th><th>2° trim.</th><th>3° trim.</th><th></th></tr></thead><tbody>`;
+  for (const f of filas) {
+    h += `<tr><td><b>${esc(nombreDocente(f.d))}</b>${f.sinAl ? `<div class="small" style="color:var(--warn)">${f.sinAl} sin alumnos</div>` : ""}</td><td class="n">${f.ids.length}</td><td class="n">${f.n}</td>
+      ${[1, 2, 3].map(t => `<td><div class="mbar"><div class="bar"><i style="width:${f.c[t].toFixed(0)}%;${f.c[t] >= 99.9 ? "" : "background:" + (t == T ? "var(--warn)" : "var(--line-2)")}"></i></div><span class="num small">${f.c[t].toFixed(0)}%</span></div></td>`).join("")}
+      <td><button class="btn sm no-print" data-act="toggleAv" data-d="${esc(f.d)}">Detalle</button></td></tr>
+      <tr data-av="${esc(f.d)}" hidden><td colspan="7" style="background:var(--surface-2)">
+        <table class="dt"><tbody>${f.prs.map(([id, p]) => { const a = S.asig[id]; return `<tr><td>${esc(a.materia)} · ${esc(tituloAsig(a))} <span class="badge ${a.tipo}">${a.tipo === "taller" ? "Taller" : "Asig."}</span></td><td class="n">${p.n} alumnos</td>${[1, 2, 3].map(t => `<td class="n">${p["p" + t].toFixed(0)}%</td>`).join("")}
+          <td class="no-print">${esAdmin() ? `<button class="btn sm" data-go="captura/${id}">Abrir</button> ` : ""}<button class="btn sm" data-act="xls" data-ids="${id}" data-modo="lleno">${ICON.xls}Excel</button></td></tr>`; }).join("")}</tbody></table>
+      </td></tr>`;
+  }
+  h += `</tbody></table></div></div>`;
+  main.innerHTML = h;
+}
+
+/* =====================================================================
+   VISTA: SECRETARÍA
+   ===================================================================== */
+function vSecre(main) {
+  const L = S.perfil.letra;
+  const ids = Object.entries(S.asig).filter(([, a]) => admvoLetra(a) === L).sort(ordenAsig);
+  const porDoc = {};
+  for (const [id, a] of ids) (porDoc[a.docenteId] ??= []).push(id);
+  let h = `<div class="page-head"><div><h1>Concentrados de mis grupos</h1><p class="muted">${esc(S.cfg.secretarias[L] || "")} · concentrados que te entregan los docentes</p></div></div>`;
+  if (!L) { main.innerHTML = h + `<div class="card empty"><b>Sin grupos asignados</b>Pide al administrador que te asigne la letra de grupos que atiendes.</div>`; return; }
+  h += `<div class="cards">`;
+  for (const d of Object.keys(porDoc).sort((a, b) => nombreDocente(a).localeCompare(nombreDocente(b)))) {
+    h += `<article class="card asig"><div class="mat">${esc(nombreDocente(d))}</div>`;
+    for (const id of porDoc[d]) { const a = S.asig[id], p = progresoAsig(id); h += `<div class="row" style="justify-content:space-between"><span>${esc(a.materia)} · <b>${esc(tituloAsig(a))}</b></span><span class="small muted">${p.n} al. · T1 ${p.p1.toFixed(0)}% · T2 ${p.p2.toFixed(0)}% · T3 ${p.p3.toFixed(0)}%</span></div>`; }
+    h += `<div class="acts"><button class="btn sm primary" data-act="xls" data-ids="${porDoc[d].join(",")}" data-modo="lleno">${ICON.xls}Descargar concentrado</button></div></article>`;
+  }
+  h += `</div>`;
+  if (!ids.length) h += `<div class="card empty"><b>Todavía no hay concentrados</b></div>`;
+  main.innerHTML = h;
+}
+
+/* =====================================================================
+   VISTA: CONFIGURACIÓN (perfil)
+   ===================================================================== */
+function vPerfil(main) {
+  const p = S.perfil, d = p.docenteId ? S.docentes[p.docenteId] : null;
+  const tieneTaller = misAsignaciones().some(([, a]) => a.tipo === "taller");
+  let h = `<div class="page-head"><div><h1>Configuración</h1><p class="muted">${esc(p.email)} · ${ROLES[p.rol]}</p></div></div>
+  <div class="grid2">
+    <form class="card pad" id="fPerfil"><h2>Mis datos</h2><p class="small muted">${d ? "Así aparecerá tu nombre en el renglón PROFR. del concentrado." : "Nombre que se mostrará en la plataforma."}</p>
+      <label class="f">Nombre completo<input class="in" name="nombre" value="${esc(d ? d.nombre : p.nombre || "")}" required></label>
+      ${d && tieneTaller ? `<label class="f" style="margin-top:12px">Secretaría que recibe mis concentrados de taller<select class="in" name="admvoTaller">${LETRAS.map(l => `<option value="${l}" ${(d.admvoTaller || "C") === l ? "selected" : ""}>${esc(S.cfg.secretarias[l])} (grupos ${l})</option>`).join("")}</select></label>` : ""}
+      <div class="row" style="margin-top:14px"><button class="btn primary">Guardar</button></div></form>
+    <form class="card pad" id="fPass"><h2>Cambiar contraseña</h2>
+      <label class="f">Contraseña actual<input class="in" type="password" name="actual" required autocomplete="current-password"></label>
+      <label class="f" style="margin-top:10px">Nueva contraseña (mínimo 6)<input class="in" type="password" name="nueva" minlength="6" required autocomplete="new-password"></label>
+      <div class="row" style="margin-top:14px"><button class="btn primary">Actualizar contraseña</button></div></form>
+  </div>`;
+  if (esAdmin()) h += `<p class="muted small" style="margin-top:16px">Los nombres completos de las secretarías, los datos de la escuela y las cuentas de los docentes se configuran en <a href="#/admin">Administración</a>.</p>`;
+  main.innerHTML = h;
+  $("#fPerfil").addEventListener("submit", async ev => {
+    ev.preventDefault(); const fd = new FormData(ev.target), nombre = fd.get("nombre").trim().toUpperCase();
+    try {
+      const upd = { [`usuarios/${S.user.uid}/nombre`]: nombre };
+      if (d) { upd[`docentes/${p.docenteId}/nombre`] = nombre; if (fd.get("admvoTaller")) upd[`docentes/${p.docenteId}/admvoTaller`] = fd.get("admvoTaller"); }
+      await update(ref(db), upd); toast("Datos guardados.", "ok");
+    } catch (e) { toast("No se pudo guardar: " + msgErr(e), "err"); }
+  });
+  $("#fPass").addEventListener("submit", async ev => {
+    ev.preventDefault(); const fd = new FormData(ev.target);
+    try { await reauthenticateWithCredential(auth.currentUser, EmailAuthProvider.credential(auth.currentUser.email, fd.get("actual"))); await updatePassword(auth.currentUser, fd.get("nueva")); ev.target.reset(); toast("Contraseña actualizada.", "ok"); }
+    catch (e) { toast(msgErr(e), "err"); }
+  });
+}
+
+/* =====================================================================
+   VISTA: ADMINISTRACIÓN
+   ===================================================================== */
+function vAdmin(main) {
+  const tabs = [["escuela", "Escuela"], ["secretarias", "Secretarías"], ["docentes", "Docentes"], ["asignaciones", "Asignaciones"], ["usuarios", "Usuarios"], ["alumnos", "Alumnos"], ["datos", "Datos"]];
+  const nSol = Object.keys(S.solicitudes).length;
+  let h = `<div class="page-head"><div><h1>Administración</h1><p class="muted">${Object.keys(S.docentes).length} docentes · ${Object.keys(S.asig).length} asignaciones · ${sum(Object.values(S.alumnos).map(g => Object.values(g).filter(x => !x.baja).length))} alumnos</p></div></div>
+    <div class="tabs">${tabs.map(([k, t]) => `<button data-atab="${k}" class="${S.adminTab === k ? "on" : ""}">${t}${k === "usuarios" && nSol ? ` (${nSol})` : ""}</button>`).join("")}</div><div id="admBody"></div>`;
+  main.innerHTML = h;
+  ADM[S.adminTab]($("#admBody"));
+}
+const ADM = {
+  escuela(el) {
+    const c = S.cfg;
+    const campo = (k, t) => `<label class="f">${t}<input class="in" name="${k}" value="${esc(c[k])}"></label>`;
+    el.innerHTML = `<form class="card pad" id="fEsc"><h2>Encabezado del concentrado</h2><p class="small muted">Estos datos aparecen en la parte superior de cada hoja de Excel.</p>
+      <div class="grid2" style="margin-top:12px">${campo("instituto", "Instituto")}${campo("unidad", "Unidad")}${campo("supervision", "Supervisión")}${campo("escuela", "Nombre de la escuela")}${campo("clave", "Claves (ES / CCT)")}${campo("ciclo", "Ciclo escolar")}</div>
+      <h2 style="margin-top:20px">Turno por grupo</h2><p class="small muted">Se usa en el renglón TURNO (cada asignación puede cambiarlo).</p>
+      <div class="grid3" style="margin-top:10px">${LETRAS.map(l => `<label class="f">Grupos ${l}<select class="in" name="turno_${l}">${["MATUTINO", "VESPERTINO", "MIXTO"].map(t => `<option ${c.turnos[l] === t ? "selected" : ""}>${t}</option>`).join("")}</select></label>`).join("")}</div>
+      <div class="row" style="margin-top:16px"><button class="btn primary">Guardar</button></div></form>`;
+    $("#fEsc").addEventListener("submit", async ev => {
+      ev.preventDefault(); const fd = new FormData(ev.target), upd = {};
+      for (const k of ["instituto", "unidad", "supervision", "escuela", "clave", "ciclo"]) upd[k] = fd.get(k).trim();
+      upd.turnos = Object.fromEntries(LETRAS.map(l => [l, fd.get("turno_" + l)]));
+      try { await update(ref(db, "config"), upd); toast("Configuración guardada.", "ok"); } catch (e) { toast(msgErr(e), "err"); }
+    });
+  },
+  secretarias(el) {
+    el.innerHTML = `<form class="card pad" id="fSec"><h2>Nombre completo de cada secretaría</h2><p class="small muted">Aparece en el renglón ADMVO. de los concentrados. Cada secretaría atiende la misma letra en los tres grados.</p>
+      <div class="grid3" style="margin-top:12px">${LETRAS.map(l => `<label class="f">Grupos 1°${l}, 2°${l}, 3°${l}<input class="in" name="s_${l}" value="${esc(S.cfg.secretarias[l])}"></label>`).join("")}</div>
+      <div class="row" style="margin-top:16px"><button class="btn primary">Guardar</button></div></form>`;
+    $("#fSec").addEventListener("submit", async ev => {
+      ev.preventDefault(); const fd = new FormData(ev.target);
+      try { await update(ref(db, "config/secretarias"), Object.fromEntries(LETRAS.map(l => [l, fd.get("s_" + l).trim().toUpperCase()]))); toast("Secretarías guardadas.", "ok"); } catch (e) { toast(msgErr(e), "err"); }
+    });
+  },
+  docentes(el) {
+    const cuenta = {}; for (const [uid, u] of Object.entries(S.usuarios)) if (u.docenteId) cuenta[u.docenteId] = { uid, ...u };
+    const nAs = {}; for (const a of Object.values(S.asig)) nAs[a.docenteId] = (nAs[a.docenteId] || 0) + 1;
+    const lista = Object.entries(S.docentes).sort((a, b) => a[1].nombre.localeCompare(b[1].nombre));
+    el.innerHTML = `<div class="card pad"><div class="row" style="justify-content:space-between;margin-bottom:12px"><h2>Docentes (${lista.length})</h2><button class="btn primary sm" data-act="nuevoDoc">+ Agregar docente</button></div>
+      <p class="small muted">Crea el acceso de cada docente con su correo y una contraseña; con eso entra y ve solo sus grupos.</p>
+      <div class="dt-wrap"><table class="dt"><thead><tr><th>Nombre completo (como aparece en el concentrado)</th><th>Acceso</th><th class="n">Asignaciones</th><th></th></tr></thead><tbody>
+      ${lista.map(([id, d]) => `<tr><td><input class="in" data-docnom="${id}" value="${esc(d.nombre)}"></td>
+        <td>${cuenta[id] ? `<span class="small">${esc(cuenta[id].email)}</span>` : `<button class="btn sm" data-act="crearAcceso" data-d="${id}">Crear acceso</button>`}</td>
+        <td class="n">${nAs[id] || 0}</td>
+        <td><button class="btn sm" data-act="verAsig" data-d="${id}">Ver</button> ${nAs[id] ? "" : `<button class="btn sm danger" data-act="borrarDoc" data-d="${id}">Eliminar</button>`}</td></tr>`).join("")}
+      </tbody></table></div></div>`;
+  },
+  asignaciones(el) {
+    const docs = Object.entries(S.docentes).sort((a, b) => a[1].nombre.localeCompare(b[1].nombre));
+    const lista = Object.entries(S.asig).filter(([, a]) => (!S.admDoc || a.docenteId === S.admDoc) && (!S.admGrado || String(a.grado) === S.admGrado)).sort((x, y) => nombreDocente(x[1].docenteId).localeCompare(nombreDocente(y[1].docenteId)) || ordenAsig(x, y));
+    el.innerHTML = `<div class="card pad"><div class="row" style="justify-content:space-between;margin-bottom:12px"><h2>Asignaciones (${lista.length})</h2><button class="btn primary sm" data-act="editAsig">+ Nueva asignación</button></div>
+      <div class="row" style="margin-bottom:12px"><select class="in" style="max-width:320px" data-admf="admDoc"><option value="">Todos los docentes</option>${docs.map(([id, d]) => `<option value="${id}" ${S.admDoc === id ? "selected" : ""}>${esc(d.nombre)}</option>`).join("")}</select>
+      <select class="in" style="max-width:140px" data-admf="admGrado"><option value="">Todos los grados</option>${[1, 2, 3].map(g => `<option value="${g}" ${S.admGrado === String(g) ? "selected" : ""}>${g}°</option>`).join("")}</select></div>
+      <p class="small muted">Talleres (Informática, Ofimática, Circuitos eléctricos, Turismo): una asignación por conjunto de grupos que se juntan, p. ej. 1° A y B. Asignaturas: una por grado y grupo.</p>
+      <div class="dt-wrap"><table class="dt"><thead><tr><th>Docente</th><th>Asignatura</th><th>Grado / grupos</th><th>Tipo</th><th>Turno</th><th>Admvo.</th><th></th></tr></thead><tbody>
+      ${lista.map(([id, a]) => `<tr><td>${esc(nombreDocente(a.docenteId))}</td><td>${esc(a.materia)}</td><td><b>${esc(tituloAsig(a))}</b></td><td><span class="badge ${a.tipo}">${a.tipo === "taller" ? "Taller" : "Asignatura"}</span></td><td class="small">${esc(turnoDe(a))}</td><td class="small">${esc(admvoNombre(a))}</td>
+        <td style="white-space:nowrap"><button class="btn sm" data-act="editAsig" data-id="${id}">Editar</button> <button class="btn sm" data-go="captura/${id}">Abrir</button> <button class="btn sm danger" data-act="borrarAsig" data-id="${id}">×</button></td></tr>`).join("")}
+      </tbody></table></div></div>`;
+  },
+  usuarios(el) {
+    const docs = Object.entries(S.docentes).sort((a, b) => a[1].nombre.localeCompare(b[1].nombre));
+    const sols = Object.entries(S.solicitudes);
+    const lista = Object.entries(S.usuarios).sort((a, b) => (a[1].email || "").localeCompare(b[1].email || ""));
+    el.innerHTML = `${sols.length ? `<div class="card pad" style="margin-bottom:14px;border-color:#f1dfb1"><h2>Solicitudes de acceso</h2><p class="small muted">Cuentas que entraron pero aún no tienen rol.</p>
+      <table class="dt"><tbody>${sols.map(([uid, s]) => `<tr><td>${esc(s.email)}</td><td class="small muted">${new Date(s.fecha).toLocaleString("es-MX")}</td><td><button class="btn sm primary" data-act="aprobar" data-uid="${uid}">Asignar rol</button> <button class="btn sm danger" data-act="rechazar" data-uid="${uid}">Descartar</button></td></tr>`).join("")}</tbody></table></div>` : ""}
+      <div class="card pad"><div class="row" style="justify-content:space-between;margin-bottom:12px"><h2>Usuarios (${lista.length})</h2><button class="btn primary sm" data-act="nuevaCuenta">+ Nueva cuenta</button></div>
+      <p class="small muted">Rol <b>Dirección</b>: solo ve estadísticas y avance. <b>Secretaría</b>: descarga los concentrados de la letra que atiende. <b>Docente</b>: captura sus grupos. Para quitar el acceso usa “Quitar”.</p>
+      <div class="dt-wrap"><table class="dt"><thead><tr><th>Correo</th><th>Rol</th><th>Docente vinculado / grupos</th><th></th></tr></thead><tbody>
+      ${lista.map(([uid, u]) => { const yo = uid === S.user.uid; return `<tr><td>${esc(u.email)}<div class="small muted">${esc(u.nombre || "")}</div></td>
+        <td><select class="in" data-urol="${uid}" ${yo ? "disabled" : ""}>${Object.entries(ROLES).map(([k, t]) => `<option value="${k}" ${u.rol === k ? "selected" : ""}>${t}</option>`).join("")}</select></td>
+        <td>${u.rol === "secretaria" ? `<select class="in" data-uletra="${uid}">${LETRAS.map(l => `<option value="${l}" ${u.letra === l ? "selected" : ""}>Grupos ${l} · ${esc(S.cfg.secretarias[l])}</option>`).join("")}</select>`
+          : u.rol === "director" ? '<span class="muted small">—</span>'
+          : `<select class="in" data-udoc="${uid}"><option value="">(sin vincular)</option>${docs.map(([id, d]) => `<option value="${id}" ${u.docenteId === id ? "selected" : ""}>${esc(d.nombre)}</option>`).join("")}</select>`}</td>
+        <td>${yo ? '<span class="small muted">tú</span>' : `<button class="btn sm danger" data-act="quitarUsuario" data-uid="${uid}">Quitar</button>`}</td></tr>`; }).join("")}
+      </tbody></table></div></div>`;
+  },
+  alumnos(el) {
+    const tiles = [1, 2, 3].flatMap(g => LETRAS.map(l => g + l));
+    el.innerHTML = `<div class="card pad"><h2>Listas de alumnos por grupo</h2><p class="small muted">La lista de cada grupo es compartida por todos sus docentes; los talleres eligen a sus integrantes de estas listas.</p>
+      <div class="adm-grid" style="margin:12px 0 16px">${tiles.map(gg => { const al = Object.values(S.alumnos[gg] || {}).filter(x => !x.baja); return `<button class="gtile ${S.admGG === gg ? "on" : ""}" data-act="admGG" data-gg="${gg}"><b>${gg[0]}° ${gg[1]}</b><span class="small muted">${al.length} al. · H ${al.filter(x => x.sexo === "H").length} · M ${al.filter(x => x.sexo === "M").length}</span></button>`; }).join("")}</div>
+      <div id="rosterBox">${rosterHTML(S.admGG, null)}</div></div>`;
+  },
+  datos(el) {
+    el.innerHTML = `<div class="grid2">
+      <div class="card pad"><h2>Catálogo del horario</h2><p class="small muted">Agrega los docentes y asignaturas por grupo tomados del horario “Grupos de alumnos” (sin tutoría) y los talleres de Informática. Solo agrega lo que falte; no borra nada.</p><button class="btn" data-act="semilla">Cargar catálogo faltante</button></div>
+      <div class="card pad"><h2>Respaldo</h2><p class="small muted">Descarga una copia completa (JSON) de configuración, docentes, asignaciones, alumnos y calificaciones.</p><button class="btn" data-act="respaldo">Descargar respaldo</button></div>
+      <div class="card pad"><h2>Listas de alumnos</h2><p class="small muted">Excel con todos los alumnos por grupo y su sexo.</p><button class="btn" data-act="xlsAlumnos">${ICON.xls}Exportar alumnos</button></div>
+    </div>`;
+  }
+};
+
+/* ---------- lista de alumnos (compartida) ---------- */
+function rosterHTML(gg, aId) {
+  const a = aId ? S.asig[aId] : null, taller = a?.tipo === "taller";
+  const roster = Object.entries(S.alumnos[gg] || {}).map(([id, x]) => ({ id, ...x })).sort(cmpNombre);
+  const miembros = taller ? (S.miembros[aId] || {}) : null;
+  const otros = {};
+  if (taller) for (const [oid, oa] of Object.entries(S.asig)) if (oid !== aId && oa.tipo === "taller" && oa.grado === a.grado) for (const [al, g] of Object.entries(S.miembros[oid] || {})) if (g === gg) (otros[al] ??= []).push(oa.materia);
+  const vis = roster.filter(x => !x.baja || !taller);
+  return `<h3 style="margin:6px 0 8px">${GRADOS[gg[0]]} "${gg[1]}" <span class="small muted">· ${roster.filter(x => !x.baja).length} alumnos${taller ? ` · ${Object.values(miembros).filter(g => g === gg).length} en este taller` : ""}</span></h3>
+    ${vis.length ? `<table class="roster"><tbody>${vis.map(x => `<tr class="${x.baja ? "baja" : ""}">
+      ${taller ? `<td style="width:30px"><input type="checkbox" data-rmiembro="${x.id}" data-a="${aId}" data-gg="${gg}" ${miembros[x.id] === gg ? "checked" : ""} aria-label="Integrante"></td>` : ""}
+      <td><input class="in" data-rnombre="${x.id}" data-gg="${gg}" value="${esc(x.nombre)}"></td>
+      <td style="width:118px"><select class="in" data-rsexo="${x.id}" data-gg="${gg}"><option value="H" ${x.sexo === "H" ? "selected" : ""}>Hombre</option><option value="M" ${x.sexo === "M" ? "selected" : ""}>Mujer</option></select></td>
+      ${taller ? `<td class="tag" style="width:150px">${otros[x.id] ? "en " + esc(otros[x.id].join(", ")) : ""}</td>` : `<td style="width:90px"><button class="btn sm ${x.baja ? "" : "danger"}" data-act="rbaja" data-al="${x.id}" data-gg="${gg}">${x.baja ? "Reactivar" : "Baja"}</button></td>`}
+    </tr>`).join("")}</tbody></table>` : `<p class="muted small">Sin alumnos registrados.</p>`}
+    <div style="margin-top:10px"><label class="f">Agregar alumnos (uno por renglón, formato Apellido Apellido Nombre; puedes poner H o M al final). ${taller ? "Se agregan a la lista del grupo y a este taller." : ""}
+      <textarea class="in" data-rpaste="${gg}" placeholder="García López Ana Sofía M&#10;Hernández Ruiz Carlos H"></textarea></label>
+      <div class="row" style="margin-top:8px"><button class="btn sm primary" data-act="radd" data-gg="${gg}" ${aId ? `data-a="${aId}"` : ""}>Agregar a ${gg[0]}° ${gg[1]}</button>
+      ${taller ? `<button class="btn sm" data-act="rtodos" data-gg="${gg}" data-a="${aId}">Marcar a todos</button>` : ""}</div></div>`;
+}
+function parsearNombres(txt) {
+  const out = [];
+  for (let l of String(txt).split(/\r?\n/)) {
+    const partes = l.split("\t").map(s => s.trim()).filter(Boolean);
+    if (!partes.length) continue;
+    let nombre = partes.reduce((m, p) => (p.replace(/[^A-Za-zÁÉÍÓÚÜÑáéíóúüñ]/g, "").length > m.replace(/[^A-Za-zÁÉÍÓÚÜÑáéíóúüñ]/g, "").length ? p : m), "");
+    let sexo = null;
+    const ultimo = partes[partes.length - 1];
+    if (/^(H|M)$/i.test(ultimo)) sexo = ultimo.toUpperCase();
+    nombre = nombre.replace(/^\s*\d+[.)\-\s]+/, "").replace(/\s+/g, " ").trim();
+    const m = nombre.match(/^(.*\S)\s+(H|M)$/i);
+    if (m) { nombre = m[1]; sexo = m[2].toUpperCase(); }
+    if (nombre.length < 3) continue;
+    out.push({ nombre, sexo: sexo || adivinarSexo(nombre) });
+  }
+  return out;
+}
+async function agregarAlumnos(gg, texto, aId) {
+  const nuevos = parsearNombres(texto);
+  if (!nuevos.length) { toast("No se encontraron nombres."); return 0; }
+  const roster = S.alumnos[gg] || {}, idx = new Map(Object.entries(roster).map(([id, x]) => [norm(x.nombre), id]));
+  const upd = {}; let n = 0, ya = 0;
+  for (const al of nuevos) {
+    let id = idx.get(norm(al.nombre));
+    if (!id) { id = push(ref(db, "alumnos/" + gg)).key; upd[`alumnos/${gg}/${id}`] = { nombre: al.nombre, sexo: al.sexo }; idx.set(norm(al.nombre), id); n++; }
+    else { ya++; if (roster[id]?.baja) upd[`alumnos/${gg}/${id}/baja`] = null; }
+    if (aId && S.asig[aId]?.tipo === "taller") upd[`miembros/${aId}/${id}`] = gg;
+  }
+  await update(ref(db), upd);
+  toast(`${n} alumnos agregados${ya ? `, ${ya} ya estaban en la lista` : ""}. Revisa el sexo de cada uno.`, "ok");
+  return n;
+}
+
+/* =====================================================================
+   DIÁLOGOS
+   ===================================================================== */
+function abrirDialogo(titulo, cuerpo, botones = [["Cerrar", "cancel"]]) {
+  const d = $("#dlg");
+  d.innerHTML = `<div class="dlg-h"><h2>${titulo}</h2><button class="btn ghost sm" data-dlg="cancel" aria-label="Cerrar">✕</button></div><div class="dlg-b">${cuerpo}</div>
+    <div class="dlg-f">${botones.map(([t, v, cls]) => `<button class="btn ${cls || ""}" data-dlg="${v}">${t}</button>`).join("")}</div>`;
+  if (!d.open) d.showModal();
+  return new Promise(res => {
+    d.onclick = ev => { const b = ev.target.closest("[data-dlg]"); if (b) { if (b.dataset.dlg !== "keep") { d.close(); res(b.dataset.dlg); } } };
+    d.oncancel = () => res("cancel");
+  });
+}
+const cerrarDialogo = () => { const d = $("#dlg"); if (d.open) d.close(); };
+async function confirmar(msg, ok = "Aceptar", cls = "primary") { return (await abrirDialogo("Confirmar", `<p>${msg}</p>`, [["Cancelar", "cancel"], [ok, "ok", cls]])) === "ok"; }
+
+function dlgAlumnos(aId) {
+  const a = S.asig[aId];
+  const cuerpo = () => (a.tipo === "taller" ? `<p class="small muted">Marca a los alumnos de cada grupo que toman ${esc(a.materia)} contigo. Los nombres y el sexo se comparten con los demás docentes del grupo.</p>` : `<p class="small muted">Esta lista la comparten todos los docentes de ${esc(tituloAsig(a))}. Los cambios se guardan al instante.</p>`)
+    + gruposArr(a).map(g => `<div class="card pad" style="margin-bottom:12px" data-rbox="${a.grado + g}">${rosterHTML(a.grado + g, aId)}</div>`).join("");
+  S.dlgRefresh = () => { const b = $("#dlg .dlg-b"); if (b && $("#dlg").open) { const st = b.scrollTop; b.innerHTML = cuerpo(); b.scrollTop = st; } };
+  abrirDialogo(a.tipo === "taller" ? `Integrantes · ${esc(a.materia)} ${esc(tituloAsig(a))}` : `Lista de alumnos · ${esc(tituloAsig(a))}`, cuerpo()).then(() => { S.dlgRefresh = null; });
+}
+async function crearCuentaAuth(email, pass) {
+  const sec = initializeApp(firebaseConfig, "alta-" + Date.now());
+  try { const sa = getAuth(sec); const cred = await createUserWithEmailAndPassword(sa, email, pass); const uid = cred.user.uid; await signOut(sa); return uid; }
+  finally { deleteApp(sec).catch(() => {}); }
+}
+function formCuenta({ docId = "", rol = "profesor", titulo = "Nueva cuenta", conPass = true, uid = null, email = "" } = {}) {
+  const docs = Object.entries(S.docentes).sort((a, b) => a[1].nombre.localeCompare(b[1].nombre));
+  const cuerpo = `<form id="fCta" class="grid2" onsubmit="return false">
+    <label class="f">Correo<input class="in" name="email" type="email" value="${esc(email)}" ${uid ? "readonly" : "required"}></label>
+    ${conPass ? `<label class="f">Contraseña (mín. 6)<input class="in" name="pass" minlength="6" required></label>` : "<span></span>"}
+    <label class="f">Rol<select class="in" name="rol">${Object.entries(ROLES).map(([k, t]) => `<option value="${k}" ${rol === k ? "selected" : ""}>${t}</option>`).join("")}</select></label>
+    <label class="f">Nombre completo<input class="in" name="nombre" value="${esc(docId ? S.docentes[docId]?.nombre : "")}"></label>
+    <label class="f">Docente vinculado (docente / administrador)<select class="in" name="docenteId"><option value="">(ninguno)</option>${docs.map(([id, d]) => `<option value="${id}" ${docId === id ? "selected" : ""}>${esc(d.nombre)}</option>`).join("")}</select></label>
+    <label class="f">Grupos que atiende (secretaría)<select class="in" name="letra">${LETRAS.map(l => `<option value="${l}">Grupos ${l} · ${esc(S.cfg.secretarias[l])}</option>`).join("")}</select></label>
+  </form><p class="err-msg" id="ctaErr"></p>`;
+  const d = $("#dlg");
+  abrirDialogo(titulo, cuerpo, [["Cancelar", "cancel"], ["Guardar", "keep", "primary"]]);
+  d.querySelector('.dlg-f [data-dlg="keep"]').addEventListener("click", async ev => {
+    const f = $("#fCta"); if (!f.reportValidity()) return;
+    const fd = new FormData(f), btn = ev.currentTarget;
+    const r = fd.get("rol"), dId = fd.get("docenteId");
+    if ((r === "profesor") && !dId) { $("#ctaErr").textContent = "Elige el docente vinculado."; return; }
+    btn.disabled = true; btn.textContent = "Guardando…";
+    try {
+      const mail = (fd.get("email") || "").trim().toLowerCase();
+      const id = uid || await crearCuentaAuth(mail, fd.get("pass"));
+      const nombre = (fd.get("nombre") || (dId ? S.docentes[dId]?.nombre : "") || "").trim().toUpperCase();
+      const perfil = { email: mail, rol: r, nombre, esProfesor: !!dId && (r === "profesor" || r === "admin"), creado: Date.now() };
+      if (dId && r !== "director" && r !== "secretaria") perfil.docenteId = dId;
+      if (r === "secretaria") perfil.letra = fd.get("letra");
+      const upd = { [`usuarios/${id}`]: perfil, [`solicitudes/${id}`]: null };
+      if (perfil.docenteId) upd[`docentes/${dId}/email`] = mail;
+      await update(ref(db), upd);
+      cerrarDialogo(); toast(uid ? "Acceso asignado." : `Cuenta creada: ${mail}`, "ok");
+    } catch (e) { $("#ctaErr").textContent = msgErr(e); btn.disabled = false; btn.textContent = "Guardar"; }
+  });
+}
+function dlgAsignacion(id) {
+  const a = id ? S.asig[id] : { docenteId: S.admDoc || "", materia: "", grado: 1, grupos: "", tipo: "regular", turno: "", admvo: "" };
+  const docs = Object.entries(S.docentes).sort((x, y) => x[1].nombre.localeCompare(y[1].nombre));
+  const mats = [...new Set([...Object.values(S.asig).map(x => x.materia), ...TALLERES])].sort();
+  const gs = gruposArr(a);
+  const cuerpo = `<form id="fAsig" class="grid2" onsubmit="return false">
+    <label class="f">Docente<select class="in" name="docenteId" required><option value="">Elige…</option>${docs.map(([k, d]) => `<option value="${k}" ${a.docenteId === k ? "selected" : ""}>${esc(d.nombre)}</option>`).join("")}</select></label>
+    <label class="f">Asignatura o taller<input class="in" name="materia" list="dlMat" value="${esc(a.materia)}" required><datalist id="dlMat">${mats.map(m => `<option value="${esc(m)}">`).join("")}</datalist></label>
+    <label class="f">Tipo<select class="in" name="tipo"><option value="regular" ${a.tipo === "regular" ? "selected" : ""}>Asignatura (por grado y grupo)</option><option value="taller" ${a.tipo === "taller" ? "selected" : ""}>Taller (grupos juntos)</option></select></label>
+    <label class="f">Grado<select class="in" name="grado">${[1, 2, 3].map(g => `<option value="${g}" ${a.grado === g ? "selected" : ""}>${g}° ${GRADOS[g]}</option>`).join("")}</select></label>
+    <div class="f" style="grid-column:1/-1"><span class="f">Grupos</span><div class="row">${LETRAS.map(l => `<label class="row" style="gap:4px"><input type="checkbox" name="g" value="${l}" ${gs.includes(l) ? "checked" : ""}>${l}</label>`).join("")}</div></div>
+    <label class="f">Turno<select class="in" name="turno"><option value="">Según el grupo</option>${["MATUTINO", "VESPERTINO", "MIXTO"].map(t => `<option ${a.turno === t ? "selected" : ""}>${t}</option>`).join("")}</select></label>
+    <label class="f">Secretaría (ADMVO.)<select class="in" name="admvo"><option value="">Automático</option>${LETRAS.map(l => `<option value="${l}" ${a.admvo === l ? "selected" : ""}>${esc(S.cfg.secretarias[l])} (grupos ${l})</option>`).join("")}</select></label>
+  </form><p class="err-msg" id="asErr"></p>`;
+  abrirDialogo(id ? "Editar asignación" : "Nueva asignación", cuerpo, [["Cancelar", "cancel"], ["Guardar", "keep", "primary"]]);
+  $('#dlg .dlg-f [data-dlg="keep"]').addEventListener("click", async () => {
+    const f = $("#fAsig"); if (!f.reportValidity()) return;
+    const fd = new FormData(f), grupos = fd.getAll("g");
+    if (!grupos.length) { $("#asErr").textContent = "Marca al menos un grupo."; return; }
+    if (fd.get("tipo") === "regular" && grupos.length > 1) { $("#asErr").textContent = "Una asignatura regular es de un solo grupo; para varios grupos crea una asignación por grupo o márcala como taller."; return; }
+    const datos = { docenteId: fd.get("docenteId"), materia: fd.get("materia").trim().toUpperCase(), grado: +fd.get("grado"), grupos: grupos.join(","), tipo: fd.get("tipo"), turno: fd.get("turno") || null, admvo: fd.get("admvo") || null };
+    try {
+      const key = id || `${datos.docenteId}_${slug(datos.materia)}_${datos.grado}${grupos.join("")}`;
+      if (!id && S.asig[key]) { $("#asErr").textContent = "Esa asignación ya existe."; return; }
+      await set(ref(db, "asignaciones/" + key), Object.fromEntries(Object.entries(datos).filter(([, v]) => v != null)));
+      cerrarDialogo(); toast("Asignación guardada.", "ok");
+    } catch (e) { $("#asErr").textContent = msgErr(e); }
+  });
+}
+
+/* =====================================================================
+   EXCEL: LECTURA DEL CONCENTRADO (importar)
+   ===================================================================== */
+function textoCelda(c) {
+  const v = c?.value;
+  if (v == null) return "";
+  if (typeof v === "object") { if (v.richText) return v.richText.map(t => t.text).join(""); if ("result" in v) return v.result == null ? "" : String(v.result); if (v.text) return String(v.text); return ""; }
+  return String(v);
+}
+function numCelda(c) {
+  let v = c?.value; if (v && typeof v === "object") v = "result" in v ? v.result : null;
+  if (typeof v === "number") return v;
+  if (typeof v === "string" && v.trim() !== "" && !isNaN(+v.replace(",", "."))) return +v.replace(",", ".");
+  return null;
+}
+async function leerConcentrado(file) {
+  if (!window.ExcelJS) throw new Error("No se cargó la librería de Excel.");
+  const wb = new ExcelJS.Workbook();
+  await wb.xlsx.load(await file.arrayBuffer());
+  const hojas = [];
+  wb.eachSheet(ws => {
+    const encab = norm(textoCelda(ws.getCell("C9")) + " " + ws.name);
+    const mg = encab.match(/(primero|segundo|tercero)/);
+    let grado = mg ? { primero: 1, segundo: 2, tercero: 3 }[mg[1]] : parseInt(ws.name, 10);
+    const asignatura = textoCelda(ws.getCell("G8")).replace(/^\s*asignatura\s*:?\s*/i, "").trim();
+    const secs = []; let cur = null;
+    ws.eachRow((row, rn) => {
+      if (rn < 10) return;
+      const a = textoCelda(row.getCell(1)).trim(), na = norm(a);
+      const ms = na.match(/^(primero|segundo|tercero)\s*["“”']?\s*([a-i])\s*["“”']?$/);
+      if (ms) { cur = { grado: { primero: 1, segundo: 2, tercero: 3 }[ms[1]], grupo: ms[2].toUpperCase(), alumnos: [], hombres: null, mujeres: null }; secs.push(cur); return; }
+      if (!cur) return;
+      if (na === "hombres") { cur.hombres = numCelda(row.getCell(3)); return; }
+      if (na === "mujeres") { cur.mujeres = numCelda(row.getCell(3)); return; }
+      const nombre = textoCelda(row.getCell(2)).replace(/\s+/g, " ").trim();
+      if (/^\d+$/.test(a) && nombre && /[a-záéíóúñ]/i.test(nombre)) {
+        const v = k => numCelda(row.getCell(k)), t = k => { const s = textoCelda(row.getCell(k)).trim().toUpperCase(); return s || null; };
+        cur.alumnos.push({ nombre, t1: v(3), er1: v(4), t2: v(5), er2: v(6), t3: v(7), i1: v(9), i2: v(10), i3: v(11), c1: t(12), c2: t(13), c3: t(14) });
+      }
+    });
+    if (secs.length) hojas.push({ hoja: ws.name, grado: grado || secs[0].grado, asignatura, secs });
+  });
+  return hojas;
+}
+function dlgImportar() {
+  abrirDialogo("Importar concentrado de Excel", `<p class="small muted">Sube tu archivo de concentrado con el formato oficial (una hoja por grado y grupo). Se registran los alumnos que falten en la lista de cada grupo y se cargan calificaciones, inasistencias y conducta.</p>
+    <input type="file" id="fImp" accept=".xlsx" class="in"><div id="impPrev" style="margin-top:14px"></div>`, [["Cancelar", "cancel"], ["Importar", "keep", "primary"]]);
+}
+function candidatos(grado, grupo, soloAsig) {
+  const base = soloAsig ? [[soloAsig, S.asig[soloAsig]]] : misAsignaciones();
+  return base.filter(([, a]) => a.grado === grado && gruposArr(a).includes(grupo));
+}
+function prepararImportacion(soloAsig) {
+  dlgImportar();
+  const d = $("#dlg"), btn = d.querySelector('.dlg-f [data-dlg="keep"]');
+  btn.disabled = true;
+  let plan = null;
+  $("#fImp").addEventListener("change", async ev => {
+    const file = ev.target.files[0]; if (!file) return;
+    $("#impPrev").innerHTML = '<p class="muted">Leyendo archivo…</p>';
+    try {
+      const hojas = await leerConcentrado(file);
+      plan = [];
+      for (const h of hojas) for (const s of h.secs) {
+        const cands = candidatos(s.grado || h.grado, s.grupo, soloAsig);
+        const pref = cands.find(([, a]) => h.asignatura && norm(h.asignatura).includes(norm(a.materia))) || cands[0];
+        const est = { h: s.alumnos.filter(x => adivinarSexo(x.nombre) === "H").length };
+        est.m = s.alumnos.length - est.h;
+        plan.push({ hoja: h.hoja, sec: s, grado: s.grado || h.grado, cands, destino: pref ? pref[0] : "", est });
+      }
+      if (!plan.length) { $("#impPrev").innerHTML = '<p class="err-msg">No se encontraron secciones con el formato del concentrado (renglones como PRIMERO "A").</p>'; return; }
+      $("#impPrev").innerHTML = `<div class="dt-wrap"><table class="dt"><thead><tr><th>Hoja</th><th>Grupo</th><th class="n">Alumnos</th><th>Sexo (Excel / estimado)</th><th>Cargar en</th></tr></thead><tbody>
+        ${plan.map((p, i) => `<tr><td>${esc(p.hoja)}</td><td>${p.grado}° ${p.sec.grupo}</td><td class="n">${p.sec.alumnos.length}</td>
+          <td class="small">${p.sec.hombres != null ? `H ${p.sec.hombres} / M ${p.sec.mujeres ?? "?"}` : "—"} · est. H ${p.est.h} / M ${p.est.m} ${p.sec.hombres != null && p.sec.hombres !== p.est.h ? '<span style="color:var(--warn)">revisar</span>' : ""}</td>
+          <td><select class="in" data-plan="${i}"><option value="">No importar</option>${p.cands.map(([id, a]) => `<option value="${id}" ${p.destino === id ? "selected" : ""}>${esc(a.materia)} · ${esc(tituloAsig(a))}</option>`).join("")}</select></td></tr>`).join("")}
+      </tbody></table></div><p class="small muted">El sexo se estima por el nombre; después de importar, verifica los marcados en la captura (botón H/M).</p>`;
+      d.querySelectorAll("[data-plan]").forEach(s => s.addEventListener("change", () => { plan[+s.dataset.plan].destino = s.value; }));
+      btn.disabled = false;
+    } catch (e) { console.error(e); $("#impPrev").innerHTML = `<p class="err-msg">No se pudo leer el archivo: ${esc(e.message)}</p>`; }
+  });
+  btn.addEventListener("click", async () => {
+    if (!plan) return;
+    btn.disabled = true; btn.textContent = "Importando…";
+    try {
+      const upd = {}; let nAl = 0, nNuevos = 0, nCal = 0;
+      const indices = {};
+      for (const p of plan) {
+        if (!p.destino) continue;
+        const a = S.asig[p.destino], gg = p.grado + p.sec.grupo;
+        if (!indices[gg]) indices[gg] = new Map(Object.entries(S.alumnos[gg] || {}).map(([id, x]) => [norm(x.nombre), id]));
+        const idx = indices[gg];
+        for (const al of p.sec.alumnos) {
+          let id = idx.get(norm(al.nombre));
+          if (!id) { id = push(ref(db, "alumnos/" + gg)).key; upd[`alumnos/${gg}/${id}`] = { nombre: al.nombre, sexo: adivinarSexo(al.nombre) }; idx.set(norm(al.nombre), id); nNuevos++; }
+          if (a.tipo === "taller") upd[`miembros/${p.destino}/${id}`] = gg;
+          for (const f of ["t1", "er1", "t2", "er2", "t3", "i1", "i2", "i3", "c1", "c2", "c3"]) if (al[f] != null) { upd[`calif/${p.destino}/${id}/${f}`] = al[f]; nCal++; }
+          nAl++;
+        }
+      }
+      if (!nAl) { toast("No elegiste ningún destino."); btn.disabled = false; btn.textContent = "Importar"; return; }
+      await update(ref(db), upd);
+      cerrarDialogo();
+      toast(`Importación lista: ${nAl} alumnos (${nNuevos} nuevos en las listas) y ${nCal} datos.`, "ok");
+    } catch (e) { console.error(e); toast("No se pudo importar: " + msgErr(e), "err"); btn.disabled = false; btn.textContent = "Importar"; }
+  });
+}
+
+/* =====================================================================
+   EXCEL: CONCENTRADO CON FORMATO OFICIAL
+   ===================================================================== */
+const BORDE = { top: { style: "thin" }, left: { style: "thin" }, bottom: { style: "thin" }, right: { style: "thin" } };
+const VERDE = { type: "pattern", pattern: "solid", fgColor: { argb: "FF92D050" } };
+const COLS = "ABCDEFGHIJKLMN";
+function hojaConcentrado(ws, aId, lleno) {
+  const a = S.asig[aId], cfg = S.cfg;
+  ws.columns = [5, 32, 6, 5, 6, 5, 6, 8, 5, 5, 5, 5, 5, 5].map(width => ({ width }));
+  const st = (c, o) => {
+    c.font = { name: "Arial", size: o.size ?? 9, bold: !!o.bold };
+    c.alignment = { horizontal: o.h || "center", vertical: "middle", wrapText: o.wrap ?? true };
+    if (o.fill) c.fill = VERDE;
+    if (o.border) c.border = BORDE; else if (o.bottom) c.border = { bottom: { style: "thin" } };
+    if (o.fmt) c.numFmt = o.fmt;
+  };
+  const area = (r1, c1, r2, c2, v, o = {}) => {
+    for (let r = r1; r <= r2; r++) for (let c = c1; c <= c2; c++) st(ws.getCell(r, c), o);
+    if (r1 !== r2 || c1 !== c2) ws.mergeCells(r1, c1, r2, c2);
+    if (v !== undefined) ws.getCell(r1, c1).value = v;
+  };
+  area(1, 1, 1, 14, cfg.instituto, { size: 11, bold: true });
+  area(2, 1, 2, 14, cfg.unidad, { size: 10, bold: true });
+  area(3, 1, 3, 14, cfg.supervision, { size: 10, bold: true });
+  area(4, 1, 4, 14, cfg.escuela, { size: 10, bold: true });
+  area(5, 1, 5, 14, cfg.clave, { size: 9, bold: true });
+  area(6, 1, 6, 14, "CICLO ESCOLAR: " + cfg.ciclo, { size: 9, bold: true });
+  area(7, 1, 7, 14, "CONCENTRADO DE CALIFICACIONES", { size: 13, bold: true });
+  area(8, 1, 8, 6, "PROFR.:          " + nombreDocente(a.docenteId), { bold: true, h: "left" });
+  area(8, 7, 8, 14, "ASIGNATURA:            " + a.materia, { bold: true, h: "left" });
+  area(9, 1, 9, 2, "TURNO:         " + turnoDe(a), { bold: true, h: "left" });
+  area(9, 3, 9, 6, `GRADO: ${GRADOS[a.grado]} "${etiquetaGrupos(a)}"`, { bold: true, h: "left" });
+  area(9, 8, 9, 14, " ADMVO.:  " + admvoNombre(a), { bold: true, h: "left" });
+  const H = { bold: true, fill: true, border: true };
+  area(10, 1, 12, 1, "N/P", H); area(10, 2, 12, 2, "NOMBRE COMPLETO DEL ALUMNO", H);
+  area(10, 3, 10, 7, "PERIODOS DE EVALUACION", H); area(10, 8, 12, 8, "PROM.\nFINAL", H);
+  area(10, 9, 10, 11, "INASISTENCIAS", H); area(10, 12, 10, 14, "CONDUCTA", H);
+  const H8 = { ...H, size: 8 };
+  area(11, 3, 11, 4, "1°", H8); area(11, 5, 11, 6, "2°", H8); area(11, 7, 12, 7, "3°", H8);
+  [9, 10, 11, 12, 13, 14].forEach((c, i) => area(11, c, 12, c, ["1°", "2°", "3°"][i % 3], H8));
+  area(12, 3, 12, 3, null, H); area(12, 4, 12, 4, "ER", H); area(12, 5, 12, 5, null, H); area(12, 6, 12, 6, "ER", H);
+  let r = 13;
+  const califs = S.calif[aId] || {};
+  for (const s of secciones(aId)) {
+    area(r, 1, r, 14, s.label, { ...H, size: 10 }); r++;
+    const ini = r, lista = s.alumnos.length ? s.alumnos : Array(10).fill(null);
+    const colVals = { C: [], E: [], G: [] };
+    lista.forEach((al, i) => {
+      const c = al && lleno ? (califs[al.id] || {}) : {};
+      const vals = [al ? i + 1 : null, al ? al.nombre : null, c.t1, c.er1, c.t2, c.er2, c.t3, null, c.i1, c.i2, c.i3, c.c1, c.c2, c.c3];
+      vals.forEach((v, k) => { const cell = ws.getCell(r, k + 1); st(cell, { border: true, h: k === 1 ? "left" : "center", wrap: false }); if (v != null && v !== "") cell.value = v; });
+      const p = lleno && al ? promFinal(c) : null;
+      const ch = ws.getCell(r, 8); ch.value = { formula: `IFERROR(AVERAGE(C${r},E${r},G${r}),"")`, result: p == null ? "" : p }; ch.numFmt = "0.0";
+      if (lleno && al) { if (num(c.t1) != null) colVals.C.push(+c.t1); if (num(c.t2) != null) colVals.E.push(+c.t2); if (num(c.t3) != null) colVals.G.push(+c.t3); }
+      r++;
+    });
+    const fin = r - 1;
+    const h = s.alumnos.filter(x => x.sexo === "H").length, m = s.alumnos.filter(x => x.sexo === "M").length;
+    const filas = ["HOMBRES", "MUJERES", "TOTAL", "APROBADOS", "REPROBADOS", "% APROBADOS", "% REPROBADOS", "SUMA", "PROMEDIO"];
+    const rH = r, rTot = r + 2, rAp = r + 3, rRp = r + 4;
+    filas.forEach((lab, k) => {
+      area(r, 1, r, 2, lab, { size: 8, bold: true, h: "right", border: true });
+      for (let c = 3; c <= 14; c++) st(ws.getCell(r, c), { size: 8, bold: true, border: true, wrap: false });
+      for (const L of ["C", "E", "G"]) {
+        const vs = colVals[L], ap = vs.filter(v => v >= 6).length, rp = vs.length - ap, tot = h + m, rg = `${L}${ini}:${L}${fin}`;
+        const cell = ws.getCell(`${L}${r}`);
+        switch (lab) {
+          case "HOMBRES": cell.value = h; break;
+          case "MUJERES": cell.value = m; break;
+          case "TOTAL": cell.value = { formula: `${L}${rH}+${L}${rH + 1}`, result: tot }; break;
+          case "APROBADOS": cell.value = { formula: `COUNTIF(${rg},">=6")`, result: ap }; break;
+          case "REPROBADOS": cell.value = { formula: `COUNTIF(${rg},"<6")`, result: rp }; break;
+          case "% APROBADOS": cell.value = { formula: `IFERROR((${L}${rAp}/${L}${rTot})*100,0)`, result: tot ? ap / tot * 100 : 0 }; cell.numFmt = "0.0"; break;
+          case "% REPROBADOS": cell.value = { formula: `IFERROR((${L}${rRp}/${L}${rTot})*100,0)`, result: tot ? rp / tot * 100 : 0 }; cell.numFmt = "0.0"; break;
+          case "SUMA": cell.value = { formula: `SUM(${rg})`, result: sum(vs) }; break;
+          case "PROMEDIO": cell.value = { formula: `IFERROR(AVERAGE(${rg}),"")`, result: vs.length ? sum(vs) / vs.length : "" }; cell.numFmt = "0.0"; break;
+        }
+      }
+      r++;
+    });
+  }
+  r++;
+  area(r, 1, r, 14, "FIRMAS DEL PROFESOR", { size: 11, bold: true }); r++;
+  area(r, 2, r, 2, "1er. TRIMESTRE", { bold: true }); area(r, 3, r, 7, "2o. TRIMESTRE", { bold: true }); area(r, 8, r, 14, "3er. TRIMESTRE", { bold: true }); r++;
+  area(r, 2, r + 1, 2, "", { bottom: true }); area(r, 3, r + 1, 7, "", { bottom: true }); area(r, 8, r + 1, 14, "", { bottom: true });
+  ws.getRow(r).height = 20; ws.getRow(r + 1).height = 20;
+  ws.pageSetup = { paperSize: 1, orientation: "portrait", fitToPage: true, fitToWidth: 1, fitToHeight: 0, horizontalCentered: true,
+    margins: { left: 0.5, right: 0.5, top: 0.6, bottom: 0.6, header: 0.3, footer: 0.3 }, printArea: `A1:N${r + 1}` };
+}
+const ABREV = { "FORMACIÓN CÍVICA Y ÉTICA": "FCYE", "EDUCACIÓN FÍSICA": "ED FIS", "MATEMÁTICAS": "MAT", "CIRCUITOS ELÉCTRICOS": "CIRC" };
+async function exportarConcentrado(ids, lleno) {
+  if (!window.ExcelJS) { toast("No se cargó la librería de Excel. Revisa tu conexión.", "err"); return; }
+  ids = ids.filter(id => S.asig[id]).sort((x, y) => ordenAsig([x, S.asig[x]], [y, S.asig[y]]));
+  if (!ids.length) { toast("No hay concentrados para descargar."); return; }
+  const wb = new ExcelJS.Workbook(); wb.creator = "Concentrado de Calificaciones 21"; wb.calcProperties = { fullCalcOnLoad: true };
+  const varias = new Set(ids.map(i => S.asig[i].materia)).size > 1, usados = new Set();
+  for (const id of ids) {
+    const a = S.asig[id];
+    let nm = `${a.grado}° ${etiquetaGrupos(a).replace(/,/g, "")}` + (varias ? " " + (ABREV[a.materia] || a.materia.slice(0, 10)) : "");
+    nm = nm.replace(/[\\/?*[\]:]/g, "").slice(0, 31); let k = 2, base = nm; while (usados.has(nm)) nm = (base.slice(0, 28) + " " + k++); usados.add(nm);
+    hojaConcentrado(wb.addWorksheet(nm), id, lleno);
+  }
+  const a0 = S.asig[ids[0]], docs = new Set(ids.map(i => S.asig[i].docenteId));
+  const quien = docs.size === 1 ? slug(nombreDocente(a0.docenteId)).toUpperCase() : "VARIOS";
+  const que = ids.length === 1 ? `${slug(a0.materia).toUpperCase()}_${a0.grado}${gruposArr(a0).join("")}` : (varias ? "VARIAS" : slug(a0.materia).toUpperCase());
+  const buf = await wb.xlsx.writeBuffer();
+  descargar(new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }), `Concentrado_${que}_${quien}_${lleno ? "LLENO" : "VACIO"}_${S.cfg.ciclo}.xlsx`);
+}
+
+/* ---------- Excel: estadísticas ---------- */
+function hojaTabla(wb, nombre, titulo, sub, head, rows, pctCols = []) {
+  const ws = wb.addWorksheet(nombre.slice(0, 31));
+  ws.mergeCells(1, 1, 1, Math.max(head.length, 2)); ws.getCell(1, 1).value = titulo; ws.getCell(1, 1).font = { name: "Arial", size: 12, bold: true };
+  ws.mergeCells(2, 1, 2, Math.max(head.length, 2)); ws.getCell(2, 1).value = sub; ws.getCell(2, 1).font = { name: "Arial", size: 9, italic: true };
+  const hr = ws.getRow(4); head.forEach((h, i) => { const c = hr.getCell(i + 1); c.value = h; c.font = { name: "Arial", size: 9, bold: true }; c.fill = VERDE; c.border = BORDE; c.alignment = { horizontal: "center", vertical: "middle", wrapText: true }; });
+  rows.forEach((r, k) => { const row = ws.getRow(5 + k); r.forEach((v, i) => { const c = row.getCell(i + 1); c.value = v == null ? "" : v; c.font = { name: "Arial", size: 9 }; c.border = BORDE; if (typeof v === "number") c.numFmt = pctCols.includes(i) ? '0.0"%"' : (Number.isInteger(v) ? "0" : "0.0"); }); });
+  head.forEach((h, i) => { const largo = Math.max(String(h).length, ...rows.slice(0, 300).map(r => String(r[i] ?? "").length)); ws.getColumn(i + 1).width = Math.min(48, Math.max(8, largo + 2)); });
+  ws.views = [{ state: "frozen", ySplit: 4 }];
+  ws.pageSetup = { paperSize: 1, orientation: head.length > 7 ? "landscape" : "portrait", fitToPage: true, fitToWidth: 1, fitToHeight: 0 };
+  return ws;
+}
+async function exportarStats() {
+  const u = S.ultTablas; if (!u) return;
+  if (!window.ExcelJS) { toast("No se cargó la librería de Excel.", "err"); return; }
+  const wb = new ExcelJS.Workbook(), sub = `${S.cfg.escuela} · Ciclo ${S.cfg.ciclo} · ${textoFiltros(u.F, u.lockDoc)} · ${new Date().toLocaleString("es-MX")}`, g = u.g;
+  hojaTabla(wb, "Resumen", "Estadísticas de aprovechamiento", sub, ["Indicador", "Valor"], [
+    ["Alumnos", u.total], ["Hombres", u.uH], ["Mujeres", u.uM], ["Evaluaciones (alumno × asignatura)", g.total], ["Evaluaciones capturadas", g.n], ["% capturado", g.cap],
+    ["Aprobados", g.ap], ["Reprobados", g.rp], ["% aprobados", g.pa], ["% reprobados", g.pr], ["Aprobados hombres", g.hAp], ["Aprobados mujeres", g.mAp], ["Reprobados hombres", g.hRp], ["Reprobados mujeres", g.mRp],
+    ["Promedio general", g.prom], ["Alumnos con al menos una reprobada", u.enRiesgo]
+  ]).eachRow((row, i) => { if ([10, 13, 14].includes(i)) row.getCell(2).numFmt = '0.0"%"'; });
+  const nombres = { resumen: "Por grupo y asignatura", grupo: "Por grupo", materia: "Por asignatura", profesor: "Por profesor", reprobados: "Reprobados", aprobados: "Aprobados", riesgo: "Alumnos en riesgo" };
+  for (const [k, t] of Object.entries(u.tablas)) { if (u.lockDoc && k === "profesor") continue; hojaTabla(wb, nombres[k], t.titulo, sub, t.head, t.rows, PCT_COLS[k] || []); }
+  const buf = await wb.xlsx.writeBuffer();
+  descargar(new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }), `Estadisticas_${u.F.T === "F" ? "FINAL" : "T" + u.F.T}_${S.cfg.ciclo}.xlsx`);
+}
+async function exportarAlumnos() {
+  const wb = new ExcelJS.Workbook();
+  for (const g of [1, 2, 3]) for (const l of LETRAS) {
+    const gg = g + l, lista = Object.values(S.alumnos[gg] || {}).filter(x => !x.baja).sort(cmpNombre);
+    if (!lista.length) continue;
+    hojaTabla(wb, `${g}° ${l}`, `${GRADOS[g]} "${l}"`, `${lista.length} alumnos · H ${lista.filter(x => x.sexo === "H").length} · M ${lista.filter(x => x.sexo === "M").length}`, ["N/P", "Nombre", "Sexo"], lista.map((x, i) => [i + 1, x.nombre, x.sexo]));
+  }
+  if (!wb.worksheets.length) { toast("No hay alumnos registrados."); return; }
+  descargar(new Blob([await wb.xlsx.writeBuffer()]), `Alumnos_${S.cfg.ciclo}.xlsx`);
+}
+
+/* =====================================================================
+   EVENTOS
+   ===================================================================== */
+const VISTAS = { inicio: vInicio, captura: vCaptura, stats: m => vStats(m, null), misstats: m => vStats(m, S.perfil.docenteId), avance: vAvance, secre: vSecre, perfil: vPerfil, admin: vAdmin };
+
+document.addEventListener("click", async ev => {
+  const goEl = ev.target.closest("[data-go]");
+  if (goEl) { ev.preventDefault(); const [v, ...r] = goEl.dataset.go.split("/"); cerrarDialogo(); go(v, r.join("/")); return; }
+  const t = ev.target.closest("[data-filtro-t]");
+  if (t) { const F = S.cur?.view === "misstats" ? S.fm : S.f; F.T = t.dataset.filtroT; render(); return; }
+  const tab = ev.target.closest("[data-tab]");
+  if (tab) { const F = S.cur?.view === "misstats" ? S.fm : S.f; F.tab = tab.dataset.tab; render(); return; }
+  const at = ev.target.closest("[data-atab]");
+  if (at) { S.adminTab = at.dataset.atab; render(); return; }
+  const b = ev.target.closest("[data-act]"); if (!b || b.tagName === "SELECT" || b.tagName === "INPUT") return;
+  const d = b.dataset;
+  try {
+    switch (d.act) {
+      case "capT": S.capT = d.t; render(); break;
+      case "avT": S.avT = d.t; render(); break;
+      case "print": window.print(); break;
+      case "xls": {
+        const ids = d.ids === "*" ? misAsignaciones().map(([id]) => id) : d.ids.split(",");
+        b.disabled = true; await exportarConcentrado(ids, d.modo === "lleno"); b.disabled = false; break;
+      }
+      case "xls-stats": await exportarStats(); break;
+      case "xlsAlumnos": await exportarAlumnos(); break;
+      case "importar": prepararImportacion(d.a || null); break;
+      case "alumnos": dlgAlumnos(d.a); break;
+      case "llenar": await rellenar(d.a); break;
+      case "sexo": { const al = S.alumnos[d.gg]?.[d.al]; await update(ref(db, `alumnos/${d.gg}/${d.al}`), { sexo: al?.sexo === "H" ? "M" : "H" }); break; }
+      case "limpiar": { const F = S.cur?.view === "misstats" ? S.fm : S.f; Object.assign(F, { grado: "", grupo: "", materia: "", docente: "", sexo: "", tipo: "", q: "" }); render(); break; }
+      case "toggleAv": { const tr = $(`tr[data-av="${CSS.escape(d.d)}"]`); if (tr) tr.hidden = !tr.hidden; break; }
+      case "admGG": S.admGG = d.gg; render(); break;
+      case "radd": {
+        const ta = b.closest("div").parentElement.querySelector(`[data-rpaste="${d.gg}"]`);
+        b.disabled = true; const n = await agregarAlumnos(d.gg, ta.value, d.a || null); b.disabled = false;
+        if (n >= 0) ta.value = "";
+        setTimeout(() => S.dlgRefresh?.(), 300); break;
+      }
+      case "rtodos": {
+        const upd = {}; for (const [id, x] of Object.entries(S.alumnos[d.gg] || {})) if (!x.baja) upd[`miembros/${d.a}/${id}`] = d.gg;
+        await update(ref(db), upd); setTimeout(() => S.dlgRefresh?.(), 300); break;
+      }
+      case "rbaja": {
+        const al = S.alumnos[d.gg]?.[d.al]; if (!al) break;
+        if (!al.baja && !await confirmar(`¿Dar de baja a <b>${esc(al.nombre)}</b>? Dejará de aparecer en todas las asignaturas de ${d.gg[0]}° ${d.gg[1]} (sus calificaciones no se borran).`, "Dar de baja", "danger")) { if (S.dlgRefresh) dlgAlumnos(S.cur.arg); break; }
+        await update(ref(db, `alumnos/${d.gg}/${d.al}`), { baja: al.baja ? null : true });
+        if (S.dlgRefresh) setTimeout(() => dlgAlumnos(S.cur.arg), 300);
+        break;
+      }
+      case "semilla": { const n = await cargarSemilla(); toast(n ? `Se agregaron ${n} registros del catálogo.` : "El catálogo ya estaba completo.", "ok"); break; }
+      case "respaldo": {
+        const out = {}; for (const k of ["config", "docentes", "asignaciones", "alumnos", "miembros", "calif", "usuarios"]) out[k] = (await get(ref(db, k))).val();
+        descargar(new Blob([JSON.stringify(out, null, 1)], { type: "application/json" }), `respaldo_concentrado21_${new Date().toISOString().slice(0, 10)}.json`); break;
+      }
+      case "nuevoDoc": {
+        const r = await abrirDialogo("Agregar docente", `<form id="fDoc" class="grid2" onsubmit="return false"><label class="f">Nombre completo<input class="in" name="nombre" required></label><label class="f">Nombre corto (alias)<input class="in" name="alias"></label></form>`, [["Cancelar", "cancel"], ["Agregar", "ok", "primary"]]);
+        if (r !== "ok") break;
+        const fd = new FormData($("#fDoc")), nombre = (fd.get("nombre") || "").trim().toUpperCase(); if (!nombre) break;
+        let key = slug(fd.get("alias") || nombre.split(" ")[0]) || "doc"; while (S.docentes[key]) key += "-2";
+        await set(ref(db, "docentes/" + key), { nombre, alias: (fd.get("alias") || "").trim().toUpperCase() || nombre.split(" ")[0] }); toast("Docente agregado.", "ok"); break;
+      }
+      case "crearAcceso": formCuenta({ docId: d.d, rol: "profesor", titulo: "Crear acceso · " + esc(nombreDocente(d.d)) }); break;
+      case "nuevaCuenta": formCuenta({}); break;
+      case "aprobar": formCuenta({ uid: d.uid, email: S.solicitudes[d.uid]?.email || "", conPass: false, titulo: "Asignar rol" }); break;
+      case "rechazar": await remove(ref(db, "solicitudes/" + d.uid)); break;
+      case "quitarUsuario": {
+        const u = S.usuarios[d.uid];
+        if (await confirmar(`¿Quitar el acceso de <b>${esc(u.email)}</b>? La cuenta ya no podrá ver ni capturar nada. (Para borrar la cuenta por completo, elimínala también en Firebase Authentication.)`, "Quitar acceso", "danger")) {
+          const upd = { ["usuarios/" + d.uid]: null }; if (u.docenteId) upd[`docentes/${u.docenteId}/email`] = null;
+          await update(ref(db), upd); toast("Acceso retirado.", "ok");
+        }
+        break;
+      }
+      case "verAsig": S.admDoc = d.d; S.adminTab = "asignaciones"; render(); break;
+      case "borrarDoc": if (await confirmar(`¿Eliminar a ${esc(nombreDocente(d.d))}?`, "Eliminar", "danger")) await remove(ref(db, "docentes/" + d.d)); break;
+      case "editAsig": dlgAsignacion(d.id || null); break;
+      case "borrarAsig": {
+        const a = S.asig[d.id];
+        if (await confirmar(`¿Eliminar <b>${esc(a.materia)} ${esc(tituloAsig(a))}</b> de ${esc(nombreDocente(a.docenteId))}? También se borran sus calificaciones capturadas.`, "Eliminar", "danger"))
+          await update(ref(db), { ["asignaciones/" + d.id]: null, ["calif/" + d.id]: null, ["miembros/" + d.id]: null });
+        break;
+      }
+    }
+  } catch (e) { console.error(e); toast("Error: " + msgErr(e), "err"); b.disabled = false; }
+});
+
+document.addEventListener("change", async ev => {
+  const el = ev.target, d = el.dataset;
+  try {
+    if (el.classList.contains("cell")) { await guardarCelda(el); return; }
+    if (d.filtro) { const F = S.cur?.view === "misstats" ? S.fm : S.f; F[d.filtro] = el.value; render(); return; }
+    if (d.act === "admvo") { await update(ref(db, "asignaciones/" + d.a), { admvo: el.value }); toast("Secretaría actualizada.", "ok"); return; }
+    if (d.admf) { S[d.admf] = el.value; render(); return; }
+    if (d.rnombre) { const v = el.value.replace(/\s+/g, " ").trim(); if (v.length > 2) await update(ref(db, `alumnos/${d.gg}/${d.rnombre}`), { nombre: v }); return; }
+    if (d.rsexo) { await update(ref(db, `alumnos/${d.gg}/${d.rsexo}`), { sexo: el.value }); return; }
+    if (d.rmiembro) { await set(ref(db, `miembros/${d.a}/${d.rmiembro}`), el.checked ? d.gg : null); return; }
+    if (d.docnom) { const v = el.value.trim().toUpperCase(); if (v) { await update(ref(db, "docentes/" + d.docnom), { nombre: v }); toast("Nombre actualizado.", "ok"); } return; }
+    if (d.urol) {
+      const u = S.usuarios[d.urol], rol = el.value;
+      await update(ref(db, "usuarios/" + d.urol), { rol, esProfesor: !!u.docenteId && (rol === "profesor" || rol === "admin"), letra: rol === "secretaria" ? (u.letra || "A") : null });
+      toast("Rol actualizado.", "ok"); return;
+    }
+    if (d.udoc) {
+      const u = S.usuarios[d.udoc], v = el.value || null;
+      const upd = { [`usuarios/${d.udoc}/docenteId`]: v, [`usuarios/${d.udoc}/esProfesor`]: !!v && (u.rol === "profesor" || u.rol === "admin") };
+      if (u.docenteId && u.docenteId !== v) upd[`docentes/${u.docenteId}/email`] = null;
+      if (v) upd[`docentes/${v}/email`] = u.email;
+      await update(ref(db), upd); toast("Vinculación guardada.", "ok"); return;
+    }
+    if (d.uletra) { await update(ref(db, "usuarios/" + d.uletra), { letra: el.value }); toast("Guardado.", "ok"); return; }
+  } catch (e) { console.error(e); toast("No se pudo guardar: " + msgErr(e), "err"); }
+});
+
+let qTimer = null;
+document.addEventListener("input", ev => {
+  const el = ev.target;
+  if (el.dataset.filtro === "q") {
+    clearTimeout(qTimer);
+    qTimer = setTimeout(() => { const F = S.cur?.view === "misstats" ? S.fm : S.f; F.q = el.value; render(); const n = $('[data-filtro="q"]'); if (n) { n.focus(); n.setSelectionRange(n.value.length, n.value.length); } }, 350);
+  }
+});
+document.addEventListener("keydown", ev => {
+  const el = ev.target;
+  if (!el.classList?.contains("cell")) return;
+  if (["Enter", "ArrowDown", "ArrowUp"].includes(ev.key)) {
+    if (el.getAttribute("list") && ev.key !== "Enter") return;
+    ev.preventDefault();
+    const todos = $$(`input.cell[data-f="${el.dataset.f}"]`), i = todos.indexOf(el);
+    const sig = todos[i + (ev.key === "ArrowUp" ? -1 : 1)];
+    if (sig) { sig.focus(); sig.select(); } else el.blur();
+  }
+});
+document.addEventListener("focusin", ev => { if (ev.target.classList?.contains("cell")) ev.target.select(); });
+window.addEventListener("beforeprint", () => S.charts.forEach(c => c.resize()));
+</script>
+</body>
+</html>
