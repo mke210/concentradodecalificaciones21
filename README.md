@@ -35,6 +35,8 @@ Es un solo archivo (`index.html`) que usa Firebase Authentication y Realtime Dat
 
 **Datos de ejemplo (para probar):** en Administración → Datos, “Cargar datos de ejemplo” llena los 27 grupos con 7 asignaturas por grado. Incluye calificaciones de los tres trimestres, aprobados, reprobados, ER, faltas y conductas R/D, con docentes marcados “(EJEMPLO)”, para que la dirección vea las estadísticas. Si el grupo ya tiene su lista de Credenciales, se usan esos alumnos. “Eliminar datos de ejemplo” lo borra todo sin tocar lo que capturen los docentes.
 
+**Informe trimestral (dirección y administrador):** es el formato “Análisis de la información del trimestre” (aprobados, reprobados y promedio de aprovechamiento). Trae un renglón por profesor, asignatura, grado y grupo, con existencia, número y porcentaje de aprobados y reprobados y promedio de grupo; en los talleres, cada grupo sale por separado. Se elige el trimestre (1°, 2°, 3° o final) y el turno (matutino, mixto o ambos). Se revisa en pantalla y se imprime o se descarga en Word (.docx, carta horizontal, con el encabezado y los títulos de columna en cada página). Los renglones del encabezado, el lugar, la fecha y las firmas se editan en “Datos del encabezado y firmas”; también se puede subir el logotipo institucional que va a la izquierda.
+
 ## Primeros pasos del docente (Mis grupos)
 
 1. Confirma su **nombre completo** (sale en PROFR.).

@@ -11,6 +11,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js"></script>
 <style>
 :root{
   --paper:#f3f4ef; --surface:#fcfcfb; --surface-2:#f7f8f4; --ink:#15201a; --ink-2:#4b5650; --muted:#7a837c;
@@ -251,6 +252,27 @@ select.mini{border:1px solid var(--line-2);border-radius:6px;padding:3px 4px;bac
 .pick{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:4px 12px;margin-top:8px;max-height:280px;overflow:auto;padding:4px}
 .pick label{display:flex;gap:6px;align-items:center;font-size:13px;padding:3px 0}
 details summary{cursor:pointer;font-weight:600;font-size:13px;color:var(--brand-2);margin-top:10px}
+/* ---------- informe trimestral ---------- */
+.inf-wrap{overflow-x:auto;margin:0 -4px;padding:4px}
+.inf-hoja{background:#fff;color:#000;font-family:Arial,Helvetica,sans-serif;min-width:980px;max-width:1240px;margin:0 auto;padding:24px 28px 32px;box-shadow:0 2px 16px rgba(0,0,0,.09);border:1px solid var(--line);border-radius:4px}
+table.inf{width:100%;border-collapse:collapse;font-size:11px;table-layout:fixed}
+.inf th,.inf td{border:1px solid #000;padding:2px 4px;text-align:center;font-variant-numeric:tabular-nums}
+.inf td.l{text-align:left}
+.inf th.inf-enc{border:0;padding:0 0 6px;font-weight:400}
+.inf-top{display:grid;grid-template-columns:18% 1fr 18%;align-items:center;border:1px solid #000}
+.inf-lin{display:flex;flex-direction:column;text-align:center;font-size:10.5px;font-weight:700;line-height:1.3;border-left:1px solid #000;border-right:1px solid #000;padding:5px}
+.inf-lin b{font-size:12.5px}
+.inf-logo{display:grid;place-items:center;height:64px;padding:4px}.inf-logo img{max-height:58px;max-width:100%}
+.inf-esc{font-weight:700;font-size:14px;margin-top:8px}
+.inf-an{display:flex;justify-content:center;gap:48px;font-weight:700;font-size:10px;margin-top:2px}
+.inf-an small{font-size:9px}
+.inf-hd th{font-size:9.5px;font-weight:700;line-height:1.15}
+.inf tr.inc td{background:#fff3c4}
+.inf-pie{text-align:center;font-size:11px;margin-top:14px}
+.inf-firmas{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:10px}
+.inf-firmas div{display:flex;flex-direction:column;align-items:center;gap:4px}
+.inf-firmas small{font-size:10px}
+.inf-firmas i{display:block;width:70%;height:40px;border-bottom:1px solid #000}
 /* ---------- hoja (formato oficial) ---------- */
 .hoja-wrap{overflow-x:auto;margin:0 -4px 14px;padding:4px}
 .hoja{background:#fff;color:#000;font-family:Arial,Helvetica,sans-serif;min-width:860px;max-width:1040px;margin:0 auto;padding:30px 34px 40px;box-shadow:0 2px 16px rgba(0,0,0,.09);border:1px solid var(--line);border-radius:4px}
@@ -301,6 +323,12 @@ table.h-tab{width:100%;border-collapse:collapse;table-layout:fixed;font-size:12p
   .capsec{break-inside:auto}
 
   body.imp-hoja main>*:not(.hoja-wrap){display:none!important}
+  body.imp-inf main>*:not(.inf-wrap){display:none!important}
+  .inf-wrap{overflow:visible;margin:0;padding:0}
+  .inf-hoja{min-width:0;max-width:none;box-shadow:none;border:0;padding:0}
+  table.inf{font-size:8pt}.inf-hd th{font-size:7pt}
+  .inf tr.inc td{background:none}
+  .inf tr{break-inside:avoid}
   .hoja-wrap{overflow:visible;margin:0;padding:0}
   .hoja{min-width:0;max-width:none;box-shadow:none;border:0;padding:0;font-size:9pt}
   .h-enc b{font-size:10pt}.h-enc .l1{font-size:11pt}.h-enc .sm{font-size:9pt}.h-enc .l7{font-size:13pt}
@@ -407,7 +435,7 @@ isSupported().then(ok => { if (ok) getAnalytics(app); }).catch(() => {});
 /* Cuentas que se dan de alta solas la primera vez que entran (las contraseñas NO se guardan aquí). */
 const CUENTAS_INICIALES = {
   "elprofechan@gmail.com": { rol: "admin", esProfesor: true, docenteId: "chan", nombre: "JOSÉ EMMANUEL CHAN IBÁÑEZ" },
-  "melchor21@21nov.com":   { rol: "director", esProfesor: false, nombre: "MELCHOR SÁNCHEZ" }
+  "melchor21@21nov.com":   { rol: "director", esProfesor: false, nombre: "MELCHOR SÁNCHEZ MONJARAZ" }
 };
 
 /* Catálogo inicial tomado del horario "Grupos de alumnos" (docentes y asignaturas por grupo, sin tutoría). */
@@ -479,6 +507,7 @@ const ICON = {
   xls: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M9 13l5 5M14 13l-5 5"/></svg>',
   print: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v7H6z"/></svg>',
   up: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M7 9l5-5 5 5M4 20h16"/></svg>',
+  doc: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg>',
   users: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M21.5 20a6.5 6.5 0 0 0-4-6"/></svg>'
 };
 
@@ -697,7 +726,7 @@ function navItems() {
   if (!p) return it;
   if (p.esProfesor && p.docenteId) { it.push(["inicio", "Mis concentrados", ICON.book]); it.push(["grupos", "Mis grupos", ICON.users]); }
   if (p.esProfesor && p.docenteId && p.rol !== "admin") it.push(["misstats", "Mis estadísticas", ICON.chart]);
-  if (p.rol === "admin" || p.rol === "director") { it.push(["stats", "Estadísticas", ICON.chart]); it.push(["avance", "Avance de captura", ICON.check]); }
+  if (p.rol === "admin" || p.rol === "director") { it.push(["stats", "Estadísticas", ICON.chart]); it.push(["informe", "Informe trimestral", ICON.doc]); it.push(["avance", "Avance de captura", ICON.check]); }
   if (p.rol === "secretaria") it.push(["secre", "Concentrados de mis grupos", ICON.folder]);
   if (p.rol === "admin") it.push(["admin", "Administración", ICON.gear]);
   it.push(["perfil", "Configuración", ICON.user]);
@@ -712,7 +741,7 @@ function scheduleRender(fromData) {
   clearTimeout(rTimer);
   rTimer = setTimeout(() => render(fromData), 90);
 }
-const VISTAS_ESTABLES = ["stats", "misstats", "avance", "secre"];
+const VISTAS_ESTABLES = ["stats", "misstats", "avance", "secre", "informe"];
 function render(fromData = false) {
   if (!S.perfil || $("#app").hidden) return;
   if (!S.ready) {
@@ -757,6 +786,152 @@ function renderTop() {
 }
 function renderNav(v) {
   $("#nav").innerHTML = navItems().map(([k, t, ic]) => `<a href="#/${k}" class="${k === v || (v === "captura" && k === "inicio") ? "on" : ""}">${ic}<span>${t}</span></a>`).join("") + '<div class="foot powered">powered by elprofe chan</div>';
+}
+
+/* =====================================================================
+   VISTA: INFORME TRIMESTRAL (análisis de aprobados, reprobados y promedio)
+   ===================================================================== */
+const NOMT_LARGO = { 1: "PRIMER TRIMESTRE", 2: "SEGUNDO TRIMESTRE", 3: "TERCER TRIMESTRE", F: "PROMEDIO FINAL" };
+const REP_DEF = {
+  l1: "INSTITUTO ESTATAL DE EDUCACIÓN PÚBLICA DE OAXACA", l2: "COORDINACIÓN GENERAL DE EDUCACIÓN BÁSICA Y NORMAL",
+  l3: "UNIDAD DE ESCUELAS SECUNDARIAS GENERALES", l4: "ZONA DE SUPERVISIÓN ESCOLAR Nº 14",
+  escuela: "ESCUELA SECUNDARIA GENERAL 20DES0139O “21 DE NOVIEMBRE”", lugar: "ESQUIPULAS, SANTA CRUZ XOXOCOTLAN, OAXACA",
+  respMat: "", respMatCargo: "SUBDIRECTOR DEL TURNO MATUTINO",
+  respMix: "JUAN GABRIEL ARMAS CASTILLO", respMixCargo: "SUBDIRECTOR DEL TURNO MIXTO",
+  director: "MELCHOR SÁNCHEZ MONJARAZ", directorCargo: "SUBDIRECTOR ENCARGADO DE LA DIRECCIÓN", logo: ""
+};
+const MESES = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"];
+const hoyLargo = () => { const d = new Date(); return `${d.getDate()} DE ${MESES[d.getMonth()]} DE ${d.getFullYear()}`; };
+function repCfg() { S.rep ||= { T: "1", turno: "MATUTINO", fecha: hoyLargo(), local: {} }; const g = { ...(S.cfg.reporte || {}) }; delete g.responsable; return { ...REP_DEF, ...g, ...S.rep.local }; }
+/* Firmas según el turno: responsable(s) de la información (subdirección del turno) y dirección */
+function firmasInforme(r, turno) {
+  const resp = [];
+  if (turno !== "MIXTO") resp.push([r.respMat, r.respMatCargo]);
+  if (turno !== "MATUTINO") resp.push([r.respMix, r.respMixCargo]);
+  return [...resp.map(([n, c]) => ["RESPONSABLE DE LA INFORMACIÓN", n, c]), ["DIRECTOR DE LA ESCUELA", r.director, r.directorCargo]];
+}
+const fmtPctI = v => v == null ? "" : (Math.abs(v - Math.round(v)) < 0.05 ? String(Math.round(v)) : (Math.round(v * 10) / 10).toFixed(1));
+const fmtProm = v => v == null ? "" : (Math.round(v * 10) / 10).toFixed(1);
+const turnosEscuela = () => [...new Set(Object.values(S.cfg.turnos || {}))].sort((a, b) => ["MATUTINO", "VESPERTINO", "MIXTO"].indexOf(a) - ["MATUTINO", "VESPERTINO", "MIXTO"].indexOf(b));
+function filasInforme(T, turno) {
+  const orden = [...MATERIAS, ...TALLERES], im = m => { const i = orden.findIndex(x => norm(x) === norm(m)); return i < 0 ? 50 : i; };
+  const porDoc = new Map();
+  for (const [aId, a] of Object.entries(S.asig)) {
+    if (norm(a.materia) === "tutoria") continue;
+    for (const s of secciones(aId)) {
+      if (turno !== "TODOS" && (S.cfg.turnos?.[s.g] || "MATUTINO") !== turno) continue;
+      const c = S.calif[aId] || {}, vals = s.alumnos.map(x => calDe(c[x.id], T)).filter(v => v != null);
+      const ex = s.alumnos.length, ap = vals.filter(v => v >= 6).length, rp = vals.length - ap;
+      if (!porDoc.has(a.docenteId)) porDoc.set(a.docenteId, []);
+      porDoc.get(a.docenteId).push({ materia: a.materia, grado: a.grado, grupo: s.g, ex, n: vals.length, ap, rp, pa: ex ? ap / ex * 100 : null, pr: ex ? rp / ex * 100 : null, prom: vals.length ? sum(vals) / vals.length : null });
+    }
+  }
+  const out = [...porDoc].map(([d, f]) => [d, f.sort((x, y) => im(x.materia) - im(y.materia) || x.materia.localeCompare(y.materia) || x.grado - y.grado || x.grupo.localeCompare(y.grupo))]);
+  return out.sort((x, y) => im(x[1][0].materia) - im(y[1][0].materia) || x[1][0].grado - y[1][0].grado || nombreDocente(x[0]).localeCompare(nombreDocente(y[0])));
+}
+const tituloTurno = t => t === "TODOS" ? `TURNOS ${turnosEscuela().join(" Y ")}` : `TURNO ${t}`;
+const tituloAnalisis = T => T === "F" ? "ANÁLISIS DE LA INFORMACIÓN DEL PROMEDIO FINAL" : `ANÁLISIS DE LA INFORMACIÓN DEL ${NOMT_LARGO[T]}`;
+function vInforme(main) {
+  const r = repCfg(), T = S.rep.T, turno = S.rep.turno, filas = filasInforme(T, turno);
+  const incompletas = filas.flatMap(([, f]) => f).filter(x => x.n < x.ex).length;
+  const escudoSrc = urlEscudo();
+  const campo = (k, t, ph = "") => `<label class="f">${t}<input class="in" data-rep="${k}" value="${esc(r[k])}" placeholder="${esc(ph)}"></label>`;
+  let np = 0;
+  let h = `<div class="no-print">
+    <div class="page-head"><div><h1>Informe trimestral</h1><p class="muted">Análisis de aprobados, reprobados y promedio por profesor, asignatura, grado y grupo. Revísalo aquí antes de imprimir o descargarlo en Word.</p></div>
+      <div class="actions"><button class="btn" data-act="infPrint">${ICON.print}Imprimir</button><button class="btn primary" data-act="infWord">${ICON.doc}Descargar Word</button></div></div>
+    <div class="card filters">
+      <div class="f"><span>Trimestre</span><div class="seg">${["1", "2", "3", "F"].map(k => `<button data-inf-t="${k}" class="${T === k ? "on" : ""}">${k === "F" ? "Final" : NOMT[k]}</button>`).join("")}</div></div>
+      <div class="f"><span>Turno</span><div class="seg">${[...turnosEscuela(), "TODOS"].map(k => `<button data-inf-turno="${k}" class="${turno === k ? "on" : ""}">${k === "TODOS" ? "Ambos" : k[0] + k.slice(1).toLowerCase()}</button>`).join("")}</div></div>
+      <label class="f">Fecha<input class="in" data-repfecha value="${esc(S.rep.fecha)}"></label>
+    </div>
+    <details class="card pad" style="margin-bottom:14px" data-k="infdet" ${S.abiertos?.has("infdet") ? "open" : ""}><summary>Datos del encabezado y firmas</summary>
+      <div class="grid2" style="margin-top:12px">${campo("l1", "Renglón 1")}${campo("l2", "Renglón 2")}${campo("l3", "Renglón 3")}${campo("l4", "Renglón 4")}${campo("escuela", "Escuela y clave")}${campo("lugar", "Lugar")}${campo("respMat", "Responsable turno matutino (nombre)", "Nombre del subdirector del turno matutino")}${campo("respMatCargo", "Cargo")}${campo("respMix", "Responsable turno mixto (nombre)")}${campo("respMixCargo", "Cargo")}${campo("director", "Dirección (nombre)")}${campo("directorCargo", "Cargo")}</div>
+      <div class="row" style="margin-top:12px"><label class="btn sm">Logotipo institucional (izquierda)<input type="file" accept="image/*" data-replogo hidden></label>${r.logo ? `<img src="${r.logo}" alt="" style="height:36px"><button class="btn sm danger" data-act="repQuitarLogo">Quitar logotipo</button>` : '<span class="small muted">Opcional. El escudo de la escuela va a la derecha.</span>'}</div>
+      ${esAdmin() ? `<div class="row" style="margin-top:12px"><button class="btn primary sm" data-act="repGuardar">Guardar estos datos para siempre</button><span class="small muted">Si no los guardas, solo se usan en este informe.</span></div>` : `<p class="small muted" style="margin-top:10px">Los cambios se usan en este informe; el administrador puede dejarlos guardados.</p>`}
+    </details>
+    ${incompletas ? `<div class="hint">${incompletas} renglones aún no tienen todas las calificaciones capturadas (marcados en amarillo). Los porcentajes se calculan sobre la existencia del grupo.</div>` : ""}
+  </div>
+  <div class="inf-wrap"><div class="inf-hoja">
+  <table class="inf"><colgroup>${[500, 3300, 2300, 800, 800, 1100, 1100, 1100, 1100, 1100, 1200].map(w => `<col style="width:${(w / 144).toFixed(2)}%">`).join("")}</colgroup><thead>
+    <tr><th colspan="11" class="inf-enc"><div class="inf-top"><div class="inf-logo">${r.logo ? `<img src="${r.logo}" alt="">` : ""}</div><div class="inf-lin"><b>${esc(r.l1)}</b><span>${esc(r.l2)}</span><span>${esc(r.l3)}</span><span>${esc(r.l4)}</span></div><div class="inf-logo"><img src="${escudoSrc}" alt=""></div></div>
+      <div class="inf-esc">${esc(r.escuela)} ${esc(tituloTurno(turno))}</div>
+      <div class="inf-an"><span>${esc(tituloAnalisis(T))} <small>(APROBADOS, REPROBADOS Y PROMEDIO DE APROVECHAMIENTO)</small></span><span>CICLO ESCOLAR ${esc(S.cfg.ciclo.replace("-", " – "))}</span></div></th></tr>
+    <tr class="inf-hd"><th>NP</th><th>PROFESOR</th><th>ASIGNATURA</th><th>GRADO</th><th>GRUPO</th><th>EXISTENCIA</th><th>NÚMERO DE APROBADOS</th><th>NÚMERO DE REPROBADOS</th><th>PORCENTAJE APROBADOS</th><th>PORCENTAJE REPROBADOS</th><th>PROMEDIO DE GRUPO</th></tr>
+  </thead><tbody>`;
+  for (const [d, fs] of filas) {
+    np++;
+    fs.forEach((x, i) => {
+      h += `<tr class="${x.n < x.ex ? "inc" : ""}"><td>${i ? "" : np}</td><td class="l">${i ? "" : esc(nombreDocente(d))}</td><td class="l">${esc(x.materia)}</td><td>${x.grado}</td><td>${x.grupo}</td><td>${x.ex}</td><td>${x.n ? x.ap : ""}</td><td>${x.n ? x.rp : ""}</td><td>${x.n ? fmtPctI(x.pa) : ""}</td><td>${x.n ? fmtPctI(x.pr) : ""}</td><td>${fmtProm(x.prom)}</td></tr>`;
+    });
+  }
+  if (!filas.length) h += `<tr><td colspan="11" style="padding:24px">No hay grupos registrados en este turno.</td></tr>`;
+  h += `</tbody></table>
+    <div class="inf-pie"><p>${esc(r.lugar)}, ${esc(S.rep.fecha)}.</p>
+      <div class="inf-firmas" style="grid-template-columns:repeat(${firmasInforme(r, turno).length},1fr)">${firmasInforme(r, turno).map(([t, n, c]) => `<div><span>${esc(t)}</span><i></i><b>${esc(n)}</b><small>${esc(c)}</small></div>`).join("")}</div></div>
+  </div></div>`;
+  main.innerHTML = h;
+}
+function urlEscudo() {
+  const bg = getComputedStyle(document.querySelector(".escudo") || document.body).backgroundImage || "";
+  const m = bg.match(/url\("?(data:[^")]+)"?\)/); return m ? m[1] : "";
+}
+function aPng(src, maxW = 300) {
+  return new Promise((res, rej) => {
+    const img = new Image();
+    img.onload = () => { const k = Math.min(1, maxW / img.naturalWidth), c = document.createElement("canvas"); c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k); c.getContext("2d").drawImage(img, 0, 0, c.width, c.height); res({ url: c.toDataURL("image/png"), w: c.width, h: c.height }); };
+    img.onerror = rej; img.src = src;
+  });
+}
+const bytesDeDataUrl = u => Uint8Array.from(atob(u.split(",")[1]), ch => ch.charCodeAt(0));
+async function informeWord() {
+  const D = window.docx;
+  if (!D) { toast("No se cargó la librería de Word. Revisa tu conexión.", "err"); return; }
+  const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, AlignmentType, Header, Footer, PageNumber, ImageRun, PageOrientation, VerticalAlign, BorderStyle, ShadingType, HeightRule } = D;
+  const r = repCfg(), T = S.rep.T, turno = S.rep.turno, filas = filasInforme(T, turno), F = "Arial";
+  const run = (text, o = {}) => new TextRun({ text: String(text ?? ""), bold: !!o.b, size: o.sz || 16, font: F });
+  const par = (text, o = {}) => new Paragraph({ alignment: o.al ?? AlignmentType.CENTER, spacing: { before: o.antes || 0, after: o.desp || 0 }, children: Array.isArray(text) ? text : [run(text, o)] });
+  const sinBorde = { top: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" }, bottom: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" }, left: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" }, right: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" } };
+  const linea = { style: BorderStyle.SINGLE, size: 4, color: "000000" };
+  const conBorde = { top: linea, bottom: linea, left: linea, right: linea };
+  const img = async (src, alto) => { if (!src) return par(""); const p = await aPng(src, 400); return new Paragraph({ alignment: AlignmentType.CENTER, children: [new ImageRun({ data: bytesDeDataUrl(p.url), transformation: { width: Math.round(alto * p.w / p.h), height: alto } })] }); };
+  const W = [500, 3300, 2300, 800, 800, 1100, 1100, 1100, 1100, 1100, 1200];
+  const cel = (txt, i, o = {}) => new TableCell({ width: { size: W[i], type: WidthType.DXA }, borders: conBorde, verticalAlign: VerticalAlign.CENTER, margins: { left: 50, right: 50, top: 10, bottom: 10 },
+    shading: o.sh ? { type: ShadingType.CLEAR, color: "auto", fill: o.sh } : undefined, children: [par(txt, { al: o.l ? AlignmentType.LEFT : AlignmentType.CENTER, b: o.b, sz: o.sz || 15 })] });
+  const encab = new Table({ width: { size: 14400, type: WidthType.DXA }, columnWidths: [2600, 9200, 2600], borders: { ...sinBorde, insideHorizontal: sinBorde.top, insideVertical: sinBorde.top },
+    rows: [new TableRow({ children: [
+      new TableCell({ width: { size: 2600, type: WidthType.DXA }, borders: { ...sinBorde, bottom: linea }, verticalAlign: VerticalAlign.CENTER, children: [await img(r.logo, 42)] }),
+      new TableCell({ width: { size: 9200, type: WidthType.DXA }, borders: { ...sinBorde, bottom: linea }, verticalAlign: VerticalAlign.CENTER, children: [par(r.l1, { b: true, sz: 20 }), par(r.l2, { b: true, sz: 16 }), par(r.l3, { b: true, sz: 14 }), par(r.l4, { b: true, sz: 14 })] }),
+      new TableCell({ width: { size: 2600, type: WidthType.DXA }, borders: { ...sinBorde, bottom: linea }, verticalAlign: VerticalAlign.CENTER, children: [await img(urlEscudo(), 46)] })
+    ] })] });
+  const header = new Header({ children: [encab,
+    par(`${r.escuela} ${tituloTurno(turno)}`, { b: true, sz: 22, antes: 100 }),
+    par([run(tituloAnalisis(T) + " ", { b: true, sz: 14 }), run("(APROBADOS, REPROBADOS Y PROMEDIO DE APROVECHAMIENTO)", { b: true, sz: 12 }), run(`          CICLO ESCOLAR ${S.cfg.ciclo.replace("-", " – ")}`, { b: true, sz: 14 })], { desp: 60 })] });
+  const hd = ["NP", "PROFESOR", "ASIGNATURA", "GRADO", "GRUPO", "EXISTENCIA", "NÚMERO DE APROBADOS", "NÚMERO DE REPROBADOS", "PORCENTAJE APROBADOS", "PORCENTAJE REPROBADOS", "PROMEDIO DE GRUPO"];
+  const rows = [new TableRow({ tableHeader: true, cantSplit: true, children: hd.map((t, i) => cel(t, i, { b: true, sz: 13 })) })];
+  let np = 0;
+  for (const [d, fs] of filas) {
+    np++;
+    fs.forEach((x, i) => rows.push(new TableRow({ cantSplit: true, children: [
+      cel(i ? "" : np, 0), cel(i ? "" : nombreDocente(d), 1, { l: true }), cel(x.materia, 2, { l: true }), cel(x.grado, 3), cel(x.grupo, 4), cel(x.ex, 5),
+      cel(x.n ? x.ap : "", 6), cel(x.n ? x.rp : "", 7), cel(x.n ? fmtPctI(x.pa) : "", 8), cel(x.n ? fmtPctI(x.pr) : "", 9), cel(fmtProm(x.prom), 10)] })));
+  }
+  const tabla = new Table({ width: { size: 14400, type: WidthType.DXA }, columnWidths: W, rows });
+  const lf = firmasInforme(r, turno), anc = Math.floor(14400 / lf.length);
+  const firma = ([t, n, c]) => new TableCell({ width: { size: anc, type: WidthType.DXA }, borders: sinBorde, children: [par(t, { sz: 16, desp: 600 }), par("________________________________", { sz: 16 }), par(n, { b: true, sz: 16 }), par(c, { sz: 14 })] });
+  const firmas = new Table({ width: { size: 14400, type: WidthType.DXA }, columnWidths: lf.map(() => anc), borders: { ...sinBorde, insideHorizontal: sinBorde.top, insideVertical: sinBorde.top }, rows: [new TableRow({ cantSplit: true, children: lf.map(firma) })] });
+  const doc = new Document({
+    creator: "Concentrado de Calificaciones 21", title: `${tituloAnalisis(T)} ${tituloTurno(turno)}`,
+    styles: { default: { document: { run: { font: F, size: 16 } } } },
+    sections: [{
+      properties: { page: { size: { orientation: PageOrientation.LANDSCAPE, width: 12240, height: 15840 }, margin: { top: 1900, bottom: 720, left: 720, right: 720, header: 360, footer: 360 } } },
+      headers: { default: header },
+      footers: { default: new Footer({ children: [new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ children: [PageNumber.CURRENT], size: 14, font: F })] })] }) },
+      children: [tabla, par(`${r.lugar}, ${S.rep.fecha}.`, { sz: 16, antes: 160, desp: 200 }), firmas]
+    }]
+  });
+  const blob = await Packer.toBlob(doc);
+  descargar(blob, `Informe_${T === "F" ? "FINAL" : T + "TRIM"}_${turno}_${S.cfg.ciclo}.docx`);
 }
 
 /* =====================================================================
@@ -2222,9 +2397,11 @@ async function exportarAlumnos() {
 /* =====================================================================
    EVENTOS
    ===================================================================== */
-const VISTAS = { grupos: vGrupos, inicio: vInicio, captura: vCaptura, stats: m => vStats(m, null), misstats: m => vStats(m, S.perfil.docenteId), avance: vAvance, secre: vSecre, perfil: vPerfil, admin: vAdmin };
+const VISTAS = { informe: vInforme, grupos: vGrupos, inicio: vInicio, captura: vCaptura, stats: m => vStats(m, null), misstats: m => vStats(m, S.perfil.docenteId), avance: vAvance, secre: vSecre, perfil: vPerfil, admin: vAdmin };
 
 document.addEventListener("click", async ev => {
+  const it2 = ev.target.closest("[data-inf-t],[data-inf-turno]");
+  if (it2) { if (it2.dataset.infT) S.rep.T = it2.dataset.infT; else S.rep.turno = it2.dataset.infTurno; render(); return; }
   const gg2 = ev.target.closest("[data-gfgrado]");
   if (gg2) { S.gf.grado = +gg2.dataset.gfgrado; S.gf.grupos = []; render(); return; }
   const goEl = ev.target.closest("[data-go]");
@@ -2292,6 +2469,10 @@ document.addEventListener("click", async ev => {
       case "crearAcceso": formCuenta({ docId: d.d, rol: "profesor", titulo: "Crear acceso · " + esc(nombreDocente(d.d)) }); break;
       case "nuevaCuenta": formCuenta({}); break;
       case "accesos": dlgAccesos(); break;
+      case "infWord": b.disabled = true; await informeWord(); b.disabled = false; break;
+      case "infPrint": { const c = document.body.classList; $("#pgsize").textContent = "@page{size:letter landscape;margin:9mm}"; c.add("imp-inf"); window.print(); setTimeout(() => c.remove("imp-inf"), 500); break; }
+      case "repGuardar": { await update(ref(db, "config/reporte"), repCfg()); S.rep.local = {}; toast("Datos del informe guardados.", "ok"); break; }
+      case "repQuitarLogo": S.rep.local.logo = ""; render(); break;
       case "demoCargar": { b.disabled = true; b.textContent = "Cargando…"; const r = await cargarDemo(); toast(`Listo: ${r.asignaciones} concentrados de ejemplo de ${r.docentes} docentes de ejemplo` + (r.alumnos ? `, ${r.alumnos} alumnos de ejemplo` : "") + (r.reales ? ` (se usaron ${r.reales} alumnos reales en sus grupos)` : "") + ". Míralos en Estadísticas.", "ok"); render(); break; }
       case "demoBorrar": { if (!await confirmar("¿Eliminar todos los datos de ejemplo? Lo que capturen los docentes no se toca.", "Eliminar", "danger")) break; const n = await borrarDemo(); toast(`Se eliminaron los datos de ejemplo (${n} registros).`, "ok"); render(); break; }
       case "credenciales": dlgCredenciales(); break;
@@ -2355,6 +2536,9 @@ document.addEventListener("change", async ev => {
       if (v) upd[`docentes/${v}/email`] = u.email;
       await update(ref(db), upd); toast("Vinculación guardada.", "ok"); return;
     }
+    if (d.rep) { S.rep.local[d.rep] = el.value.trim(); render(); return; }
+    if ("repfecha" in d) { S.rep.fecha = el.value.trim().toUpperCase(); render(); return; }
+    if ("replogo" in d) { const f = el.files[0]; if (!f) return; const url = await new Promise(r => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.readAsDataURL(f); }); S.rep.local.logo = (await aPng(url, 320)).url; render(); return; }
     if (d.gf) { S.gf[d.gf] = el.type === "checkbox" ? el.checked : el.value; if (d.gf === "materia") S.gf.taller = TALLERES.includes(el.value); render(); return; }
     if (d.gfgrupo) { const g = S.gf.grupos; el.checked ? g.push(d.gfgrupo) : g.splice(g.indexOf(d.gfgrupo), 1); render(); return; }
     if (d.asadmvo) { await update(ref(db, "asignaciones/" + d.asadmvo), { admvo: el.value }); toast("Secretaría actualizada.", "ok"); return; }
