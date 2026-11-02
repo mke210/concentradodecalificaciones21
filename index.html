@@ -328,9 +328,8 @@ table.h-tab{width:100%;border-collapse:collapse;table-layout:fixed;font-size:12p
   <div class="login-art">
     <div>
       <span class="escudo" style="width:132px;height:116px;margin-bottom:18px" role="img" aria-label="Escudo de la Escuela Secundaria General 21 de Noviembre"></span>
-      <div class="k">Esc. Sec. Gral. “21 de Noviembre” · IEEPO</div>
+      <div class="k">Esc. Sec. Gral. “21 de Noviembre”</div>
       <h1>Concentrado de Calificaciones</h1>
-      <p>Captura por trimestre, descarga del formato oficial en Excel y estadísticas de aprobación para la dirección.</p>
       <div class="sheet" aria-hidden="true">
         <span class="l"></span><span></span><span></span><span></span><span></span><span></span>
         <span></span><span class="l"></span><span></span><span class="r"></span><span></span><span></span>
@@ -1175,7 +1174,11 @@ function registros(F, lockDoc) {
       if (F.grupo && s.g !== F.grupo) continue;
       for (const al of s.alumnos) {
         if (F.sexo && al.sexo !== F.sexo) continue;
-        out.push({ aId, docenteId: a.docenteId, materia: a.materia, tipo: a.tipo, grado: a.grado, grupo: s.g, gg: s.gg, alumnoId: al.id, nombre: al.nombre, sexo: al.sexo || "?", cal: calDe(S.calif[aId]?.[al.id], F.T) });
+        const c = S.calif[aId]?.[al.id] || {};
+        const ks = F.T === "F" ? ["1", "2", "3"] : [F.T];
+        const fal = ks.map(t => num(c["i" + t])).filter(v => v != null);
+        out.push({ aId, docenteId: a.docenteId, materia: a.materia, tipo: a.tipo, grado: a.grado, grupo: s.g, gg: s.gg, alumnoId: al.id, nombre: al.nombre, sexo: al.sexo || "?", cal: calDe(c, F.T),
+          ina: fal.length ? sum(fal) : null, cond: ks.map(t => c["c" + t]).filter(Boolean).map(v => String(v).toUpperCase()) });
       }
     }
   }
@@ -1236,9 +1239,20 @@ function tablasStats(rs, F) {
     rows: [...agrupar(rs, r => r.materia)].map(([k, l]) => filaG(k, l)).sort((a, b) => a[0].localeCompare(b[0])) };
   T.profesor = { titulo: "Por profesor", head: ["Profesor", "Asignaciones", "Alumnos", "Evaluados", "% Capturado", "Aprobados", "Reprobados", "% Aprob.", "Promedio"], num: [1, 2, 3, 4, 5, 6, 7, 8],
     rows: [...agrupar(rs, r => r.docenteId)].map(([k, l]) => { const g = agg(l); return [nombreDocente(k), new Set(l.map(x => x.aId)).size, l.length, g.n, g.cap, g.ap, g.rp, g.pa, g.prom]; }).sort((a, b) => a[0].localeCompare(b[0])) };
+  T.grado = { titulo: "Por grado", head: ["Grado", ...headG.slice(1)], num: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+    rows: [...agrupar(rs, r => `${r.grado}° grado`)].map(([k, l]) => filaG(k, l)).sort((a, b) => a[0].localeCompare(b[0])) };
+  const porAlF = agrupar(rs.filter(r => r.ina > 0), r => r.alumnoId);
+  T.faltas = { titulo: "Inasistencias por alumno (suma de todas sus asignaturas)", head: ["Alumno", "Grupo", "Sexo", "Total de faltas", "Detalle"], num: [3],
+    rows: [...porAlF].map(([, l]) => [l[0].nombre, `${l[0].grado}° ${l[0].grupo}`, l[0].sexo, sum(l.map(x => x.ina)), l.filter(x => x.ina).map(x => `${x.materia} (${x.ina})`).join(", ")])
+      .filter(r => !q || norm(r[0]).includes(q)).sort((a, b) => b[3] - a[3] || a[1].localeCompare(b[1])) };
+  T.conducta = { titulo: "Conducta regular o deficiente", head: ["Alumno", "Grupo", "Sexo", "Asignatura", "Profesor", "Conducta"], num: [],
+    rows: rs.filter(r => r.cond.some(esCondBaja) && (!q || norm(r.nombre).includes(q))).sort((a, b) => a.gg.localeCompare(b.gg) || a.nombre.localeCompare(b.nombre, "es"))
+      .map(r => [r.nombre, `${r.grado}° ${r.grupo}`, r.sexo, r.materia, nombreDocente(r.docenteId), r.cond.join(", ")]) };
   return T;
 }
-const PCT_COLS = { resumen: [9, 10], grupo: [10], materia: [10], profesor: [4, 7] };
+const COND_ORD = ["E", "MB", "B", "R", "D"];
+const esCondBaja = v => !["E", "MB", "B"].includes(v);
+const PCT_COLS = { resumen: [9, 10], grupo: [10], grado: [10], materia: [10], profesor: [4, 7] };
 function celdaTabla(v, i, key) {
   if (v == null) return "—";
   if ((PCT_COLS[key] || []).includes(i)) return pct(v);
@@ -1283,10 +1297,13 @@ function vStats(main, lockDoc) {
   const alumnosU = new Map(rs.map(r => [r.alumnoId, r.sexo]));
   const uH = [...alumnosU.values()].filter(s => s === "H").length, uM = [...alumnosU.values()].filter(s => s === "M").length;
   const enRiesgo = new Set(rs.filter(r => r.cal != null && r.cal < 6).map(r => r.alumnoId)).size;
+  const totFal = sum(rs.map(r => r.ina || 0)), falAl = {}; for (const r of rs) if (r.ina) falAl[r.alumnoId] = (falAl[r.alumnoId] || 0) + r.ina;
+  const conBaja = rs.filter(r => r.cond.some(esCondBaja)), alCondBaja = new Set(conBaja.map(r => r.alumnoId)).size;
   const tablas = tablasStats(rs, F);
-  S.ultTablas = { tablas, F, lockDoc, g, uH, uM, enRiesgo, total: alumnosU.size };
+  S.ultTablas = { tablas, F, lockDoc, g, uH, uM, enRiesgo, total: alumnosU.size, totFal: null, alCondBaja: null };
+  Object.assign(S.ultTablas, { totFal, alCondBaja });
   const tab = F.tab;
-  let h = `<div class="page-head"><div><h1>${lockDoc ? "Mis estadísticas" : "Estadísticas de aprovechamiento"}</h1><p class="muted">Esc. Sec. Gral. "${esc(S.cfg.escuela)}" · Ciclo ${esc(S.cfg.ciclo)} · se actualiza conforme los docentes capturan</p></div>
+  let h = `<div class="page-head"><div><h1>${lockDoc ? "Mis estadísticas" : "Estadísticas de aprovechamiento"} ${S.cfg.demo ? '<span class="badge" style="background:var(--warn-soft);color:#8a5a00;border-color:#f1dfb1;vertical-align:middle">Incluye datos de ejemplo</span>' : ""}</h1><p class="muted">Esc. Sec. Gral. "${esc(S.cfg.escuela)}" · Ciclo ${esc(S.cfg.ciclo)} · se actualiza conforme los docentes capturan</p></div>
     <div class="actions"><button class="btn" data-act="print">${ICON.print}Imprimir</button><button class="btn primary" data-act="xls-stats">${ICON.xls}Exportar a Excel</button></div></div>
     ${filtrosHTML(F, lockDoc)}
     <p class="filtros-print"><span class="escudo" style="width:46px;height:40px;float:left;margin-right:10px"></span><b>Estadísticas · ${esc(S.cfg.escuela)} · Ciclo ${esc(S.cfg.ciclo)}</b><br>Filtros: ${esc(textoFiltros(F, lockDoc))} · Impreso el ${new Date().toLocaleDateString("es-MX")}</p>
@@ -1297,6 +1314,8 @@ function vStats(main, lockDoc) {
       <div class="card kpi"><span class="k-l"><i class="dot" style="background:var(--bad)"></i>Reprobados</span><span class="k-v num">${g.rp}</span><span class="k-s">${pct(g.pr)} · H ${g.hRp} · M ${g.mRp}</span></div>
       <div class="card kpi"><span class="k-l">Promedio general</span><span class="k-v num">${g.prom == null ? "—" : f1(g.prom)}</span><span class="k-s">${esc(nomT(F.T))}</span></div>
       <div class="card kpi"><span class="k-l">Alumnos con al menos una reprobada</span><span class="k-v num">${enRiesgo}</span><span class="k-s">${alumnosU.size ? pct(enRiesgo / alumnosU.size * 100) : "—"} del total</span></div>
+      <div class="card kpi"><span class="k-l">Inasistencias</span><span class="k-v num">${totFal}</span><span class="k-s">${Object.values(falAl).filter(v => v >= 10).length} alumnos con 10 o más</span></div>
+      <div class="card kpi"><span class="k-l"><i class="dot" style="background:var(--warn)"></i>Conducta regular o deficiente</span><span class="k-v num">${alCondBaja}</span><span class="k-s">alumnos · ${conBaja.length} registros R o D</span></div>
     </div>`;
   if (!rs.length) {
     h += `<div class="card empty"><b>No hay alumnos para estos filtros</b>Cuando los docentes registren sus listas y calificaciones aparecerán aquí.</div>`;
@@ -1309,11 +1328,13 @@ function vStats(main, lockDoc) {
     <div class="card chart-card"><h3>Reprobación por asignatura</h3><p>% de evaluaciones reprobadas, de mayor a menor</p><div class="chart-box" id="bxMat"><canvas id="chMat"></canvas></div></div>
     <div class="card chart-card"><h3>Distribución de calificaciones</h3><p>${esc(nomT(F.T))}</p><div class="chart-box" style="height:240px"><canvas id="chDist"></canvas></div></div>
     ${lockDoc ? "" : `<div class="card chart-card"><h3>Aprobación por profesor</h3><p>% de evaluaciones aprobadas</p><div class="chart-box" id="bxProf"><canvas id="chProf"></canvas></div></div>`}
+    <div class="card chart-card"><h3>Conducta registrada</h3><p>Número de registros (E, MB, B, R, D)</p><div class="chart-box" style="height:240px"><canvas id="chCond"></canvas></div></div>
+    <div class="card chart-card"><h3>Inasistencias por grupo</h3><p>Total de faltas registradas</p><div class="chart-box" style="height:240px"><canvas id="chFal"></canvas></div></div>
     <div class="card chart-card"><h3>Evolución por trimestre</h3><p>% de aprobación con los mismos filtros</p><div class="chart-box" style="height:240px"><canvas id="chEvol"></canvas></div></div>
   </div>
   <div class="card pad">
-    <div class="tabs">${[["resumen", "Resumen por grupo"], ["grupo", "Por grupo"], ["materia", "Por asignatura"], ...(lockDoc ? [] : [["profesor", "Por profesor"]]), ["reprobados", "Reprobados"], ["aprobados", "Aprobados"], ["riesgo", "Alumnos en riesgo"]].map(([k, t]) => `<button data-tab="${k}" class="${tab === k ? "on" : ""}">${t}</button>`).join("")}</div>
-    ${["reprobados", "aprobados", "riesgo"].includes(tab) ? `<div class="row no-print" style="margin-bottom:10px"><input class="in" style="max-width:320px" placeholder="Buscar alumno…" data-filtro="q" value="${esc(F.q)}"></div>` : ""}
+    <div class="tabs">${[["resumen", "Resumen por grupo"], ["grado", "Por grado"], ["grupo", "Por grupo"], ["materia", "Por asignatura"], ...(lockDoc ? [] : [["profesor", "Por profesor"]]), ["reprobados", "Reprobados"], ["aprobados", "Aprobados"], ["riesgo", "Alumnos en riesgo"], ["faltas", "Faltas"], ["conducta", "Conducta"]].map(([k, t]) => `<button data-tab="${k}" class="${tab === k ? "on" : ""}">${t}</button>`).join("")}</div>
+    ${["reprobados", "aprobados", "riesgo", "faltas", "conducta"].includes(tab) ? `<div class="row no-print" style="margin-bottom:10px"><input class="in" style="max-width:320px" placeholder="Buscar alumno…" data-filtro="q" value="${esc(F.q)}"></div>` : ""}
     <h3 class="filtros-print">${esc(tablas[tab].titulo)}</h3>
     ${htmlTabla(tablas[tab], tab)}
   </div>`;
@@ -1397,6 +1418,21 @@ function dibujarGraficas(rs, F, lockDoc) {
     const pp = [...agrupar(rs, r => r.docenteId)].map(([k, l]) => [k, agg(l)]).filter(([, g]) => g.n).sort((a, b) => b[1].pa - a[1].pa);
     barrasH("chProf", "bxProf", pp.map(([k]) => nombreDocente(k)), pp.map(([, g]) => g.pa), COL.ok, c => { const g = pp[c.dataIndex][1]; return ` ${pct(c.raw)} aprobados (${g.ap} de ${g.n})`; });
   }
+  // conducta
+  const cc = {}; for (const r of rs) for (const v of r.cond) cc[v] = (cc[v] || 0) + 1;
+  const etiqC = [...COND_ORD, ...Object.keys(cc).filter(v => !COND_ORD.includes(v))];
+  chart("chCond", {
+    type: "bar",
+    data: { labels: etiqC, datasets: [{ label: "Registros", data: etiqC.map(v => cc[v] || 0), backgroundColor: etiqC.map(v => esCondBaja(v) ? COL.bad : COL.ok), borderRadius: { topLeft: 4, topRight: 4 }, borderSkipped: false, maxBarThickness: 46 }] },
+    options: baseOpts({ plugins: { ...baseOpts().plugins, legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { beginAtZero: true, grid: { color: COL.grid }, border: { display: false }, ticks: { color: COL.muted, precision: 0 } } } })
+  });
+  // faltas por grupo
+  const pf = [...agrupar(rs, r => `${r.grado}° ${r.grupo}`)].sort((a, b) => a[0].localeCompare(b[0]));
+  chart("chFal", {
+    type: "bar",
+    data: { labels: pf.map(([k]) => k), datasets: [{ label: "Faltas", data: pf.map(([, l]) => sum(l.map(r => r.ina || 0))), backgroundColor: COL.ok, borderRadius: { topLeft: 4, topRight: 4 }, borderSkipped: false, maxBarThickness: 26 }] },
+    options: baseOpts({ plugins: { ...baseOpts().plugins, legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { beginAtZero: true, grid: { color: COL.grid }, border: { display: false }, ticks: { color: COL.muted, precision: 0 } } } })
+  });
   // evolución
   const ev3 = ["1", "2", "3"].map(t => agg(registros({ ...F, T: t }, lockDoc)));
   chart("chEvol", {
@@ -1590,7 +1626,12 @@ const ADM = {
       <div id="rosterBox">${rosterHTML(S.admGG, null)}</div></div>`;
   },
   datos(el) {
-    el.innerHTML = `<div class="grid2">
+    const nDemo = Object.keys(S.asig).filter(k => k.startsWith("demo_")).length;
+    el.innerHTML = `<div class="card pad" style="margin-bottom:14px;border-color:#f1dfb1;background:#fffdf6"><h2>Datos de ejemplo</h2>
+      <p class="small muted">Carga calificaciones de ejemplo de los tres trimestres para los 27 grupos (7 asignaturas por grado, con aprobados, reprobados, ER, faltas y malas conductas) para que la dirección pruebe las estadísticas. Si un grupo ya tiene su lista real, se usan esos alumnos; si no, se crean alumnos de ejemplo. Todo queda marcado como ejemplo y se borra con un clic, sin tocar lo que capturen los docentes.</p>
+      <p class="small"><b>${nDemo ? `Cargados: ${nDemo} concentrados de ejemplo.` : "No hay datos de ejemplo cargados."}</b></p>
+      <div class="row"><button class="btn primary" data-act="demoCargar" ${nDemo ? "disabled" : ""}>Cargar datos de ejemplo</button><button class="btn danger" data-act="demoBorrar" ${nDemo || S.cfg.demo ? "" : "disabled"}>Eliminar datos de ejemplo</button></div></div>
+    <div class="grid2">
       <div class="card pad" style="border-color:var(--lime)"><h2>Alumnos desde Credenciales</h2><p class="small muted">Carga las listas de todos los grupos con el respaldo JSON del sistema de Credenciales (nombre, grado, grupo y matrícula). Puedes repetirlo cuando haya altas o cambios de grupo.</p><button class="btn primary" data-act="credenciales">${ICON.up}Importar alumnos</button></div>
       <div class="card pad"><h2>Catálogo del horario</h2><p class="small muted">Los docentes del horario “Grupos de alumnos”. Cada docente registra sus propios grupos en “Mis grupos” (el horario se le sugiere). Si prefieres, puedes cargar desde aquí las asignaciones de todos. Solo agrega lo que falte; no borra nada.</p><div class="row"><button class="btn" data-act="semilla">Cargar docentes faltantes</button><button class="btn" data-act="semillaAsig">Cargar asignaciones de todos</button></div></div>
       <div class="card pad"><h2>Respaldo</h2><p class="small muted">Descarga una copia completa (JSON) de configuración, docentes, asignaciones, alumnos y calificaciones.</p><button class="btn" data-act="respaldo">Descargar respaldo</button></div>
@@ -1841,6 +1882,84 @@ function dlgCredenciales() {
 }
 
 /* =====================================================================
+   DATOS DE EJEMPLO (se pueden cargar y eliminar; todo usa el prefijo demo_)
+   ===================================================================== */
+const DEMO_MAT = {
+  1: ["ESPAÑOL", "MATEMÁTICAS", "INGLÉS", "BIOLOGÍA", "GEOGRAFÍA", "FORMACIÓN CÍVICA Y ÉTICA", "ARTES"],
+  2: ["ESPAÑOL", "MATEMÁTICAS", "INGLÉS", "FÍSICA", "HISTORIA", "FORMACIÓN CÍVICA Y ÉTICA", "ARTES"],
+  3: ["ESPAÑOL", "MATEMÁTICAS", "INGLÉS", "QUÍMICA", "HISTORIA", "FORMACIÓN CÍVICA Y ÉTICA", "ARTES"]
+};
+const DEMO_DIF = { "MATEMÁTICAS": -0.75, "INGLÉS": -0.4, "BIOLOGÍA": -0.2, "FÍSICA": -0.55, "QUÍMICA": -0.5, "ESPAÑOL": -0.1, "HISTORIA": 0, "GEOGRAFÍA": 0.1, "FORMACIÓN CÍVICA Y ÉTICA": 0.35, "ARTES": 0.55 };
+const DEMO_DOC = ["LAURA MÉNDEZ RUIZ", "JORGE ALBERTO CRUZ PÉREZ", "PATRICIA LÓPEZ SANTIAGO", "MIGUEL ÁNGEL REYES DÍAZ", "ROSA MARÍA VÁSQUEZ LUNA", "FERNANDO GARCÍA TORRES", "ADRIANA MARTÍNEZ SOSA",
+  "RAÚL HERNÁNDEZ OJEDA", "GABRIELA RAMÍREZ CRUZ", "HÉCTOR JIMÉNEZ MORALES", "VERÓNICA ORTIZ JUÁREZ", "ARTURO SÁNCHEZ BRAVO", "MÓNICA AGUILAR RÍOS", "OSCAR MENDOZA LUIS",
+  "CLAUDIA SALINAS VEGA", "EDUARDO CASTRO NAVA", "SILVIA ROMERO PAZ", "IVÁN TORRES MEJÍA", "ELENA GUZMÁN SOTO", "RICARDO LUNA CANSECO", "NORMA FLORES ACEVEDO"];
+const DEMO_AP = "GARCÍA LÓPEZ MARTÍNEZ HERNÁNDEZ PÉREZ SÁNCHEZ RAMÍREZ CRUZ GÓMEZ DÍAZ VÁSQUEZ JIMÉNEZ RUIZ MORALES REYES ORTIZ SANTIAGO MENDOZA AGUILAR CASTILLO ROMERO ALAVEZ ZÁRATE CANSECO BAUTISTA JUÁREZ LUIS PACHECO MEJÍA OSORIO".split(" ");
+const DEMO_H = "JOSÉ LUIS ÁNGEL DIEGO CARLOS JUAN PABLO MIGUEL ALEXANDER KEVIN SANTIAGO EMILIANO IKER MATEO GAEL ADRIÁN URIEL FERNANDO ERICK OSCAR DANIEL BRYAN".split(" ");
+const DEMO_M = "MARÍA FERNANDA XIMENA VALERIA CAMILA SOFÍA DANIELA JIMENA REGINA AYLIN ITZEL KARLA ANDREA PAOLA YARETZI NAOMI MELANY ARIADNA ALEXA DULCE".split(" ");
+function rngDemo(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+async function cargarDemo() {
+  const R = rngDemo(2126), pick = a => a[Math.floor(R() * a.length)], gauss = () => { let u = 0, v = 0; while (!u) u = R(); while (!v) v = R(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
+  const clip = (x, a, b) => Math.max(a, Math.min(b, x));
+  const base = {}, alumnosDemo = {}, roster = {};
+  // docentes de ejemplo: uno por asignatura y grado
+  let k = 0;
+  for (const g of [1, 2, 3]) for (const m of DEMO_MAT[g]) { const id = `demo_d${g}_${slug(m)}`; base["docentes/" + id] = { nombre: DEMO_DOC[k++ % DEMO_DOC.length] + " (EJEMPLO)", alias: "EJEMPLO" }; }
+  // alumnos: usa las listas reales del grupo si ya están cargadas; si no, crea alumnos de ejemplo
+  for (const g of [1, 2, 3]) for (const L of LETRAS) {
+    const gg = g + L, reales = Object.entries(S.alumnos[gg] || {}).filter(([id, x]) => !x.baja && !id.startsWith("demo_"));
+    if (reales.length >= 5) { roster[gg] = reales.map(([id]) => id); continue; }
+    roster[gg] = [];
+    const n = 18 + Math.floor(R() * 8);
+    for (let i = 0; i < n; i++) {
+      const sexo = R() < 0.5 ? "H" : "M", id = `demo_${gg}_${String(i + 1).padStart(2, "0")}`;
+      const nom = `${pick(DEMO_AP)} ${pick(DEMO_AP)} ${pick(sexo === "H" ? DEMO_H : DEMO_M)}`;
+      alumnosDemo[`alumnos/${gg}/${id}`] = { nombre: nom, sexo };
+      roster[gg].push(id);
+    }
+  }
+  // perfil de cada alumno: desempeño, faltas y conducta
+  const perfil = {}, efGrado = { 1: 0.1, 2: -0.35, 3: 0.15 }, efGrupo = {};
+  for (const gg of Object.keys(roster)) { efGrupo[gg] = gauss() * 0.35; for (const id of roster[gg]) perfil[id] = { hab: clip(7.4 + gauss() * 1.25, 4.5, 10), falt: R() < 0.12 ? 3 + R() * 5 : R() * 1.6, cond: R() < 0.1 ? (R() < 0.35 ? "D" : "R") : (R() < 0.15 ? "E" : R() < 0.4 ? "MB" : "B") }; }
+  const asig = {}, calif = {};
+  for (const g of [1, 2, 3]) for (const L of LETRAS) for (const m of DEMO_MAT[g]) {
+    const gg = g + L, aid = `demo_${g}${L}_${slug(m)}`;
+    asig["asignaciones/" + aid] = { docenteId: `demo_d${g}_${slug(m)}`, materia: m, grado: g, grupos: L, tipo: "regular", admvo: L };
+    const cal = {};
+    for (const id of roster[gg]) {
+      const p = perfil[id], c = {};
+      for (const t of [1, 2, 3]) {
+        const x = p.hab + (DEMO_DIF[m] || 0) + efGrado[g] + efGrupo[gg] + (t - 1) * 0.15 + gauss() * 0.75 - (p.falt > 3 ? 0.6 : 0);
+        const v = clip(Math.round(x), 5, 10);
+        c["t" + t] = v;
+        if (t < 3 && v < 6 && R() < 0.7) c["er" + t] = R() < 0.6 ? (R() < 0.8 ? 6 : 7) : 5;
+        c["i" + t] = Math.max(0, Math.round(p.falt + gauss() * 1.1));
+        c["c" + t] = R() < 0.85 ? p.cond : pick(["E", "MB", "B", "B", "R"]);
+      }
+      cal[id] = c;
+    }
+    calif["calif/" + aid] = cal;
+  }
+  await update(ref(db), { ...base, ...alumnosDemo, "config/demo": true });
+  const lista = Object.entries(asig);
+  for (let i = 0; i < lista.length; i += 30) {
+    const upd = {};
+    for (const [k2, v] of lista.slice(i, i + 30)) { upd[k2] = v; const ck = "calif/" + k2.split("/")[1]; upd[ck] = calif[ck]; }
+    await update(ref(db), upd);
+  }
+  return { asignaciones: lista.length, alumnos: Object.keys(alumnosDemo).length, docentes: Object.keys(base).length, reales: Object.values(roster).flat().filter(id => !id.startsWith("demo_")).length };
+}
+async function borrarDemo() {
+  const upd = { "config/demo": null };
+  for (const id of Object.keys(S.docentes)) if (id.startsWith("demo_")) upd["docentes/" + id] = null;
+  for (const id of Object.keys(S.asig)) if (id.startsWith("demo_")) for (const n of ["asignaciones", "calif", "miembros", "orden", "quitados"]) upd[`${n}/${id}`] = null;
+  for (const [gg, g] of Object.entries(S.alumnos)) for (const id of Object.keys(g)) if (id.startsWith("demo_")) upd[`alumnos/${gg}/${id}`] = null;
+  // listas de talleres reales que hubieran incluido alumnos de ejemplo
+  for (const [aid, m] of Object.entries(S.miembros)) for (const id of Object.keys(m || {})) if (id.startsWith("demo_")) { upd[`miembros/${aid}/${id}`] = null; upd[`calif/${aid}/${id}`] = null; }
+  await update(ref(db), upd);
+  return Object.keys(upd).length - 1;
+}
+
+/* =====================================================================
    EXCEL: LECTURA DEL CONCENTRADO (importar)
    ===================================================================== */
 function textoCelda(c) {
@@ -2082,9 +2201,9 @@ async function exportarStats() {
   hojaTabla(wb, "Resumen", "Estadísticas de aprovechamiento", sub, ["Indicador", "Valor"], [
     ["Alumnos", u.total], ["Hombres", u.uH], ["Mujeres", u.uM], ["Evaluaciones (alumno × asignatura)", g.total], ["Evaluaciones capturadas", g.n], ["% capturado", g.cap],
     ["Aprobados", g.ap], ["Reprobados", g.rp], ["% aprobados", g.pa], ["% reprobados", g.pr], ["Aprobados hombres", g.hAp], ["Aprobados mujeres", g.mAp], ["Reprobados hombres", g.hRp], ["Reprobados mujeres", g.mRp],
-    ["Promedio general", g.prom], ["Alumnos con al menos una reprobada", u.enRiesgo]
+    ["Promedio general", g.prom], ["Alumnos con al menos una reprobada", u.enRiesgo], ["Inasistencias", u.totFal], ["Alumnos con conducta regular o deficiente", u.alCondBaja]
   ]).eachRow((row, i) => { if ([10, 13, 14].includes(i)) row.getCell(2).numFmt = '0.0"%"'; });
-  const nombres = { resumen: "Por grupo y asignatura", grupo: "Por grupo", materia: "Por asignatura", profesor: "Por profesor", reprobados: "Reprobados", aprobados: "Aprobados", riesgo: "Alumnos en riesgo" };
+  const nombres = { resumen: "Por grupo y asignatura", grado: "Por grado", faltas: "Faltas", conducta: "Conducta", grupo: "Por grupo", materia: "Por asignatura", profesor: "Por profesor", reprobados: "Reprobados", aprobados: "Aprobados", riesgo: "Alumnos en riesgo" };
   for (const [k, t] of Object.entries(u.tablas)) { if (u.lockDoc && k === "profesor") continue; hojaTabla(wb, nombres[k], t.titulo, sub, t.head, t.rows, PCT_COLS[k] || []); }
   const buf = await wb.xlsx.writeBuffer();
   descargar(new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }), `Estadisticas_${u.F.T === "F" ? "FINAL" : "T" + u.F.T}_${S.cfg.ciclo}.xlsx`);
@@ -2173,6 +2292,8 @@ document.addEventListener("click", async ev => {
       case "crearAcceso": formCuenta({ docId: d.d, rol: "profesor", titulo: "Crear acceso · " + esc(nombreDocente(d.d)) }); break;
       case "nuevaCuenta": formCuenta({}); break;
       case "accesos": dlgAccesos(); break;
+      case "demoCargar": { b.disabled = true; b.textContent = "Cargando…"; const r = await cargarDemo(); toast(`Listo: ${r.asignaciones} concentrados de ejemplo de ${r.docentes} docentes de ejemplo` + (r.alumnos ? `, ${r.alumnos} alumnos de ejemplo` : "") + (r.reales ? ` (se usaron ${r.reales} alumnos reales en sus grupos)` : "") + ". Míralos en Estadísticas.", "ok"); render(); break; }
+      case "demoBorrar": { if (!await confirmar("¿Eliminar todos los datos de ejemplo? Lo que capturen los docentes no se toca.", "Eliminar", "danger")) break; const n = await borrarDemo(); toast(`Se eliminaron los datos de ejemplo (${n} registros).`, "ok"); render(); break; }
       case "credenciales": dlgCredenciales(); break;
       case "aprobar": formCuenta({ uid: d.uid, email: S.solicitudes[d.uid]?.email || "", conPass: false, titulo: "Asignar rol" }); break;
       case "rechazar": await remove(ref(db, "solicitudes/" + d.uid)); break;
