@@ -300,6 +300,7 @@ table.h-tab{width:100%;border-collapse:collapse;table-layout:fixed;font-size:12p
 .h-tab input.cell:focus{outline:2px solid #1d4f33;outline-offset:-2px;background:#fff8d6}
 .h-tab input.cell:disabled{color:#555;cursor:not-allowed;-webkit-text-fill-color:#555;opacity:1}
 .h-tab input.cell.er-on{background:#fdecec;box-shadow:inset 0 0 0 1px #f3b5b4}
+.h-tab input.cell.lock{background-image:repeating-linear-gradient(135deg,transparent 0 5px,rgba(0,0,0,.05) 5px 6px)}
 .h-tab input.cell.tachado{text-decoration:line-through;color:#999;-webkit-text-fill-color:#999}
 .h-tab input.cell.rep,.h-tab td.rep{color:#c62828;-webkit-text-fill-color:#c62828;font-weight:700}
 .h-tab input.cell.saving{background:#fff3cd}.h-tab input.cell.ok{background:#e3f4d4}.h-tab input.cell.err{background:#fde2e1}
@@ -462,7 +463,7 @@ const CONFIG_DEF = {
    ===================================================================== */
 const S = {
   user: null, perfil: null, cfg: structuredClone(CONFIG_DEF),
-  docentes: {}, asig: {}, alumnos: {}, miembros: {}, orden: {}, quitados: {}, calif: {}, usuarios: {}, solicitudes: {},
+  docentes: {}, asig: {}, alumnos: {}, miembros: {}, orden: {}, quitados: {}, bloqueos: {}, calif: {}, usuarios: {}, solicitudes: {},
   ready: false, loaded: new Set(), cur: null, charts: [], capT: "1",
   f: { T: "1", grado: "", grupo: "", materia: "", docente: "", sexo: "", tipo: "", tab: "resumen", q: "" },
   fm: { T: "1", grado: "", grupo: "", materia: "", docente: "", sexo: "", tipo: "", tab: "resumen", q: "" },
@@ -479,7 +480,8 @@ const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&l
 const norm = s => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/\s+/g, " ").trim();
 const cmpNombre = (a, b) => (a.nombre || "").localeCompare(b.nombre || "", "es", { sensitivity: "base" });
 const num = v => (v === "" || v == null || isNaN(+v)) ? null : +v;
-const f1 = v => v == null || v === "" ? "" : (Math.round(v * 10) / 10).toFixed(1);
+const trunc1 = x => Math.floor(x * 10 + 1e-6) / 10;
+const f1 = v => v == null || v === "" ? "" : trunc1(+v).toFixed(1);
 const pct = v => (v == null || isNaN(v)) ? "—" : (Math.round(v * 10) / 10).toFixed(1) + "%";
 const fmtCal = v => v == null ? "" : (Number.isInteger(v) ? String(v) : String(Math.round(v * 10) / 10));
 const slug = s => norm(s).replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
@@ -541,9 +543,8 @@ function secciones(aId) {
 }
 /* Calificación que cuenta en el trimestre: si hay ER (examen de recuperación, 1° y 2°), cuenta el ER. */
 function calTri(c, t) { if (t < 3) { const er = num(c?.["er" + t]); if (er != null) return er; } return num(c?.["t" + t]); }
-/* Promedio final: con los tres trimestres; menor a 6 se trunca, de 6 en adelante sube solo si el decimal pasa de .5 */
-function redondeoFinal(x) { const e = Math.floor(x + 1e-9); if (x < 6) return e; return (x - e) > 0.5 + 1e-9 ? e + 1 : e; }
-function promFinal(c) { const v = [1, 2, 3].map(t => calTri(c, t)); if (v.some(x => x == null)) return null; return redondeoFinal(sum(v) / 3); }
+/* Promedio final: promedio de los tres trimestres truncado a un decimal (8.19 → 8.1) */
+function promFinal(c) { const v = [1, 2, 3].map(t => calTri(c, t)); if (v.some(x => x == null)) return null; return trunc1(sum(v) / 3); }
 const calDe = (c, T) => T === "F" ? promFinal(c) : calTri(c, T);
 
 /* Sexo sugerido a partir del nombre (acepta "Apellido Apellido Nombre" y "Nombre Apellido Apellido"). Siempre editable. */
@@ -591,11 +592,11 @@ function listen(path, cb, key) {
 function detenerDatos() {
   unsubs.forEach(u => { try { u(); } catch {} }); unsubs = [];
   Object.values(califSubs).forEach(u => { try { u(); } catch {} }); califSubs = {};
-  Object.assign(S, { docentes: {}, asig: {}, alumnos: {}, miembros: {}, orden: {}, quitados: {}, calif: {}, usuarios: {}, solicitudes: {}, ready: false, loaded: new Set(), cur: null });
+  Object.assign(S, { docentes: {}, asig: {}, alumnos: {}, miembros: {}, orden: {}, quitados: {}, bloqueos: {}, calif: {}, usuarios: {}, solicitudes: {}, ready: false, loaded: new Set(), cur: null });
 }
 const leeTodo = () => ["admin", "director", "secretaria"].includes(S.perfil?.rol);
 function iniciarDatos() {
-  const need = ["config", "docentes", "asig", "alumnos", "miembros", "orden", "quitados"];
+  const need = ["config", "docentes", "asig", "alumnos", "miembros", "orden", "quitados", "bloqueos"];
   listen("usuarios/" + S.user.uid, v => { if (v) S.perfil = v; });
   listen("config", v => { S.cfg = mergeCfg(v); }, "config");
   listen("docentes", v => { S.docentes = v || {}; }, "docentes");
@@ -604,6 +605,7 @@ function iniciarDatos() {
   listen("miembros", v => { S.miembros = v || {}; }, "miembros");
   listen("orden", v => { S.orden = v || {}; }, "orden");
   listen("quitados", v => { S.quitados = v || {}; }, "quitados");
+  listen("bloqueos", v => { S.bloqueos = v || {}; }, "bloqueos");
   if (leeTodo()) { need.push("calif"); listen("calif", v => { S.calif = v || {}; }, "calif"); }
   if (esAdmin()) {
     listen("usuarios", v => { S.usuarios = v || {}; });
@@ -811,7 +813,7 @@ function firmasInforme(r, turno) {
   return [...resp.map(([n, c]) => ["RESPONSABLE DE LA INFORMACIÓN", n, c]), ["DIRECTOR DE LA ESCUELA", r.director, r.directorCargo]];
 }
 const fmtPctI = v => v == null ? "" : (Math.abs(v - Math.round(v)) < 0.05 ? String(Math.round(v)) : (Math.round(v * 10) / 10).toFixed(1));
-const fmtProm = v => v == null ? "" : (Math.round(v * 10) / 10).toFixed(1);
+const fmtProm = v => v == null ? "" : trunc1(v).toFixed(1);
 const turnosEscuela = () => [...new Set(Object.values(S.cfg.turnos || {}))].sort((a, b) => ["MATUTINO", "VESPERTINO", "MIXTO"].indexOf(a) - ["MATUTINO", "VESPERTINO", "MIXTO"].indexOf(b));
 function filasInforme(T, turno) {
   const orden = [...MATERIAS, ...TALLERES], im = m => { const i = orden.findIndex(x => norm(x) === norm(m)); return i < 0 ? 50 : i; };
@@ -1189,7 +1191,7 @@ const NOMT = { 1: "1er trimestre", 2: "2o trimestre", 3: "3er trimestre" };
 const triDe = f => +f.slice(-1);
 function capturaFirma(aId) {
   const a = S.asig[aId]; if (!a) return "x";
-  return JSON.stringify([a, S.capT, secciones(aId).map(s => s.alumnos.map(x => [x.id, x.nombre, x.sexo])), S.cfg, S.docentes[a.docenteId]]);
+  return JSON.stringify([a, S.capT, secciones(aId).map(s => s.alumnos.map(x => [x.id, x.nombre, x.sexo])), S.cfg, S.docentes[a.docenteId], S.bloqueos[aId] || null]);
 }
 function vCaptura(main, aId) {
   const a = S.asig[aId];
@@ -1208,7 +1210,8 @@ function vCaptura(main, aId) {
   <div class="toolbar no-print">
     <span class="tb-tit">${esc(a.materia)} · ${esc(tituloAsig(a))}</span>
     <span class="small" style="font-weight:700;color:var(--ink-2)">Trimestre:</span>
-    <div class="seg" role="tablist">${[1, 2, 3].map(k => `<button data-act="capT" data-t="${k}" class="${T === k ? "on" : ""}">${NOMT[k]}</button>`).join("")}</div>
+    <div class="seg" role="tablist">${[1, 2, 3].map(k => `<button data-act="capT" data-t="${k}" class="${T === k ? "on" : ""}" title="${bloqueado(aId, k) ? "Bloqueado" : ""}">${NOMT[k]}${bloqueado(aId, k) ? " 🔒" : ""}</button>`).join("")}</div>
+    ${esAdmin() ? [1, 2, 3].filter(k => bloqueado(aId, k)).map(k => `<button class="btn sm" data-act="desbloquear" data-a="${aId}" data-t="${k}" title="Permite al docente volver a modificar este trimestre">🔓 Desbloquear ${k}°</button>`).join("") : ""}
     <div class="sp"></div>
     <button class="btn sm" data-act="alumnos" data-a="${aId}">${ICON.users}Mi lista de alumnos</button>
     <button class="btn sm" data-act="llenar" data-a="${aId}" title="Pone 0 inasistencias y conducta B a quien no tenga dato en este trimestre">Rellenar 0 / B</button>
@@ -1217,8 +1220,8 @@ function vCaptura(main, aId) {
     <button class="btn sm" data-act="xls" data-ids="${aId}" data-modo="T">${ICON.xls}Excel ${NOMT[T]}</button>
     <button class="btn sm primary" data-act="print">${ICON.print}Imprimir ${NOMT[T]}</button>
   </div>
-  <div class="hint no-print">Capturando el <b>${NOMT[T]}</b>${T === 3 ? " y el promedio final" : ""}. Solo números enteros.
-    ${T < 3 ? `<b>ER</b> se habilita cuando la calificación es menor a 6. Si escribes la calificación del examen de recuperación, esa es la que cuenta (aunque no sea aprobatoria) y la calificación normal queda bloqueada; para corregirla, borra primero el ER.` : "El promedio final se calcula con los tres trimestres (tomando el ER cuando lo hay) y aparece cuando están completos."}
+  <div class="hint no-print">${bloqueado(aId, T) ? `<b>🔒 El ${NOMT[T]} está bloqueado:</b> ${esAdmin() ? "como administrador puedes corregir las calificaciones capturadas." : "las calificaciones ya capturadas no se pueden modificar (solo puedes llenar casillas vacías). Si hay un error, pide al administrador que lo corrija."}<br>` : (T > 1 && esMia(aId) && [1, 2, 3].some(t => t < T && !bloqueado(aId, t)) ? `<b>Aviso:</b> al capturar la primera calificación del ${NOMT[T]}, los trimestres anteriores quedarán bloqueados.<br>` : "")}Capturando el <b>${NOMT[T]}</b>${T === 3 ? " y el promedio final" : ""}. Solo números enteros. Antes de imprimir o descargar se te pedirá revisar: al hacerlo, lo capturado se bloquea.
+    ${T < 3 ? `<b>ER</b> se habilita cuando la calificación es menor a 6. Si escribes la calificación del examen de recuperación, esa es la que cuenta (aunque no sea aprobatoria) y la calificación normal queda bloqueada; para corregirla, borra primero el ER.` : "El promedio final es el promedio de los tres trimestres (tomando el ER cuando lo hay) truncado a un decimal, por ejemplo 8.19 → 8.1; aparece cuando están completos."}
     ${!total ? `<br><b>${a.tipo === "taller" ? "Este taller aún no tiene alumnos: usa “Mi lista de alumnos” para elegirlos." : "Este grupo aún no tiene alumnos: usa “Mi lista de alumnos” para agregarlos."}</b>` : ""}</div>`;
   const W = [5, 32, 6, 5, 6, 5, 6, 8, 5, 5, 5, 5, 5, 5];
   const cls = f => { if (f === "PROM") return T === 3 ? "cur" : "fut"; const k = triDe(f); if (k > T) return "fut"; if (k === T) return /^(t|er)/.test(f) ? "cur" : "cur2"; return ""; };
@@ -1258,7 +1261,7 @@ function resumenSec(aId, s, k) {
   const vals = s.alumnos.map(x => calTri(c[x.id], k)).filter(v => v != null);
   const h = s.alumnos.filter(x => x.sexo === "H").length, m = s.alumnos.filter(x => x.sexo === "M").length, tot = h + m;
   const ap = vals.filter(v => v >= 6).length, rp = vals.length - ap, suma = sum(vals);
-  return { h, m, tot, ap, rp, pa: tot ? Math.round(ap / tot * 100) : 0, pr: tot ? Math.round(rp / tot * 100) : 0, suma, prom: vals.length ? Math.round(suma / vals.length) : "", cap: vals.length, n: s.alumnos.length };
+  return { h, m, tot, ap, rp, pa: tot ? Math.round(ap / tot * 100) : 0, pr: tot ? Math.round(rp / tot * 100) : 0, suma, prom: vals.length ? trunc1(suma / vals.length) : "", cap: vals.length, n: s.alumnos.length };
 }
 function refrescarCalculos() {
   const aId = S.cur?.arg; if (!S.asig[aId] || !$("#hoja")) return;
@@ -1268,19 +1271,23 @@ function refrescarCalculos() {
     let off = k > T, tach = false;
     if (!off && f.startsWith("er")) off = !(num(d[f]) != null || (num(d["t" + k]) != null && num(d["t" + k]) < 6));
     if (!off && f.startsWith("t") && k < 3 && num(d["er" + k]) != null) { off = true; tach = true; }
+    const lk = bloqueado(aId, k) && d[f] != null && d[f] !== "";
+    if (!off && lk && !esAdmin()) off = true;
+    el.classList.toggle("lock", lk);
+    el.title = lk ? (esAdmin() ? "Trimestre bloqueado (como administrador puedes corregirlo)" : "Trimestre bloqueado") : "";
     if (el !== document.activeElement) el.disabled = off;
     el.classList.toggle("tachado", tach);
     el.classList.toggle("er-on", f.startsWith("er") && !off && num(d[f]) == null);
     const v = /^(t|er)/.test(f) ? num(el.value) : null;
     el.classList.toggle("rep", v != null && v < 6 && !tach);
   });
-  $$("#hoja td[data-prom]").forEach(td => { const p = T === 3 ? promFinal(c[td.dataset.prom]) : null; td.textContent = p == null ? "" : p; td.classList.toggle("rep", p != null && p < 6); });
+  $$("#hoja td[data-prom]").forEach(td => { const p = T === 3 ? promFinal(c[td.dataset.prom]) : null; td.textContent = p == null ? "" : p.toFixed(1); td.classList.toggle("rep", p != null && p < 6); });
   const cache = {};
   $$("#hoja td[data-s]").forEach(td => {
     const [gg, k, key] = td.dataset.s.split("|");
     const s = secciones(aId).find(x => x.gg === gg); if (!s) return;
     const r = cache[gg + k] ??= resumenSec(aId, s, +k);
-    td.textContent = (+k > T && !["h", "m", "tot"].includes(key)) ? "" : r[key];
+    td.textContent = (+k > T && !["h", "m", "tot"].includes(key)) ? "" : (key === "prom" && r.prom !== "" ? r.prom.toFixed(1) : r[key]);
   });
 }
 function refrescarCaptura() {
@@ -1310,6 +1317,11 @@ async function guardarCelda(el) {
   }
   el.value = fmtVal(val);
   if (anterior === val) { refrescarCalculos(); return; }
+  if (!esAdmin() && bloqueado(aId, triDe(f)) && anterior != null) {
+    el.value = fmtVal(anterior); refrescarCalculos();
+    toast(`El ${NOMT[triDe(f)]} está bloqueado: esta calificación ya no se puede modificar. Pide al administrador que la corrija.`, "err"); return;
+  }
+  if (val != null && !await confirmarInicioTrimestre(aId, triDe(f))) { el.value = fmtVal(anterior); refrescarCalculos(); return; }
   const upd = { [f]: val };
   // Si la calificación normal deja de ser reprobatoria, el ER ya no aplica
   if (f.startsWith("t") && triDe(f) < 3 && (val == null || val >= 6) && S.calif[aId]?.[al]?.["er" + triDe(f)] != null) upd["er" + triDe(f)] = null;
@@ -1323,7 +1335,36 @@ async function guardarCelda(el) {
     setStatus("Guardado a las " + new Date().toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
   } catch (e) { el.classList.remove("saving"); el.classList.add("err"); toast("No se pudo guardar: " + msgErr(e), "err"); setStatus("Error al guardar"); }
 }
+/* ---------- bloqueo de trimestres ---------- */
+const bloqueado = (aId, t) => !!S.bloqueos?.[aId]?.[t];
+const esMia = aId => S.asig[aId]?.docenteId && S.asig[aId].docenteId === S.perfil?.docenteId;
+async function bloquear(aIds, ts) {
+  const upd = {};
+  for (const a of aIds) for (const t of ts) if (!bloqueado(a, t)) upd[`bloqueos/${a}/${t}`] = { fecha: Date.now(), por: S.perfil?.email || "" };
+  if (Object.keys(upd).length) await update(ref(db), upd);
+}
+/* Antes de imprimir o descargar un trimestre: aviso y bloqueo de lo capturado (solo concentrados propios) */
+async function confirmarBloqueo(aIds, T, accion) {
+  const ts = [1, 2, 3].filter(t => t <= T), pend = aIds.filter(id => esMia(id) && ts.some(t => !bloqueado(id, t)));
+  if (!pend.length) return true;
+  const ok = (await abrirDialogo(`Antes de ${accion}, revisa tus calificaciones`, `<p><b>Revisa con cuidado las calificaciones del ${NOMT[T]}${T > 1 ? " y de los trimestres anteriores" : ""}</b>${pend.length > 1 ? ` de tus ${pend.length} concentrados` : ""}.</p>
+    <p>Por seguridad, al continuar <b>se bloquearán las calificaciones ya capturadas</b> y ya no podrás modificarlas. Si después encuentras un error, el administrador puede corregirlo.</p>
+    <p class="small muted">Si aún no terminas de revisar, presiona “Cancelar y revisar”.</p>`, [["Cancelar y revisar", "cancel"], [accion === "imprimir" ? "Imprimir y bloquear" : "Descargar y bloquear", "ok", "primary"]])) === "ok";
+  if (ok) await bloquear(pend, ts);
+  return ok;
+}
+/* Al empezar a capturar un trimestre, los anteriores quedan bloqueados */
+async function confirmarInicioTrimestre(aId, k) {
+  if (!esMia(aId) || k < 2) return true;
+  const prev = [1, 2, 3].filter(t => t < k && !bloqueado(aId, t));
+  if (!prev.length) return true;
+  const ok = (await abrirDialogo(`Vas a empezar el ${NOMT[k]}`, `<p>Al capturar en el <b>${NOMT[k]}</b>, ${prev.map(t => "el " + NOMT[t]).join(" y ")} <b>quedará bloqueado</b> y ya no podrás modificar sus calificaciones capturadas.</p>
+    <p>Si aún no lo revisas, presiona “Cancelar y revisar”. Si hay un error después, el administrador puede corregirlo.</p>`, [["Cancelar y revisar", "cancel"], ["Continuar", "ok", "primary"]])) === "ok";
+  if (ok) await bloquear([aId], prev);
+  return ok;
+}
 async function rellenar(aId) {
+  if (!await confirmarInicioTrimestre(aId, +S.capT)) return;
   const T = S.capT, upd = {}; let n = 0;
   for (const s of secciones(aId)) for (const al of s.alumnos) {
     const c = S.calif[aId]?.[al.id] || {};
@@ -1650,7 +1691,7 @@ function vAvance(main) {
       ${[1, 2, 3].map(t => `<td><div class="mbar"><div class="bar"><i style="width:${f.c[t].toFixed(0)}%;${f.c[t] >= 99.9 ? "" : "background:" + (t == T ? "var(--warn)" : "var(--line-2)")}"></i></div><span class="num small">${f.c[t].toFixed(0)}%</span></div></td>`).join("")}
       <td><button class="btn sm no-print" data-act="toggleAv" data-d="${esc(f.d)}">Detalle</button></td></tr>
       <tr data-av="${esc(f.d)}" hidden><td colspan="7" style="background:var(--surface-2)">
-        <table class="dt"><tbody>${f.prs.map(([id, p]) => { const a = S.asig[id]; return `<tr><td>${esc(a.materia)} · ${esc(tituloAsig(a))} <span class="badge ${a.tipo}">${a.tipo === "taller" ? "Taller" : "Asig."}</span></td><td class="n">${p.n} alumnos</td>${[1, 2, 3].map(t => `<td class="n">${p["p" + t].toFixed(0)}%</td>`).join("")}
+        <table class="dt"><tbody>${f.prs.map(([id, p]) => { const a = S.asig[id]; return `<tr><td>${esc(a.materia)} · ${esc(tituloAsig(a))} <span class="badge ${a.tipo}">${a.tipo === "taller" ? "Taller" : "Asig."}</span></td><td class="n">${p.n} alumnos</td>${[1, 2, 3].map(t => `<td class="n">${p["p" + t].toFixed(0)}%${bloqueado(id, t) ? " 🔒" : ""}</td>`).join("")}
           <td class="no-print">${esAdmin() ? `<button class="btn sm" data-go="captura/${id}">Abrir</button> ` : ""}<button class="btn sm" data-act="xls" data-ids="${id}" data-modo="T" data-t="${T}">${ICON.xls}Excel ${T}° trim.</button></td></tr>`; }).join("")}</tbody></table>
       </td></tr>`;
   }
@@ -2229,7 +2270,7 @@ function prepararImportacion(soloAsig) {
           let id = idx.get(claveNombre(al.nombre)) || buscarAlumno(gg, al.nombre);
           if (!id) { id = push(ref(db, "alumnos/" + gg)).key; upd[`alumnos/${gg}/${id}`] = { nombre: al.nombre, sexo: adivinarSexo(al.nombre) }; idx.set(claveNombre(al.nombre), id); nNuevos++; }
           if (a.tipo === "taller") upd[`miembros/${p.destino}/${id}`] = gg;
-          for (const f of ["t1", "er1", "t2", "er2", "t3", "i1", "i2", "i3", "c1", "c2", "c3"]) if (al[f] != null) { upd[`calif/${p.destino}/${id}/${f}`] = typeof al[f] === "number" ? Math.round(al[f]) : al[f]; nCal++; }
+          for (const f of ["t1", "er1", "t2", "er2", "t3", "i1", "i2", "i3", "c1", "c2", "c3"]) if (al[f] != null && (esAdmin() || !bloqueado(p.destino, triDe(f)) || S.calif[p.destino]?.[id]?.[f] == null)) { upd[`calif/${p.destino}/${id}/${f}`] = typeof al[f] === "number" ? Math.round(al[f]) : al[f]; nCal++; }
           nAl++;
         }
       }
@@ -2296,7 +2337,7 @@ function hojaConcentrado(ws, aId, modo) {
       if (vacio || Tm === 3) {
         const X = `(IF(D${r}<>"",D${r},C${r})+IF(F${r}<>"",F${r},E${r})+G${r})/3`;
         const p = al && !vacio ? promFinal(c) : null;
-        ws.getCell(r, 8).value = { formula: `IF(COUNT(C${r},E${r},G${r})<3,"",IF(${X}<6,INT(${X}),IF(${X}-INT(${X})>0.5,INT(${X})+1,INT(${X}))))`, result: p == null ? "" : p };
+        ws.getCell(r, 8).value = { formula: `IF(COUNT(C${r},E${r},G${r})<3,"",TRUNC(${X},1))`, result: p == null ? "" : p }; ws.getCell(r, 8).numFmt = "0.0";
       }
       r++;
     });
@@ -2323,7 +2364,7 @@ function hojaConcentrado(ws, aId, modo) {
           case "% APROBADOS": cell.value = { formula: `IFERROR(ROUND(${L}${rAp}/${L}${rTot}*100,0),0)`, result: R(res?.pa ?? 0) }; break;
           case "% REPROBADOS": cell.value = { formula: `IFERROR(ROUND(${L}${rRp}/${L}${rTot}*100,0),0)`, result: R(res?.pr ?? 0) }; break;
           case "SUMA": cell.value = { formula: Yr ? `SUMPRODUCT(${eff})` : `SUM(${X})`, result: R(res?.suma ?? 0) }; break;
-          case "PROMEDIO": cell.value = { formula: `IFERROR(ROUND(${L}${rSum}/(${L}${rAp}+${L}${rRp}),0),"")`, result: R(res?.prom ?? "") }; break;
+          case "PROMEDIO": cell.value = { formula: `IFERROR(TRUNC(${L}${rSum}/(${L}${rAp}+${L}${rRp}),1),"")`, result: R(res?.prom ?? "") }; cell.numFmt = "0.0"; break;
         }
       }
       r++;
@@ -2420,12 +2461,15 @@ document.addEventListener("click", async ev => {
       case "avT": S.avT = d.t; render(); break;
       case "print": {
         const c = document.body.classList, hoja = S.cur?.view === "captura";
+        if (hoja && !await confirmarBloqueo([S.cur.arg], +S.capT, "imprimir")) break;
         $("#pgsize").textContent = hoja ? `@page{size:${S.cfg.papel === "carta" ? "letter" : "legal"};margin:9mm}` : "@page{size:letter;margin:12mm}";
         if (hoja) c.add("imp-hoja"); window.print(); setTimeout(() => c.remove("imp-hoja"), 500); break;
       }
       case "xls": {
         const ids = d.ids === "*" ? misAsignaciones().map(([id]) => id) : d.ids.split(",");
-        b.disabled = true; await exportarConcentrado(ids, d.modo === "vacio" ? "vacio" : (d.t || S.capT)); b.disabled = false; break;
+        const modo = d.modo === "vacio" ? "vacio" : (d.t || S.capT);
+        if (modo !== "vacio" && !await confirmarBloqueo(ids, +modo, "descargar")) break;
+        b.disabled = true; await exportarConcentrado(ids, modo); b.disabled = false; break;
       }
       case "xls-stats": await exportarStats(); break;
       case "xlsAlumnos": await exportarAlumnos(); break;
@@ -2469,6 +2513,7 @@ document.addEventListener("click", async ev => {
       case "crearAcceso": formCuenta({ docId: d.d, rol: "profesor", titulo: "Crear acceso · " + esc(nombreDocente(d.d)) }); break;
       case "nuevaCuenta": formCuenta({}); break;
       case "accesos": dlgAccesos(); break;
+      case "desbloquear": if (await confirmar(`¿Desbloquear el ${NOMT[d.t]} de este concentrado? El docente podrá volver a modificar esas calificaciones hasta que vuelva a imprimir o descargar.`, "Desbloquear")) { await remove(ref(db, `bloqueos/${d.a}/${d.t}`)); toast("Trimestre desbloqueado.", "ok"); } break;
       case "infWord": b.disabled = true; await informeWord(); b.disabled = false; break;
       case "infPrint": { const c = document.body.classList; $("#pgsize").textContent = "@page{size:letter landscape;margin:9mm}"; c.add("imp-inf"); window.print(); setTimeout(() => c.remove("imp-inf"), 500); break; }
       case "repGuardar": { await update(ref(db, "config/reporte"), repCfg()); S.rep.local = {}; toast("Datos del informe guardados.", "ok"); break; }
