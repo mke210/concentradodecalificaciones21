@@ -30,8 +30,10 @@ Es un solo archivo (`index.html`) que usa Firebase Authentication y Realtime Dat
 2. **Administración → Docentes → Dar de alta accesos**: tú escribes el correo y la contraseña de cada docente; también hay un botón que genera contraseñas de 6 dígitos. Al terminar se muestran los datos para copiarlos o enviarlos por WhatsApp. La contraseña no se guarda en la plataforma.
 3. **Administración → Secretarías**: escribe el nombre completo de cada secretaría (Víctor = A, Julia = B, Zulma = C, Daza = D, Lafit = E, Ruth = F, Leonor = G, Carmelita = H, Carlos = I). Ese nombre sale en el renglón **ADMVO.**
 4. **Administración → Docentes → Eliminar**: cuando hay cambios de personal, quitas al docente y su acceso. Sus concentrados (con lo capturado) pueden pasar al docente que lo sustituye, o eliminarse.
-5. **Administración → Escuela**: tamaño de hoja del concentrado (Oficio por defecto, o Carta).
+5. **Administración → Escuela**: tamaño de hoja del concentrado (Carta por defecto, u Oficio). Cada grupo sale en su propia hoja.
 6. **Administración → Usuarios → Nueva cuenta**: crea las cuentas de las secretarías con el rol *Secretaría* y su letra.
+
+**Nuevo ciclo escolar:** en Administración → Datos, “Borrar e iniciar nuevo ciclo” borra las calificaciones (con ER, faltas, conducta y bloqueos), los grupos de cada docente y las listas de alumnos, y cambia el ciclo escolar. Se puede elegir qué se borra. Las cuentas, los docentes, las secretarías y los datos de la escuela se conservan. Para confirmar hay que escribir BORRAR; conviene descargar antes el respaldo.
 
 **Datos de ejemplo (para probar):** en Administración → Datos, “Cargar datos de ejemplo” llena los 27 grupos con 7 asignaturas por grado. Incluye calificaciones de los tres trimestres, aprobados, reprobados, ER, faltas y conductas R/D, con docentes marcados “(EJEMPLO)”, para que la dirección vea las estadísticas. Si el grupo ya tiene su lista de Credenciales, se usan esos alumnos. “Eliminar datos de ejemplo” lo borra todo sin tocar lo que capturen los docentes.
 
@@ -40,7 +42,7 @@ Es un solo archivo (`index.html`) que usa Firebase Authentication y Realtime Dat
 ## Primeros pasos del docente (Mis grupos)
 
 1. Confirma su **nombre completo** (sale en PROFR.).
-2. Registra **sus grados y grupos**: elige la asignatura o el taller, el grado y los grupos. En una asignatura se crea un concentrado por cada grupo; en un taller, los grupos marcados se juntan en uno solo (p. ej. 3° "A, B Y C"). El horario de la escuela se le sugiere y lo puede agregar con un botón.
+2. Registra **sus grados y grupos**: elige la asignatura o el taller, el grado y los grupos. Se crea un concentrado (una hoja tamaño carta) por cada grupo, tanto en asignaturas como en talleres. En los talleres, el docente elige en cada grupo a sus alumnos. Los talleres que antes juntaban grupos (1° "A Y B") se separan solos en 1° A y 1° B, conservando alumnos, calificaciones y bloqueos. El horario de la escuela se le sugiere y lo puede agregar con un botón.
 3. Elige **su o sus secretarías**: para cada concentrado, quién lo recibe. Ese nombre sale en ADMVO. de ese grado y grupo. En una asignatura, por defecto es la secretaría que atiende ese grupo.
 
 Si dos docentes registran la misma asignatura en el mismo grupo, la plataforma lo impide y avisa quién lo tiene.
@@ -49,9 +51,10 @@ Si dos docentes registran la misma asignatura en el mismo grupo, la plataforma l
 
 - Al abrir un grupo se ve la **hoja con el formato oficial** del concentrado: encabezado, columnas 1°/ER/2°/ER/3°, PROM. FINAL, inasistencias, conducta, los renglones de HOMBRES a PROMEDIO y las firmas. Se escribe directo en la hoja y se guarda solo.
 - **Trimestre**: se elige 1°, 2° o 3°; en la hoja se iluminan las columnas de ese trimestre (calificación y ER, y su inasistencia y conducta). Solo se capturan las columnas de ese trimestre y de los anteriores. **Imprimir** y **Excel** sacan la hoja con lo capturado hasta ese trimestre; el 3° incluye el promedio final.
-- **Solo números enteros** (0 a 10) en las calificaciones. Los porcentajes se redondean a entero. El promedio del grupo se trunca a un decimal (8.19 → 8.1).
+- **Calificaciones enteras del 5 al 10** (también en ER). Los porcentajes se redondean a entero. El promedio del grupo se trunca a un decimal (8.19 → 8.1).
 - **ER (examen de recuperación)** en el 1° y 2° trimestre: se habilita solo si la calificación es menor a 6. Si se escribe una calificación en ER, esa es la que cuenta aunque no sea aprobatoria, y la calificación normal queda bloqueada. Ejemplos: 5 con ER 6 cuenta 6; 5 con ER 5 cuenta 5. Para corregir la calificación normal, primero se borra el ER.
-- **Promedio final** del alumno: promedio de los tres trimestres, tomando el ER cuando lo hay, truncado a un decimal (8.33 → 8.3; 5.67 → 5.6, reprobado).
+- **Promedio final** del alumno: promedio de los tres trimestres, tomando el ER cuando lo hay, truncado a un decimal (8.33 → 8.3; 5.67 → 5.6, reprobado; 6, 6 y 6 → 6). En el renglón PROMEDIO, la columna PROM. FINAL muestra el promedio final del grupo: el promedio de los promedios del 1o, 2o y 3er trimestre.
+- **Conducta**: E, MB, B, R y M (mala). La **M** aparece en rojo en la hoja, en la impresión y en el Excel.
 - **Bloqueo de trimestres**: antes de **Imprimir** o descargar el **Excel** de un trimestre aparece un aviso para revisar las calificaciones. Si el docente acepta, lo ya capturado de ese trimestre (y de los anteriores) queda bloqueado. Con “Cancelar y revisar” no se bloquea nada. Al capturar la primera calificación del 2o trimestre se bloquea el 1o, y al empezar el 3o se bloquea el 2o (también con aviso). En un trimestre bloqueado el docente solo puede llenar casillas vacías (por ejemplo el ER). El administrador puede corregir las calificaciones bloqueadas o desbloquear el trimestre con “🔓 Desbloquear”. Las reglas de la base de datos también lo impiden, no solo la pantalla.
 - **Mi lista de alumnos**: en las asignaturas, la lista del grupo se carga sola (de Credenciales). En los talleres, el docente elige a sus alumnos de cada grupo y se quedan guardados. En ambos puede moverlos de orden (↑ ↓), regresarlos al orden alfabético o quitarlos (✕).
 - **Importar Excel**: lee un concentrado con el formato oficial y reconoce a los alumnos aunque el nombre esté en otro orden o con otra ortografía.
