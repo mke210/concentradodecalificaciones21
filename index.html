@@ -1217,7 +1217,7 @@ function vCaptura(main, aId) {
     ${esAdmin() ? [1, 2, 3].filter(k => bloqueado(aId, k)).map(k => `<button class="btn sm" data-act="desbloquear" data-a="${aId}" data-t="${k}" title="Permite al docente volver a modificar este trimestre">🔓 Desbloquear ${k}°</button>`).join("") : ""}
     <div class="sp"></div>
     <button class="btn sm" data-act="alumnos" data-a="${aId}">${ICON.users}Mi lista de alumnos</button>
-    <button class="btn sm" data-act="llenar" data-a="${aId}" title="Pone 0 inasistencias y conducta B a quien no tenga dato en este trimestre">Rellenar 0 / B</button>
+    <button class="btn sm" data-act="llenar" data-a="${aId}" title="Pone 0 inasistencias y conducta B a quien no tenga dato; si ya está lleno, los quita">${estadoRelleno(aId).lleno ? "Quitar 0 / B" : "Rellenar 0 / B"}</button>
     <button class="btn sm" data-act="importar" data-a="${aId}">${ICON.up}Importar</button>
     <button class="btn sm" data-act="xls" data-ids="${aId}" data-modo="vacio" title="Formato con nombres para llenar a mano">${ICON.xls}Vacío</button>
     <button class="btn sm" data-act="xls" data-ids="${aId}" data-modo="T">${ICON.xls}Excel ${NOMT[T]}</button>
@@ -1270,6 +1270,7 @@ function resumenSec(aId, s, k) {
 function promGrupoFinal(aId, s) { const p = [1, 2, 3].map(k => resumenSec(aId, s, k).prom); return p.some(v => v === "") ? null : trunc1(sum(p) / 3); }
 function refrescarCalculos() {
   const aId = S.cur?.arg; if (!S.asig[aId] || !$("#hoja")) return;
+  const bR = $('[data-act="llenar"]'); if (bR) bR.textContent = estadoRelleno(aId).lleno ? "Quitar 0 / B" : "Rellenar 0 / B";
   const T = +S.capT, c = S.calif[aId] || {};
   $$("#hoja input.cell").forEach(el => {
     const f = el.dataset.f, k = triDe(f), d = c[el.dataset.al] || {};
@@ -1370,16 +1371,33 @@ async function confirmarInicioTrimestre(aId, k) {
   if (ok) await bloquear([aId], prev);
   return ok;
 }
+/* Rellenar 0 / B: primera vez llena vacíos con 0 faltas y conducta B; si ya está todo lleno, quita esos 0 y B.
+   No toca calificaciones ni bloquea trimestres. */
+function estadoRelleno(aId) {
+  const T = S.capT, als = secciones(aId).flatMap(s => s.alumnos);
+  const vacios = als.filter(al => { const c = S.calif[aId]?.[al.id] || {}; return c["i" + T] == null || c["c" + T] == null; }).length;
+  return { als, lleno: als.length > 0 && vacios === 0 };
+}
 async function rellenar(aId) {
-  if (!await confirmarInicioTrimestre(aId, +S.capT)) return;
-  const T = S.capT, upd = {}; let n = 0;
-  for (const s of secciones(aId)) for (const al of s.alumnos) {
-    const c = S.calif[aId]?.[al.id] || {};
-    if (c["i" + T] == null) { upd[`calif/${aId}/${al.id}/i${T}`] = 0; n++; }
-    if (c["c" + T] == null) { upd[`calif/${aId}/${al.id}/c${T}`] = "B"; n++; }
+  const T = S.capT, { als, lleno } = estadoRelleno(aId), upd = {}; let n = 0;
+  if (!lleno) {
+    for (const al of als) {
+      const c = S.calif[aId]?.[al.id] || {};
+      if (c["i" + T] == null) { upd[`calif/${aId}/${al.id}/i${T}`] = 0; n++; }
+      if (c["c" + T] == null) { upd[`calif/${aId}/${al.id}/c${T}`] = "B"; n++; }
+    }
+    if (!n) { toast("No hay alumnos en la lista."); return; }
+    await update(ref(db), upd); toast(`Se completaron ${n} casillas con 0 faltas y conducta B. Presiona de nuevo para quitarlas.`, "ok");
+    return;
   }
-  if (!n) { toast("Ya todos tienen inasistencias y conducta en este trimestre."); return; }
-  await update(ref(db), upd); toast(`Se completaron ${n} casillas.`, "ok");
+  if (!esAdmin() && bloqueado(aId, +T)) { toast(`El ${NOMT[T]} está bloqueado: ya no se pueden quitar. Pide al administrador que lo corrija.`, "err"); return; }
+  for (const al of als) {
+    const c = S.calif[aId]?.[al.id] || {};
+    if (c["i" + T] === 0) { upd[`calif/${aId}/${al.id}/i${T}`] = null; n++; }
+    if (String(c["c" + T] || "").toUpperCase() === "B") { upd[`calif/${aId}/${al.id}/c${T}`] = null; n++; }
+  }
+  if (!n) { toast("No hay 0 / B que quitar."); return; }
+  await update(ref(db), upd); toast(`Se quitaron ${n} casillas con 0 o B (las faltas y conductas distintas se conservan).`, "ok");
 }
 
 /* =====================================================================
