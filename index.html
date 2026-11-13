@@ -512,6 +512,7 @@ const ICON = {
   xls: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M9 13l5 5M14 13l-5 5"/></svg>',
   print: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v7H6z"/></svg>',
   up: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M7 9l5-5 5 5M4 20h16"/></svg>',
+  hist: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/></svg>',
   doc: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg>',
   users: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M21.5 20a6.5 6.5 0 0 0-4-6"/></svg>'
 };
@@ -595,7 +596,7 @@ function listen(path, cb, key) {
 function detenerDatos() {
   unsubs.forEach(u => { try { u(); } catch {} }); unsubs = [];
   Object.values(califSubs).forEach(u => { try { u(); } catch {} }); califSubs = {};
-  Object.assign(S, { docentes: {}, asig: {}, alumnos: {}, miembros: {}, orden: {}, quitados: {}, bloqueos: {}, calif: {}, usuarios: {}, solicitudes: {}, ready: false, loaded: new Set(), cur: null });
+  Object.assign(S, { hist: null, hf: null, docentes: {}, asig: {}, alumnos: {}, miembros: {}, orden: {}, quitados: {}, bloqueos: {}, calif: {}, usuarios: {}, solicitudes: {}, ready: false, loaded: new Set(), cur: null });
 }
 const leeTodo = () => ["admin", "director", "secretaria"].includes(S.perfil?.rol);
 function iniciarDatos() {
@@ -734,6 +735,7 @@ function navItems() {
   if (p.rol === "admin" || p.rol === "director") { it.push(["stats", "Estadísticas", ICON.chart]); it.push(["informe", "Informe trimestral", ICON.doc]); it.push(["avance", "Avance de captura", ICON.check]); }
   if (p.rol === "secretaria") it.push(["secre", "Concentrados de mis grupos", ICON.folder]);
   if (p.rol === "admin") it.push(["admin", "Administración", ICON.gear]);
+  if (p.rol === "admin" || (p.esProfesor && p.docenteId)) it.push(["historial", "Historial de cambios", ICON.hist]);
   it.push(["perfil", "Configuración", ICON.user]);
   return it;
 }
@@ -746,7 +748,7 @@ function scheduleRender(fromData) {
   clearTimeout(rTimer);
   rTimer = setTimeout(() => render(fromData), 90);
 }
-const VISTAS_ESTABLES = ["stats", "misstats", "avance", "secre", "informe"];
+const VISTAS_ESTABLES = ["stats", "misstats", "avance", "secre", "informe", "historial"];
 function render(fromData = false) {
   if (!S.perfil || $("#app").hidden) return;
   if (!S.ready) {
@@ -791,6 +793,101 @@ function renderTop() {
 }
 function renderNav(v) {
   $("#nav").innerHTML = navItems().map(([k, t, ic]) => `<a href="#/${k}" class="${k === v || (v === "captura" && k === "inicio") ? "on" : ""}">${ic}<span>${t}</span></a>`).join("") + '<div class="foot powered">powered by elprofe chan</div>';
+}
+
+/* =====================================================================
+   HISTORIAL DE CAMBIOS (quién cambió qué, cuándo, valor anterior y nuevo)
+   ===================================================================== */
+const CAMPO_ETQ = { t1: "Calificación 1er trim.", er1: "ER 1er trim.", t2: "Calificación 2o trim.", er2: "ER 2o trim.", t3: "Calificación 3er trim.", i1: "Inasistencias 1er trim.", i2: "Inasistencias 2o trim.", i3: "Inasistencias 3er trim.", c1: "Conducta 1er trim.", c2: "Conducta 2o trim.", c3: "Conducta 3er trim.", nombre: "Nombre del alumno", sexo: "Sexo", baja: "Baja del alumno", lista: "Lista de alumnos", orden: "Orden de la lista", bloqueo: "Bloqueo", admvo: "Secretaría", concentrado: "Concentrado", masivo: "Cambio masivo" };
+const HIST_TIPOS = { calificacion: "Calificaciones y ER", inasistencia: "Inasistencias", conducta: "Conducta", alumno: "Datos del alumno", lista: "Lista de alumnos", bloqueo: "Bloqueos", concentrado: "Concentrados y secretaría", masivo: "Cambios masivos" };
+const tipoDeCampo = f => /^(t|er)\d$/.test(f) ? "calificacion" : /^i\d$/.test(f) ? "inasistencia" : /^c\d$/.test(f) ? "conducta" : ["nombre", "sexo", "baja"].includes(f) ? "alumno" : ["lista", "orden"].includes(f) ? "lista" : f === "bloqueo" ? "bloqueo" : ["admvo", "concentrado"].includes(f) ? "concentrado" : "masivo";
+function nombreAlumno(al) { for (const g of Object.values(S.alumnos)) if (g?.[al]) return g[al].nombre; return ""; }
+const valTxt = v => v == null || v === "" ? "" : String(v);
+/* Registra un cambio. aId = concentrado afectado (o null para cambios generales de alumnos). */
+/* Solo se registran los cambios hechos DESPUÉS de que un trimestre se bloqueó (o se reabrió para corregir).
+   t = trimestre del dato; sin t, cuenta si el concentrado ya tiene algún trimestre bloqueado. */
+const conRegistro = (aId, t) => !!aId && (t ? !!S.bloqueos?.[aId]?.[t] : [1, 2, 3].some(k => S.bloqueos?.[aId]?.[k]));
+function registrar(aId, { campo, al = "", alumno, antes = "", despues = "", detalle = "", t = 0 }) {
+  if (!S.user || !S.perfil) return;
+  if (campo !== "bloqueo" && !conRegistro(aId, t)) return;
+  if (valTxt(antes) === valTxt(despues) && !detalle) return;
+  const a = aId ? S.asig[aId] : null, ruta = "historial/" + (aId || "_general");
+  const e = {
+    t: Date.now(), uid: S.user.uid, quien: S.perfil.docenteId ? nombreDocente(S.perfil.docenteId) : (S.perfil.nombre || S.perfil.email || ""), rol: S.perfil.rol || "",
+    campo, tipo: tipoDeCampo(campo), al, alumno: alumno ?? (al ? nombreAlumno(al) : ""), antes: valTxt(antes), despues: valTxt(despues), detalle,
+    asig: a ? `${a.materia} · ${tituloAsig(a)}` : "", docenteId: a?.docenteId || ""
+  };
+  const k = push(ref(db, ruta)).key;
+  set(ref(db, `${ruta}/${k}`), e).then(() => { if (S.hist) { S.hist.unshift({ ...e, aId: aId || "_general", id: k }); } }).catch(err => console.warn("historial", err));
+}
+const ctxAsig = () => S.cur?.view === "captura" ? S.cur.arg : null;
+
+async function cargarHistorial(soloAsig) {
+  const out = [], add = (aId, obj) => { for (const [id, e] of Object.entries(obj || {})) if (e && e.t) out.push({ ...e, aId, id }); };
+  if (soloAsig) add(soloAsig, (await get(ref(db, "historial/" + soloAsig))).val());
+  else if (esAdmin()) { const all = (await get(ref(db, "historial"))).val() || {}; for (const [aId, obj] of Object.entries(all)) add(aId, obj); }
+  else await Promise.all(misAsignaciones().map(async ([aId]) => { try { add(aId, (await get(ref(db, "historial/" + aId))).val()); } catch {} }));
+  return out.sort((x, y) => y.t - x.t);
+}
+const fechaHora = t => new Date(t).toLocaleString("es-MX", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+function celdaValor(v, campo) {
+  if (v === "") return '<span class="muted">(vacío)</span>';
+  const n = num(v), mala = /^c\d$/.test(campo) && String(v).toUpperCase() === "M", rep = /^(t|er)\d$/.test(campo) && n != null && n < 6;
+  return `<b class="${mala || rep ? "pill-bad" : ""}">${esc(v)}</b>`;
+}
+function filtrarHist(lista, F) {
+  const q = norm(F.q), desde = F.desde ? new Date(F.desde + "T00:00").getTime() : 0, hasta = F.hasta ? new Date(F.hasta + "T23:59:59").getTime() : Infinity;
+  return lista.filter(e => (!F.docente || e.docenteId === F.docente) && (!F.asig || e.aId === F.asig) && (!F.tipo || e.tipo === F.tipo) && (!F.quien || e.uid === F.quien)
+    && e.t >= desde && e.t <= hasta && (!q || norm(`${e.alumno} ${e.asig} ${e.detalle} ${e.quien}`).includes(q)));
+}
+function tablaHist(lista, lim) {
+  if (!lista.length) return `<div class="empty">No hay cambios registrados con estos filtros.</div>`;
+  return `<div class="dt-wrap" style="max-height:none"><table class="dt"><thead><tr><th>Fecha y hora</th><th>Realizado por</th><th>Concentrado</th><th>Alumno</th><th>Cambio</th><th>Antes</th><th>Después</th></tr></thead><tbody>
+    ${lista.slice(0, lim).map(e => `<tr><td style="white-space:nowrap">${esc(fechaHora(e.t))}</td><td>${esc(e.quien)}${e.rol === "admin" ? ' <span class="badge">Admin</span>' : ""}</td><td>${esc(e.asig || "—")}</td><td>${esc(e.alumno || "—")}</td>
+      <td>${esc(CAMPO_ETQ[e.campo] || e.campo)}${e.detalle ? `<div class="small muted">${esc(e.detalle)}</div>` : ""}</td><td>${e.detalle && !e.antes ? "" : celdaValor(e.antes, e.campo)}</td><td>${e.detalle && !e.despues ? "" : celdaValor(e.despues, e.campo)}</td></tr>`).join("")}
+  </tbody></table></div>${lista.length > lim ? `<div class="row" style="justify-content:center;margin-top:10px"><button class="btn sm" data-act="histMas">Mostrar más (${lista.length - lim} restantes)</button></div>` : ""}<p class="small muted">${lista.length} cambios</p>`;
+}
+function vHistorial(main) {
+  const F = S.hf ||= { docente: "", asig: "", tipo: "", quien: "", desde: "", hasta: "", q: "", lim: 300 };
+  if (!S.hist) {
+    main.innerHTML = '<div class="empty">Cargando historial…</div>';
+    cargarHistorial().then(l => { S.hist = l; if (S.cur?.view === "historial") render(); }).catch(e => { main.innerHTML = `<div class="card empty"><b>No se pudo cargar el historial</b>${esc(msgErr(e))}. Revisa que las reglas de la base de datos estén publicadas.</div>`; });
+    return;
+  }
+  const lista = filtrarHist(S.hist, F);
+  const docs = [...new Set(S.hist.map(e => e.docenteId).filter(Boolean))].sort((a, b) => nombreDocente(a).localeCompare(nombreDocente(b)));
+  const asigs = [...new Map(S.hist.filter(e => !F.docente || e.docenteId === F.docente).map(e => [e.aId, e.asig || "Cambios generales de alumnos"]))].sort((a, b) => a[1].localeCompare(b[1]));
+  const quienes = [...new Map(S.hist.map(e => [e.uid, e.quien]))].sort((a, b) => a[1].localeCompare(b[1]));
+  const sel = (k, lbl, ops) => `<label class="f">${lbl}<select class="in" data-hf="${k}">${ops.map(([v, t]) => `<option value="${esc(v)}" ${F[k] === v ? "selected" : ""}>${esc(t)}</option>`).join("")}</select></label>`;
+  main.innerHTML = `<div class="page-head"><div><h1>Historial de cambios</h1><p class="muted">${esAdmin() ? "Cambios que hacen los docentes y el administrador" : "Cambios en tus concentrados (tuyos o del administrador)"} <b>después de que un trimestre se bloqueó</b> (al imprimir, descargar o empezar el siguiente): calificaciones, ER, faltas, conducta, alumnos y listas, además de cada bloqueo y desbloqueo.</p></div>
+    <div class="actions"><button class="btn" data-act="histRecargar">Actualizar</button><button class="btn" data-act="print">${ICON.print}Imprimir</button><button class="btn primary" data-act="histExcel">${ICON.xls}Exportar a Excel</button></div></div>
+    <div class="card filters">
+      ${esAdmin() ? sel("docente", "Docente del concentrado", [["", "Todos"], ...docs.map(d => [d, nombreDocente(d)])]) : ""}
+      ${sel("asig", "Concentrado", [["", "Todos"], ...asigs])}
+      ${sel("tipo", "Tipo de cambio", [["", "Todos"], ...Object.entries(HIST_TIPOS)])}
+      ${sel("quien", "Realizado por", [["", "Cualquiera"], ...quienes])}
+      <label class="f">Desde<input class="in" type="date" data-hf="desde" value="${esc(F.desde)}"></label>
+      <label class="f">Hasta<input class="in" type="date" data-hf="hasta" value="${esc(F.hasta)}"></label>
+      <label class="f">Buscar<input class="in" data-hf="q" value="${esc(F.q)}" placeholder="Alumno, grupo…"></label>
+    </div>
+    <p class="filtros-print"><b>Historial de cambios · ${esc(S.cfg.escuela)}</b> · ${new Date().toLocaleString("es-MX")}</p>
+    <div class="card pad">${tablaHist(lista, F.lim)}</div>`;
+}
+async function dlgHistorialAsig(aId) {
+  const a = S.asig[aId];
+  abrirDialogo(`Historial · ${esc(a.materia)} ${esc(tituloAsig(a))}`, '<p class="muted">Cargando…</p>');
+  try {
+    const l = await cargarHistorial(aId);
+    const b = $("#dlg .dlg-b"); if (b) b.innerHTML = `<p class="small muted">Cambios hechos en este concentrado después de que se bloqueó un trimestre, del más reciente al más antiguo. La captura normal antes del bloqueo no se registra.</p>${tablaHist(l, 1000)}`;
+  } catch (e) { const b = $("#dlg .dlg-b"); if (b) b.innerHTML = `<p class="err-msg">${esc(msgErr(e))}</p>`; }
+}
+async function exportarHist() {
+  const F = S.hf, lista = filtrarHist(S.hist || [], F);
+  const wb = new ExcelJS.Workbook();
+  hojaTabla(wb, "Historial", "Historial de cambios", `${S.cfg.escuela} · Ciclo ${S.cfg.ciclo} · ${new Date().toLocaleString("es-MX")}`,
+    ["Fecha y hora", "Realizado por", "Concentrado", "Alumno", "Cambio", "Detalle", "Antes", "Después"],
+    lista.map(e => [fechaHora(e.t), e.quien, e.asig || "", e.alumno || "", CAMPO_ETQ[e.campo] || e.campo, e.detalle || "", e.antes, e.despues]));
+  descargar(new Blob([await wb.xlsx.writeBuffer()]), `Historial_cambios_${new Date().toISOString().slice(0, 10)}.xlsx`);
 }
 
 /* =====================================================================
@@ -973,7 +1070,7 @@ function vGrupos(main) {
       <div class="f" style="margin-top:12px"><span>Grupos</span><div class="chips">${LETRAS.map(l => `<label class="chip-g ${f.grupos.includes(l) ? "on" : ""}"><input type="checkbox" data-gfgrupo="${l}" ${f.grupos.includes(l) ? "checked" : ""}>${f.grado}° ${l}</label>`).join("")}</div></div>
       <label class="row small" style="margin-top:10px"><input type="checkbox" data-gf="taller" ${esTaller ? "checked" : ""} ${TALLERES.includes(f.materia) ? "disabled" : ""}> Es taller: en cada grupo eliges a tus alumnos</label>
       <p class="small muted" style="margin:6px 0 0">${esTaller ? `Se creará un concentrado (una hoja) por cada grupo marcado, y en cada uno eliges a tus alumnos del taller` : `Se creará un concentrado (una hoja) por cada grupo marcado (${f.grupos.map(l => f.grado + "° " + l).join(", ") || "…"}).`}</p>
-      <label class="f" style="margin-top:12px">Secretaría que recibe ${esTaller ? "este taller" : "estos concentrados"}<select class="in" data-gf="admvo">${opSec(f.admvo, esTaller ? "" : "La que atiende cada grupo (automático)")}</select></label>
+      <label class="f" style="margin-top:12px">Secretaría que recibe ${esTaller ? "estos concentrados del taller" : "estos concentrados"}<select class="in" data-gf="admvo">${opSec(f.admvo || (esTaller ? d.admvoTaller || "" : ""), esTaller ? "" : "La que atiende cada grupo (automático)")}</select></label>
       <div class="row" style="margin-top:14px"><button class="btn primary" data-act="gAgregar">Agregar</button><span class="err-msg" id="gErr"></span></div>
     </form></div>`;
   if (sug.length) h += `<div class="card pad" style="margin-top:14px;border-color:var(--lime)"><div class="row" style="justify-content:space-between"><div><h2>Según el horario de la escuela</h2><p class="small muted">Estos son los grupos que el horario te asigna. Puedes agregarlos de una vez y después quitar lo que no corresponda.</p></div><button class="btn primary sm" data-act="gSugerencias">Agregar los ${sug.length}</button></div>
@@ -1017,7 +1114,7 @@ async function agregarGrupos() {
   }
   if (!Object.keys(upd).length) return err(avisos.length ? "No se agregó: " + avisos.join("; ") + ". Si es un error, avisa al administrador." : "Esos grupos ya estaban registrados.");
   try {
-    for (const [k, v] of Object.entries(upd)) await set(ref(db, k), v);
+    for (const [k, v] of Object.entries(upd)) { await set(ref(db, k), v); S.asig[k.split("/")[1]] = v; registrar(k.split("/")[1], { campo: "concentrado", detalle: "Registró el concentrado" }); }
     S.gf.grupos = [];
     toast(`Se agregaron ${Object.keys(upd).length} concentrados.` + (avisos.length ? " No se agregó: " + avisos.join("; ") : ""), avisos.length ? "err" : "ok");
     render();
@@ -1030,7 +1127,7 @@ async function agregarSugerencias() {
     const otro = a.tipo === "regular" && otroDueno(a.materia, a.grado, a.grupos, did);
     if (otro) { avisos.push(`${a.materia} ${a.grado}° ${a.grupos}`); continue; }
     const v = { ...a }; if (a.tipo === "taller") v.admvo = S.docentes[did]?.admvoTaller || "C";
-    await set(ref(db, "asignaciones/" + id), v); n++;
+    await set(ref(db, "asignaciones/" + id), v); S.asig[id] = v; registrar(id, { campo: "concentrado", detalle: "Registró el concentrado (del horario)" }); n++;
   }
   toast(`Se agregaron ${n} concentrados del horario.` + (avisos.length ? ` Ya los tenía otro docente: ${avisos.join(", ")}` : ""), "ok");
 }
@@ -1038,6 +1135,7 @@ async function quitarAsignacion(id) {
   const a = S.asig[id]; if (!a) return;
   const n = Object.keys(S.calif[id] || {}).length;
   if (!await confirmar(`¿Quitar <b>${esc(a.materia)} ${esc(tituloAsig(a))}</b> de tus grupos?${n ? ` Se borrarán las calificaciones capturadas de ${n} alumnos.` : ""}`, "Quitar", "danger")) return;
+  registrar(id, { campo: "concentrado", detalle: `Quitó el concentrado${n ? ` (con calificaciones de ${n} alumnos)` : ""}` });
   await update(ref(db), { ["asignaciones/" + id]: null, ["calif/" + id]: null, ["miembros/" + id]: null, ["orden/" + id]: null, ["quitados/" + id]: null });
   toast("Concentrado quitado.", "ok");
 }
@@ -1093,6 +1191,7 @@ async function moverAlumno(aId, gg, al, dir) {
   [ids[i], ids[j]] = [ids[j], ids[i]];
   const upd = {}; ids.forEach((id, k) => upd[`orden/${aId}/${id}`] = k + 1);
   await update(ref(db), upd);
+  registrar(aId, { campo: "orden", al, antes: `Lugar ${i + 1}`, despues: `Lugar ${j + 1}` });
 }
 async function quitarDeLista(aId, gg, al) {
   const a = S.asig[aId], x = S.alumnos[gg]?.[al];
@@ -1100,6 +1199,7 @@ async function quitarDeLista(aId, gg, al) {
   const upd = { [`orden/${aId}/${al}`]: null };
   if (a.tipo === "taller") upd[`miembros/${aId}/${al}`] = null; else upd[`quitados/${aId}/${al}`] = true;
   await update(ref(db), upd);
+  registrar(aId, { campo: "lista", al, alumno: x?.nombre, antes: "En la lista", despues: "Quitado" });
   if (!$("#dlg").open) dlgLista(aId);
 }
 
@@ -1123,7 +1223,7 @@ async function dlgBorrarDocente(did) {
     const upd = { ["docentes/" + did]: null };
     for (const [uid] of cuentas) upd["usuarios/" + uid] = null;
     for (const [id] of asigs) {
-      if (modo === "pasar") upd[`asignaciones/${id}/docenteId`] = dest;
+      if (modo === "pasar") { upd[`asignaciones/${id}/docenteId`] = dest; registrar(id, { campo: "concentrado", antes: d.nombre, despues: nombreDocente(dest), detalle: "El concentrado pasó a otro docente" }); }
       else Object.assign(upd, { ["asignaciones/" + id]: null, ["calif/" + id]: null, ["miembros/" + id]: null, ["orden/" + id]: null, ["quitados/" + id]: null });
     }
     btn.disabled = true;
@@ -1167,7 +1267,7 @@ function vInicio(main) {
   for (const [id, a] of mias) (porMat[a.materia + "|" + a.tipo] ??= []).push([id, a]);
   for (const [k, lista] of Object.entries(porMat)) {
     const [mat, tipo] = k.split("|");
-    h += `<div class="sec-title">${esc(mat)} · ${tipo === "taller" ? "Taller (grupos juntos)" : "Asignatura por grado y grupo"}</div><div class="cards">`;
+    h += `<div class="sec-title">${esc(mat)} · ${tipo === "taller" ? "Taller (eliges a tus alumnos en cada grupo)" : "Asignatura por grado y grupo"}</div><div class="cards">`;
     for (const [id, a] of lista) {
       const pr = progresoAsig(id);
       h += `<article class="card asig">
@@ -1217,8 +1317,9 @@ function vCaptura(main, aId) {
     ${esAdmin() ? [1, 2, 3].filter(k => bloqueado(aId, k)).map(k => `<button class="btn sm" data-act="desbloquear" data-a="${aId}" data-t="${k}" title="Permite al docente volver a modificar este trimestre">🔓 Desbloquear ${k}°</button>`).join("") : ""}
     <div class="sp"></div>
     <button class="btn sm" data-act="alumnos" data-a="${aId}">${ICON.users}Mi lista de alumnos</button>
-    <button class="btn sm" data-act="llenar" data-a="${aId}" title="Pone 0 inasistencias y conducta B a quien no tenga dato en este trimestre">Rellenar 0 / B</button>
+    <button class="btn sm" data-act="llenar" data-a="${aId}" title="Pone 0 inasistencias y conducta B a quien no tenga dato; si ya está lleno, los quita">${estadoRelleno(aId).lleno ? "Quitar 0 / B" : "Rellenar 0 / B"}</button>
     <button class="btn sm" data-act="importar" data-a="${aId}">${ICON.up}Importar</button>
+    <button class="btn sm" data-act="histAsig" data-a="${aId}" title="Cambios hechos en este concentrado">${ICON.hist}Historial</button>
     <button class="btn sm" data-act="xls" data-ids="${aId}" data-modo="vacio" title="Formato con nombres para llenar a mano">${ICON.xls}Vacío</button>
     <button class="btn sm" data-act="xls" data-ids="${aId}" data-modo="T">${ICON.xls}Excel ${NOMT[T]}</button>
     <button class="btn sm primary" data-act="print">${ICON.print}Imprimir ${NOMT[T]}</button>
@@ -1270,6 +1371,7 @@ function resumenSec(aId, s, k) {
 function promGrupoFinal(aId, s) { const p = [1, 2, 3].map(k => resumenSec(aId, s, k).prom); return p.some(v => v === "") ? null : trunc1(sum(p) / 3); }
 function refrescarCalculos() {
   const aId = S.cur?.arg; if (!S.asig[aId] || !$("#hoja")) return;
+  const bR = $('[data-act="llenar"]'); if (bR) bR.textContent = estadoRelleno(aId).lleno ? "Quitar 0 / B" : "Rellenar 0 / B";
   const T = +S.capT, c = S.calif[aId] || {};
   $$("#hoja input.cell").forEach(el => {
     const f = el.dataset.f, k = triDe(f), d = c[el.dataset.al] || {};
@@ -1329,7 +1431,7 @@ async function guardarCelda(el) {
     toast(`El ${NOMT[triDe(f)]} está bloqueado: esta calificación ya no se puede modificar. Pide al administrador que la corrija.`, "err"); return;
   }
   if (val != null && !await confirmarInicioTrimestre(aId, triDe(f))) { el.value = fmtVal(anterior); refrescarCalculos(); return; }
-  const upd = { [f]: val };
+  const upd = { [f]: val }, previos = { ...(S.calif[aId]?.[al] || {}) };
   // Si la calificación normal deja de ser reprobatoria, el ER ya no aplica
   if (f.startsWith("t") && triDe(f) < 3 && (val == null || val >= 6) && S.calif[aId]?.[al]?.["er" + triDe(f)] != null) upd["er" + triDe(f)] = null;
   S.calif[aId] ??= {}; S.calif[aId][al] ??= {};
@@ -1338,17 +1440,19 @@ async function guardarCelda(el) {
   el.classList.add("saving"); setStatus("Guardando…");
   try {
     await update(ref(db, `calif/${aId}/${al}`), upd);
+    for (const [k, v] of Object.entries(upd)) registrar(aId, { campo: k, al, antes: previos[k] ?? "", despues: v ?? "", t: triDe(k) });
     el.classList.remove("saving"); el.classList.add("ok"); setTimeout(() => el.classList.remove("ok"), 900);
     setStatus("Guardado a las " + new Date().toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
   } catch (e) { el.classList.remove("saving"); el.classList.add("err"); toast("No se pudo guardar: " + msgErr(e), "err"); setStatus("Error al guardar"); }
 }
 /* ---------- bloqueo de trimestres ---------- */
-const bloqueado = (aId, t) => !!S.bloqueos?.[aId]?.[t];
+const bloqueado = (aId, t) => { const b = S.bloqueos?.[aId]?.[t]; return !!b && !b.abierto; };
 const esMia = aId => S.asig[aId]?.docenteId && S.asig[aId].docenteId === S.perfil?.docenteId;
-async function bloquear(aIds, ts) {
-  const upd = {};
-  for (const a of aIds) for (const t of ts) if (!bloqueado(a, t)) upd[`bloqueos/${a}/${t}`] = { fecha: Date.now(), por: S.perfil?.email || "" };
+async function bloquear(aIds, ts, motivo = "") {
+  const upd = {}, reg = [];
+  for (const a of aIds) for (const t of ts) if (!bloqueado(a, t)) { upd[`bloqueos/${a}/${t}`] = { fecha: Date.now(), por: S.perfil?.email || "" }; reg.push([a, t]); }
   if (Object.keys(upd).length) await update(ref(db), upd);
+  for (const [a, t] of reg) registrar(a, { campo: "bloqueo", detalle: `Se bloqueó el ${NOMT[t]}${motivo ? " " + motivo : ""}`, antes: "Abierto", despues: "Bloqueado" });
 }
 /* Antes de imprimir o descargar un trimestre: aviso y bloqueo de lo capturado (solo concentrados propios) */
 async function confirmarBloqueo(aIds, T, accion) {
@@ -1357,7 +1461,7 @@ async function confirmarBloqueo(aIds, T, accion) {
   const ok = (await abrirDialogo(`Antes de ${accion}, revisa tus calificaciones`, `<p><b>Revisa con cuidado las calificaciones del ${NOMT[T]}${T > 1 ? " y de los trimestres anteriores" : ""}</b>${pend.length > 1 ? ` de tus ${pend.length} concentrados` : ""}.</p>
     <p>Por seguridad, al continuar <b>se bloquearán las calificaciones ya capturadas</b> y ya no podrás modificarlas. Si después encuentras un error, el administrador puede corregirlo.</p>
     <p class="small muted">Si aún no terminas de revisar, presiona “Cancelar y revisar”.</p>`, [["Cancelar y revisar", "cancel"], [accion === "imprimir" ? "Imprimir y bloquear" : "Descargar y bloquear", "ok", "primary"]])) === "ok";
-  if (ok) await bloquear(pend, ts);
+  if (ok) await bloquear(pend, ts, accion === "imprimir" ? "al imprimir" : "al descargar el Excel");
   return ok;
 }
 /* Al empezar a capturar un trimestre, los anteriores quedan bloqueados */
@@ -1367,19 +1471,38 @@ async function confirmarInicioTrimestre(aId, k) {
   if (!prev.length) return true;
   const ok = (await abrirDialogo(`Vas a empezar el ${NOMT[k]}`, `<p>Al capturar en el <b>${NOMT[k]}</b>, ${prev.map(t => "el " + NOMT[t]).join(" y ")} <b>quedará bloqueado</b> y ya no podrás modificar sus calificaciones capturadas.</p>
     <p>Si aún no lo revisas, presiona “Cancelar y revisar”. Si hay un error después, el administrador puede corregirlo.</p>`, [["Cancelar y revisar", "cancel"], ["Continuar", "ok", "primary"]])) === "ok";
-  if (ok) await bloquear([aId], prev);
+  if (ok) await bloquear([aId], prev, `al empezar el ${NOMT[k]}`);
   return ok;
 }
+/* Rellenar 0 / B: primera vez llena vacíos con 0 faltas y conducta B; si ya está todo lleno, quita esos 0 y B.
+   No toca calificaciones ni bloquea trimestres. */
+function estadoRelleno(aId) {
+  const T = S.capT, als = secciones(aId).flatMap(s => s.alumnos);
+  const vacios = als.filter(al => { const c = S.calif[aId]?.[al.id] || {}; return c["i" + T] == null || c["c" + T] == null; }).length;
+  return { als, lleno: als.length > 0 && vacios === 0 };
+}
 async function rellenar(aId) {
-  if (!await confirmarInicioTrimestre(aId, +S.capT)) return;
-  const T = S.capT, upd = {}; let n = 0;
-  for (const s of secciones(aId)) for (const al of s.alumnos) {
-    const c = S.calif[aId]?.[al.id] || {};
-    if (c["i" + T] == null) { upd[`calif/${aId}/${al.id}/i${T}`] = 0; n++; }
-    if (c["c" + T] == null) { upd[`calif/${aId}/${al.id}/c${T}`] = "B"; n++; }
+  const T = S.capT, { als, lleno } = estadoRelleno(aId), upd = {}; let n = 0;
+  if (!lleno) {
+    for (const al of als) {
+      const c = S.calif[aId]?.[al.id] || {};
+      if (c["i" + T] == null) { upd[`calif/${aId}/${al.id}/i${T}`] = 0; n++; }
+      if (c["c" + T] == null) { upd[`calif/${aId}/${al.id}/c${T}`] = "B"; n++; }
+    }
+    if (!n) { toast("No hay alumnos en la lista."); return; }
+    await update(ref(db), upd); toast(`Se completaron ${n} casillas con 0 faltas y conducta B. Presiona de nuevo para quitarlas.`, "ok");
+    registrar(aId, { campo: "masivo", t: +T, detalle: `Rellenar 0 / B en el ${NOMT[T]}: ${n} casillas vacías llenadas con 0 faltas y conducta B` });
+    return;
   }
-  if (!n) { toast("Ya todos tienen inasistencias y conducta en este trimestre."); return; }
-  await update(ref(db), upd); toast(`Se completaron ${n} casillas.`, "ok");
+  if (!esAdmin() && bloqueado(aId, +T)) { toast(`El ${NOMT[T]} está bloqueado: ya no se pueden quitar. Pide al administrador que lo corrija.`, "err"); return; }
+  for (const al of als) {
+    const c = S.calif[aId]?.[al.id] || {};
+    if (c["i" + T] === 0) { upd[`calif/${aId}/${al.id}/i${T}`] = null; n++; }
+    if (String(c["c" + T] || "").toUpperCase() === "B") { upd[`calif/${aId}/${al.id}/c${T}`] = null; n++; }
+  }
+  if (!n) { toast("No hay 0 / B que quitar."); return; }
+  await update(ref(db), upd); toast(`Se quitaron ${n} casillas con 0 o B (las faltas y conductas distintas se conservan).`, "ok");
+  registrar(aId, { campo: "masivo", t: +T, detalle: `Quitar 0 / B en el ${NOMT[T]}: se borraron ${n} casillas con 0 faltas o conducta B` });
 }
 
 /* =====================================================================
@@ -1859,7 +1982,7 @@ const ADM = {
         <p class="small muted">Borra la información del ciclo que termina para empezar de cero. Las cuentas de acceso, los docentes, las secretarías y los datos de la escuela se conservan. <b>Antes descarga el respaldo</b> por si necesitas consultar algo después.</p>
         <div class="grid2" style="margin-top:10px">
           <div class="f"><span>Qué se borra</span>
-            <label class="row small"><input type="checkbox" id="ncCal" checked> Calificaciones, ER, inasistencias, conducta y bloqueos</label>
+            <label class="row small"><input type="checkbox" id="ncCal" checked> Calificaciones, ER, inasistencias, conducta, bloqueos e historial de cambios</label>
             <label class="row small"><input type="checkbox" id="ncAsig" checked> Grupos de cada docente (Mis grupos), integrantes de talleres y orden de las listas</label>
             <label class="row small"><input type="checkbox" id="ncAl" checked> Listas de alumnos (se vuelven a cargar desde Credenciales)</label></div>
           <label class="f">Nuevo ciclo escolar<input class="in" id="ncCiclo" value="${esc(sigCiclo(S.cfg.ciclo))}" style="max-width:200px"></label>
@@ -1922,6 +2045,7 @@ async function agregarAlumnos(gg, texto, aId) {
     if (aId && S.asig[aId]?.tipo === "taller") upd[`miembros/${aId}/${id}`] = gg;
   }
   await update(ref(db), upd);
+  for (const [k, v] of Object.entries(upd)) if (k.startsWith("alumnos/") && v?.nombre) registrar(aId, { campo: "lista", al: k.split("/")[2], alumno: v.nombre, detalle: `Agregó un alumno nuevo a la lista de ${gg[0]}° ${gg[1]}`, despues: "Alta" });
   toast(`${n} alumnos agregados${ya ? `, ${ya} ya estaban en la lista` : ""}. Revisa el sexo de cada uno.`, "ok");
   return n;
 }
@@ -1987,7 +2111,7 @@ function dlgAsignacion(id) {
   const cuerpo = `<form id="fAsig" class="grid2" onsubmit="return false">
     <label class="f">Docente<select class="in" name="docenteId" required><option value="">Elige…</option>${docs.map(([k, d]) => `<option value="${k}" ${a.docenteId === k ? "selected" : ""}>${esc(d.nombre)}</option>`).join("")}</select></label>
     <label class="f">Asignatura o taller<input class="in" name="materia" list="dlMat" value="${esc(a.materia)}" required><datalist id="dlMat">${mats.map(m => `<option value="${esc(m)}">`).join("")}</datalist></label>
-    <label class="f">Tipo<select class="in" name="tipo"><option value="regular" ${a.tipo === "regular" ? "selected" : ""}>Asignatura (por grado y grupo)</option><option value="taller" ${a.tipo === "taller" ? "selected" : ""}>Taller (grupos juntos)</option></select></label>
+    <label class="f">Tipo<select class="in" name="tipo"><option value="regular" ${a.tipo === "regular" ? "selected" : ""}>Asignatura (por grado y grupo)</option><option value="taller" ${a.tipo === "taller" ? "selected" : ""}>Taller (alumnos elegidos)</option></select></label>
     <label class="f">Grado<select class="in" name="grado">${[1, 2, 3].map(g => `<option value="${g}" ${a.grado === g ? "selected" : ""}>${g}° ${GRADOS[g]}</option>`).join("")}</select></label>
     <div class="f" style="grid-column:1/-1"><span class="f">Grupos</span><div class="row">${LETRAS.map(l => `<label class="row" style="gap:4px"><input type="checkbox" name="g" value="${l}" ${gs.includes(l) ? "checked" : ""}>${l}</label>`).join("")}</div></div>
     <label class="f">Turno<select class="in" name="turno"><option value="">Según el grupo</option>${["MATUTINO", "VESPERTINO", "MIXTO"].map(t => `<option ${a.turno === t ? "selected" : ""}>${t}</option>`).join("")}</select></label>
@@ -2062,6 +2186,7 @@ async function nuevoCiclo() {
     if (ciclo) upd["config/ciclo"] = ciclo;
     if (cal || asig) for (const k of new Set([...Object.keys(S.calif), ...Object.keys(S.asig)])) upd["calif/" + k] = null;
     if (cal || asig) for (const k of Object.keys(S.bloqueos)) upd["bloqueos/" + k] = null;
+    if (cal) upd["historial"] = null;
     if (asig) {
       for (const k of Object.keys(S.asig)) upd["asignaciones/" + k] = null;
       for (const n of ["miembros", "orden", "quitados"]) for (const k of Object.keys(S[n])) upd[`${n}/${k}`] = null;
@@ -2343,7 +2468,7 @@ function prepararImportacion(soloAsig) {
     if (!plan) return;
     btn.disabled = true; btn.textContent = "Importando…";
     try {
-      const upd = {}; let nAl = 0, nNuevos = 0, nCal = 0, nAj = 0;
+      const upd = {}, cambios = [], destinos = new Set(); let nAl = 0, nNuevos = 0, nCal = 0, nAj = 0;
       const indices = {};
       for (const p of plan) {
         if (!p.destino) continue;
@@ -2354,13 +2479,16 @@ function prepararImportacion(soloAsig) {
           let id = idx.get(claveNombre(al.nombre)) || buscarAlumno(gg, al.nombre);
           if (!id) { id = push(ref(db, "alumnos/" + gg)).key; upd[`alumnos/${gg}/${id}`] = { nombre: al.nombre, sexo: adivinarSexo(al.nombre) }; idx.set(claveNombre(al.nombre), id); nNuevos++; }
           if (a.tipo === "taller") upd[`miembros/${p.destino}/${id}`] = gg;
-          for (const f of ["t1", "er1", "t2", "er2", "t3", "i1", "i2", "i3", "c1", "c2", "c3"]) if (al[f] != null && (esAdmin() || !bloqueado(p.destino, triDe(f)) || S.calif[p.destino]?.[id]?.[f] == null)) { let v = typeof al[f] === "number" ? Math.round(al[f]) : al[f]; if (/^(t|er)/.test(f) && typeof v === "number") { if (v < 5) { v = 5; nAj++; } if (v > 10) { v = 10; nAj++; } } upd[`calif/${p.destino}/${id}/${f}`] = v; nCal++; }
+          for (const f of ["t1", "er1", "t2", "er2", "t3", "i1", "i2", "i3", "c1", "c2", "c3"]) if (al[f] != null && (esAdmin() || !bloqueado(p.destino, triDe(f)) || S.calif[p.destino]?.[id]?.[f] == null)) { let v = typeof al[f] === "number" ? Math.round(al[f]) : al[f]; const prev = S.calif[p.destino]?.[id]?.[f]; if (String(prev ?? "") !== String(v)) cambios.push([p.destino, id, f, prev ?? "", v]); if (/^(t|er)/.test(f) && typeof v === "number") { if (v < 5) { v = 5; nAj++; } if (v > 10) { v = 10; nAj++; } } upd[`calif/${p.destino}/${id}/${f}`] = v; nCal++; }
           nAl++;
         }
       }
       if (!nAl) { toast("No elegiste ningún destino."); btn.disabled = false; btn.textContent = "Importar"; return; }
       await update(ref(db), upd);
       cerrarDialogo();
+      for (const p of plan) if (p.destino) destinos.add(p.destino);
+      for (const dst of destinos) { const nb = cambios.filter(c => c[0] === dst && conRegistro(dst, triDe(c[2]))).length; if (nb) registrar(dst, { campo: "masivo", detalle: `Importó datos desde un archivo de Excel (${nb} datos en trimestres bloqueados)` }); }
+      for (const [dst, id, f, prev, v] of cambios) registrar(dst, { campo: f, al: id, antes: prev, despues: v, detalle: "Por importación de Excel", t: triDe(f) });
       toast(`Importación lista: ${nAl} alumnos (${nNuevos} nuevos en las listas) y ${nCal} datos.` + (nAj ? ` ${nAj} calificaciones menores a 5 se registraron como 5.` : ""), "ok");
     } catch (e) { console.error(e); toast("No se pudo importar: " + msgErr(e), "err"); btn.disabled = false; btn.textContent = "Importar"; }
   });
@@ -2527,7 +2655,7 @@ async function exportarAlumnos() {
 /* =====================================================================
    EVENTOS
    ===================================================================== */
-const VISTAS = { informe: vInforme, grupos: vGrupos, inicio: vInicio, captura: vCaptura, stats: m => vStats(m, null), misstats: m => vStats(m, S.perfil.docenteId), avance: vAvance, secre: vSecre, perfil: vPerfil, admin: vAdmin };
+const VISTAS = { historial: vHistorial, informe: vInforme, grupos: vGrupos, inicio: vInicio, captura: vCaptura, stats: m => vStats(m, null), misstats: m => vStats(m, S.perfil.docenteId), avance: vAvance, secre: vSecre, perfil: vPerfil, admin: vAdmin };
 
 document.addEventListener("click", async ev => {
   const it2 = ev.target.closest("[data-inf-t],[data-inf-turno]");
@@ -2565,7 +2693,7 @@ document.addEventListener("click", async ev => {
       case "importar": prepararImportacion(d.a || null); break;
       case "alumnos": dlgLista(d.a); break;
       case "llenar": await rellenar(d.a); break;
-      case "sexo": { const al = S.alumnos[d.gg]?.[d.al]; await update(ref(db, `alumnos/${d.gg}/${d.al}`), { sexo: al?.sexo === "H" ? "M" : "H" }); break; }
+      case "sexo": { const al = S.alumnos[d.gg]?.[d.al]; registrar(ctxAsig(), { campo: "sexo", al: d.al, alumno: al?.nombre, antes: al?.sexo, despues: al?.sexo === "H" ? "M" : "H" }); await update(ref(db, `alumnos/${d.gg}/${d.al}`), { sexo: al?.sexo === "H" ? "M" : "H" }); break; }
       case "limpiar": { const F = S.cur?.view === "misstats" ? S.fm : S.f; Object.assign(F, { grado: "", grupo: "", materia: "", docente: "", sexo: "", tipo: "", q: "" }); render(); break; }
       case "toggleAv": { const tr = $(`tr[data-av="${CSS.escape(d.d)}"]`); if (tr) tr.hidden = !tr.hidden; break; }
       case "admGG": S.admGG = d.gg; render(); break;
@@ -2583,13 +2711,14 @@ document.addEventListener("click", async ev => {
         const al = S.alumnos[d.gg]?.[d.al]; if (!al) break;
         if (!al.baja && !await confirmar(`¿Dar de baja a <b>${esc(al.nombre)}</b>? Dejará de aparecer en todas las asignaturas de ${d.gg[0]}° ${d.gg[1]} (sus calificaciones no se borran).`, "Dar de baja", "danger")) { if (S.dlgRefresh) dlgLista(S.cur.arg); break; }
         await update(ref(db, `alumnos/${d.gg}/${d.al}`), { baja: al.baja ? null : true });
+        registrar(ctxAsig(), { campo: "baja", al: d.al, alumno: al.nombre, antes: al.baja ? "Baja" : "Activo", despues: al.baja ? "Activo" : "Baja" });
         if (S.dlgRefresh) setTimeout(() => dlgLista(S.cur.arg), 300);
         break;
       }
       case "semillaAsig": { if (!await confirmar("¿Cargar las asignaciones del horario para todos los docentes? Normalmente cada docente lo hace en “Mis grupos”.")) break; const n = await cargarSemilla(true); toast(n ? `Se agregaron ${n} registros.` : "Ya estaban todas.", "ok"); break; }
       case "semilla": { const n = await cargarSemilla(); toast(n ? `Se agregaron ${n} registros del catálogo.` : "El catálogo ya estaba completo.", "ok"); break; }
       case "respaldo": {
-        const out = {}; for (const k of ["config", "docentes", "asignaciones", "alumnos", "miembros", "calif", "usuarios"]) out[k] = (await get(ref(db, k))).val();
+        const out = {}; for (const k of ["config", "docentes", "asignaciones", "alumnos", "miembros", "orden", "quitados", "calif", "bloqueos", "historial", "usuarios"]) out[k] = (await get(ref(db, k))).val();
         descargar(new Blob([JSON.stringify(out, null, 1)], { type: "application/json" }), `respaldo_concentrado21_${new Date().toISOString().slice(0, 10)}.json`); break;
       }
       case "nuevoDoc": {
@@ -2602,8 +2731,12 @@ document.addEventListener("click", async ev => {
       case "crearAcceso": formCuenta({ docId: d.d, rol: "profesor", titulo: "Crear acceso · " + esc(nombreDocente(d.d)) }); break;
       case "nuevaCuenta": formCuenta({}); break;
       case "accesos": dlgAccesos(); break;
+      case "histAsig": await dlgHistorialAsig(d.a); break;
+      case "histRecargar": S.hist = null; render(); break;
+      case "histMas": S.hf.lim += 300; render(); break;
+      case "histExcel": await exportarHist(); break;
       case "nuevoCiclo": await nuevoCiclo(); break;
-      case "desbloquear": if (await confirmar(`¿Desbloquear el ${NOMT[d.t]} de este concentrado? El docente podrá volver a modificar esas calificaciones hasta que vuelva a imprimir o descargar.`, "Desbloquear")) { await remove(ref(db, `bloqueos/${d.a}/${d.t}`)); toast("Trimestre desbloqueado.", "ok"); } break;
+      case "desbloquear": if (await confirmar(`¿Desbloquear el ${NOMT[d.t]} de este concentrado? El docente podrá volver a modificar esas calificaciones hasta que vuelva a imprimir o descargar.`, "Desbloquear")) { await update(ref(db, `bloqueos/${d.a}/${d.t}`), { abierto: true, abiertoPor: S.perfil?.email || "", abiertoFecha: Date.now() }); registrar(d.a, { campo: "bloqueo", detalle: `Se desbloqueó el ${NOMT[d.t]}`, antes: "Bloqueado", despues: "Abierto" }); toast("Trimestre desbloqueado.", "ok"); } break;
       case "infWord": b.disabled = true; await informeWord(); b.disabled = false; break;
       case "infPrint": { const c = document.body.classList; $("#pgsize").textContent = "@page{size:letter landscape;margin:9mm}"; c.add("imp-inf"); window.print(); setTimeout(() => c.remove("imp-inf"), 500); break; }
       case "repGuardar": { await update(ref(db, "config/reporte"), repCfg()); S.rep.local = {}; toast("Datos del informe guardados.", "ok"); break; }
@@ -2627,21 +2760,23 @@ document.addEventListener("click", async ev => {
       case "gSugerencias": b.disabled = true; await agregarSugerencias(); break;
       case "gQuitar": await quitarAsignacion(d.id); break;
       case "lMover": await moverAlumno(d.a, d.gg, d.al, +d.dir); break;
-      case "lAlfa": { const s2 = secciones(d.a).find(x => x.gg === d.gg); const upd = {}; for (const x of s2?.alumnos || []) upd[`orden/${d.a}/${x.id}`] = null; await update(ref(db), upd); break; }
+      case "lAlfa": { const s2 = secciones(d.a).find(x => x.gg === d.gg); const upd = {}; for (const x of s2?.alumnos || []) upd[`orden/${d.a}/${x.id}`] = null; await update(ref(db), upd); registrar(d.a, { campo: "orden", detalle: `Regresó la lista de ${d.gg[0]}° ${d.gg[1]} al orden alfabético` }); break; }
       case "lQuitar": await quitarDeLista(d.a, d.gg, d.al); break;
-      case "lRegresar": await update(ref(db), { [`quitados/${d.a}/${d.al}`]: null }); break;
+      case "lRegresar": await update(ref(db), { [`quitados/${d.a}/${d.al}`]: null }); registrar(d.a, { campo: "lista", al: d.al, antes: "Quitado", despues: "En la lista" }); break;
       case "lMarcar": { const box = b.closest("details"); $$("[data-pick]", box).forEach(i => { i.checked = true; S.picks.add(i.dataset.pick); }); break; }
       case "lAgregar": {
         const box = b.closest("details"), ids = $$("[data-pick]", box).filter(i => i.checked).map(i => i.dataset.pick);
         if (!ids.length) { toast("Marca primero a los alumnos."); break; }
         const upd = {}; for (const id of ids) { upd[`miembros/${d.a}/${id}`] = d.gg; S.picks.delete(id); }
-        await update(ref(db), upd); toast(`${ids.length} alumnos agregados a tu lista.`, "ok"); break;
+        await update(ref(db), upd); toast(`${ids.length} alumnos agregados a tu lista.`, "ok");
+        for (const id of ids) registrar(d.a, { campo: "lista", al: id, antes: "", despues: "En la lista" });
+        break;
       }
       case "editAsig": dlgAsignacion(d.id || null); break;
       case "borrarAsig": {
         const a = S.asig[d.id];
         if (await confirmar(`¿Eliminar <b>${esc(a.materia)} ${esc(tituloAsig(a))}</b> de ${esc(nombreDocente(a.docenteId))}? También se borran sus calificaciones capturadas.`, "Eliminar", "danger"))
-          await update(ref(db), { ["asignaciones/" + d.id]: null, ["calif/" + d.id]: null, ["miembros/" + d.id]: null });
+          { registrar(d.id, { campo: "concentrado", detalle: "El administrador eliminó el concentrado" }); await update(ref(db), { ["asignaciones/" + d.id]: null, ["calif/" + d.id]: null, ["miembros/" + d.id]: null }); }
         break;
       }
     }
@@ -2653,11 +2788,11 @@ document.addEventListener("change", async ev => {
   try {
     if (el.classList.contains("cell")) { await guardarCelda(el); return; }
     if (d.filtro) { const F = S.cur?.view === "misstats" ? S.fm : S.f; F[d.filtro] = el.value; render(); return; }
-    if (d.act === "admvo") { await update(ref(db, "asignaciones/" + d.a), { admvo: el.value }); toast("Secretaría actualizada.", "ok"); return; }
+    if (d.act === "admvo") { registrar(d.a, { campo: "admvo", antes: S.cfg.secretarias[admvoLetra(S.asig[d.a])], despues: S.cfg.secretarias[el.value] }); await update(ref(db, "asignaciones/" + d.a), { admvo: el.value }); toast("Secretaría actualizada.", "ok"); return; }
     if (d.admf) { S[d.admf] = el.value; render(); return; }
-    if (d.rnombre) { const v = el.value.replace(/\s+/g, " ").trim(); if (v.length > 2) await update(ref(db, `alumnos/${d.gg}/${d.rnombre}`), { nombre: v }); return; }
-    if (d.rsexo) { await update(ref(db, `alumnos/${d.gg}/${d.rsexo}`), { sexo: el.value }); return; }
-    if (d.rmiembro) { await set(ref(db, `miembros/${d.a}/${d.rmiembro}`), el.checked ? d.gg : null); return; }
+    if (d.rnombre) { const v = el.value.replace(/\s+/g, " ").trim(); const ant = S.alumnos[d.gg]?.[d.rnombre]?.nombre; if (v.length > 2 && v !== ant) registrar(ctxAsig(), { campo: "nombre", al: d.rnombre, alumno: v, antes: ant, despues: v }); if (v.length > 2) await update(ref(db, `alumnos/${d.gg}/${d.rnombre}`), { nombre: v }); return; }
+    if (d.rsexo) { const x = S.alumnos[d.gg]?.[d.rsexo]; registrar(ctxAsig(), { campo: "sexo", al: d.rsexo, alumno: x?.nombre, antes: x?.sexo, despues: el.value }); await update(ref(db, `alumnos/${d.gg}/${d.rsexo}`), { sexo: el.value }); return; }
+    if (d.rmiembro) { await set(ref(db, `miembros/${d.a}/${d.rmiembro}`), el.checked ? d.gg : null); registrar(d.a, { campo: "lista", al: d.rmiembro, antes: el.checked ? "" : "En la lista", despues: el.checked ? "En la lista" : "Quitado" }); return; }
     if (d.docnom) { const v = el.value.trim().toUpperCase(); if (v) { await update(ref(db, "docentes/" + d.docnom), { nombre: v }); toast("Nombre actualizado.", "ok"); } return; }
     if (d.urol) {
       const u = S.usuarios[d.urol], rol = el.value;
@@ -2671,12 +2806,13 @@ document.addEventListener("change", async ev => {
       if (v) upd[`docentes/${v}/email`] = u.email;
       await update(ref(db), upd); toast("Vinculación guardada.", "ok"); return;
     }
+    if (d.hf) { S.hf[d.hf] = el.value; if (d.hf === "docente") S.hf.asig = ""; S.hf.lim = 300; render(); return; }
     if (d.rep) { S.rep.local[d.rep] = el.value.trim(); render(); return; }
     if ("repfecha" in d) { S.rep.fecha = el.value.trim().toUpperCase(); render(); return; }
     if ("replogo" in d) { const f = el.files[0]; if (!f) return; const url = await new Promise(r => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.readAsDataURL(f); }); S.rep.local.logo = (await aPng(url, 320)).url; render(); return; }
     if (d.gf) { S.gf[d.gf] = el.type === "checkbox" ? el.checked : el.value; if (d.gf === "materia") S.gf.taller = TALLERES.includes(el.value); render(); return; }
     if (d.gfgrupo) { const g = S.gf.grupos; el.checked ? g.push(d.gfgrupo) : g.splice(g.indexOf(d.gfgrupo), 1); render(); return; }
-    if (d.asadmvo) { await update(ref(db, "asignaciones/" + d.asadmvo), { admvo: el.value }); toast("Secretaría actualizada.", "ok"); return; }
+    if (d.asadmvo) { registrar(d.asadmvo, { campo: "admvo", antes: S.cfg.secretarias[admvoLetra(S.asig[d.asadmvo])], despues: S.cfg.secretarias[el.value] }); await update(ref(db, "asignaciones/" + d.asadmvo), { admvo: el.value }); toast("Secretaría actualizada.", "ok"); return; }
     if (d.pick) { el.checked ? S.picks.add(d.pick) : S.picks.delete(d.pick); return; }
     if (d.uletra) { await update(ref(db, "usuarios/" + d.uletra), { letra: el.value }); toast("Guardado.", "ok"); return; }
   } catch (e) { console.error(e); toast("No se pudo guardar: " + msgErr(e), "err"); }

@@ -33,6 +33,8 @@ Es un solo archivo (`index.html`) que usa Firebase Authentication y Realtime Dat
 5. **Administración → Escuela**: tamaño de hoja del concentrado (Carta por defecto, u Oficio). Cada grupo sale en su propia hoja.
 6. **Administración → Usuarios → Nueva cuenta**: crea las cuentas de las secretarías con el rol *Secretaría* y su letra.
 
+**Historial de cambios:** registra solo los cambios que se hacen **después de que un trimestre quedó bloqueado** (al imprimir, al descargar el Excel o al empezar el siguiente trimestre). La captura normal antes del bloqueo no se registra. De cada cambio queda la fecha y hora, quién lo hizo (docente o administrador), el concentrado, el alumno, qué cambió y el valor anterior y el nuevo: calificaciones, ER, inasistencias, conducta, “Rellenar/Quitar 0 / B” e importaciones de Excel en el trimestre bloqueado. También quedan los bloqueos y desbloqueos. Si el administrador desbloquea un trimestre, las correcciones que haga el docente mientras está abierto también se registran, hasta que se vuelve a bloquear. Los cambios a la lista, el orden, el nombre o sexo del alumno y la secretaría se registran cuando el concentrado ya tiene algún trimestre bloqueado. El administrador ve todo en “Historial de cambios”, con filtros por docente, concentrado, tipo, persona, fechas y alumno, y lo puede imprimir o exportar a Excel. Cada docente ve los cambios de sus concentrados, incluidas las correcciones del administrador, en el mismo menú o con el botón “Historial” de cada hoja. Los registros no se pueden modificar ni borrar desde la plataforma, salvo el administrador al iniciar un nuevo ciclo.
+
 **Nuevo ciclo escolar:** en Administración → Datos, “Borrar e iniciar nuevo ciclo” borra las calificaciones (con ER, faltas, conducta y bloqueos), los grupos de cada docente y las listas de alumnos, y cambia el ciclo escolar. Se puede elegir qué se borra. Las cuentas, los docentes, las secretarías y los datos de la escuela se conservan. Para confirmar hay que escribir BORRAR; conviene descargar antes el respaldo.
 
 **Datos de ejemplo (para probar):** en Administración → Datos, “Cargar datos de ejemplo” llena los 27 grupos con 7 asignaturas por grado. Incluye calificaciones de los tres trimestres, aprobados, reprobados, ER, faltas y conductas R/D, con docentes marcados “(EJEMPLO)”, para que la dirección vea las estadísticas. Si el grupo ya tiene su lista de Credenciales, se usan esos alumnos. “Eliminar datos de ejemplo” lo borra todo sin tocar lo que capturen los docentes.
@@ -72,6 +74,8 @@ miembros/{asignacion}/{alumno}  "1A"   (integrantes de talleres)
 calif/{asignacion}/{alumno}     t1 er1 t2 er2 t3 · i1 i2 i3 · c1 c2 c3
 usuarios/{uid}          email, nombre, rol, docenteId?, esProfesor, letra?
 solicitudes/{uid}       cuentas sin rol que pidieron acceso
+bloqueos/{asignacion}/{trimestre}   fecha y quién bloqueó
+historial/{asignacion}/{id}         t, quien, campo, alumno, antes, despues, detalle
 ```
 
 Las reglas permiten que cada docente escriba solo en sus asignaciones. La dirección y las secretarías solo leen. Los alumnos y las calificaciones nunca se borran al dar de baja.
