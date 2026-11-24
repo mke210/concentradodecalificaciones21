@@ -84,3 +84,10 @@ Las reglas permiten que cada docente escriba solo en sus asignaciones. La direcc
 
 ---
 powered by elprofe chan
+
+## Desbloqueo rápido y descarga por alcance (administrador)
+- **Avance → Desbloquear N°**: junto a cada docente (y junto a «Abrir» en cada concentrado) hay un botón que abre el trimestre seleccionado con un clic. Arriba hay «Desbloquear N° a todos» (pide confirmación). Queda registrado en el historial.
+- **Descargar / imprimir…**: elige *todos*, *por grado*, *por grupo* o *por docente*, y con calificaciones (1°/2°/3° trimestre) o formato vacío. Genera un Excel con una hoja por grupo, listo para imprimir. Los docentes tienen el mismo selector («Elegir grado o grupo…») sobre sus propios concentrados.
+
+## Lista de alumnos
+- Arrastra el ⠿ o escribe el número de lista para reordenar; los nombres se pueden editar en la hoja de captura (✎) y en «Mi lista de alumnos».

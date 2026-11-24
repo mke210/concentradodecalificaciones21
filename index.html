@@ -513,6 +513,7 @@ function descargar(blob, nombre) {
   setTimeout(() => URL.revokeObjectURL(u), 4000);
 }
 const ICON = {
+  unlock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/></svg>',
   book: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5V5a2 2 0 0 1 2-2h14v16H6.5A2.5 2.5 0 0 0 4 21.5"/><path d="M8 7h8M8 11h6"/></svg>',
   chart: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
   check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>',
@@ -1303,6 +1304,7 @@ function vInicio(main) {
       <button class="btn" data-go="grupos">${ICON.users}Mis grupos</button>
       <button class="btn" data-act="importar">${ICON.up}Importar desde Excel</button>
       <button class="btn" data-act="xls" data-ids="*" data-modo="vacio">${ICON.xls}Todos · formato vacío</button>
+      <button class="btn" data-act="dlgDescarga">${ICON.xls}Elegir grado o grupo…</button>
       <button class="btn primary" data-act="xls" data-ids="*" data-modo="T">${ICON.xls}Todos · ${NOMT[S.capT]}</button>
     </div></div>
     <div class="row" style="margin:-4px 0 6px"><span class="small" style="font-weight:700;color:var(--ink-2)">Trimestre en curso:</span><div class="seg">${[1, 2, 3].map(k => `<button data-act="capT" data-t="${k}" class="${+S.capT === k ? "on" : ""}">${NOMT[k]}</button>`).join("")}</div></div>`;
@@ -1502,6 +1504,39 @@ async function bloquear(aIds, ts, motivo = "") {
   for (const [a, t] of reg) registrar(a, { campo: "bloqueo", detalle: `Se bloqueó el ${NOMT[t]}${motivo ? " " + motivo : ""}`, antes: "Abierto", despues: "Bloqueado" });
 }
 /* Antes de imprimir o descargar un trimestre: aviso y bloqueo de lo capturado (solo concentrados propios) */
+const confirmarSimple = async (msg, boton) => (await abrirDialogo("Confirmar", `<p>${msg}</p>`, [["Cancelar", "cancel"], [boton, "ok", "primary"]])) === "ok";
+/* Descargar / imprimir concentrados: todos, por grado, por grupo (o por docente) */
+function dlgDescarga(todos) {
+  const base = (todos && esAdmin()) ? Object.entries(S.asig) : misAsignaciones();
+  const grados = [...new Set(base.map(([, a]) => a.grado))].sort(), grupos = [...new Set(base.map(([, a]) => a.grado + a.grupos))].sort();
+  const docs = [...new Set(base.map(([, a]) => a.docenteId))].sort((x, y) => nombreDocente(x).localeCompare(nombreDocente(y)));
+  const radio = (v, t, extra = "") => `<label class="row" style="gap:8px;margin:6px 0"><input type="radio" name="dsAl" value="${v}" ${v === "todos" ? "checked" : ""}> <span>${t}</span> ${extra}</label>`;
+  abrirDialogo(todos && esAdmin() ? "Descargar / imprimir concentrados" : "Descargar mis concentrados", `
+    <p class="small muted">Se descarga un Excel con una hoja por grupo, listo para imprimir (carta u oficio, una página por hoja).</p>
+    <h4 style="margin:10px 0 2px">¿Cuáles?</h4>
+    ${radio("todos", "Todos", `<span class="small muted" id="dsN0"></span>`)}
+    ${radio("grado", "Por grado", `<select class="in" id="dsGrado" style="width:auto">${grados.map(g => `<option value="${g}">${g}°</option>`).join("")}</select>`)}
+    ${radio("grupo", "Por grupo", `<select class="in" id="dsGrupo" style="width:auto">${grupos.map(g => `<option value="${g}">${g[0]}° ${g[1]}</option>`).join("")}</select>`)}
+    ${todos && esAdmin() ? radio("docente", "Por docente", `<select class="in" id="dsDoc" style="max-width:240px">${docs.map(d => `<option value="${esc(d)}">${esc(nombreDocente(d))}</option>`).join("")}</select>`) : ""}
+    <h4 style="margin:14px 0 2px">¿Qué trae?</h4>
+    <label class="row" style="gap:8px;margin:6px 0"><input type="radio" name="dsM" value="T" checked> Con calificaciones hasta el <select class="in" id="dsT" style="width:auto">${[1, 2, 3].map(k => `<option value="${k}" ${+S.capT === k ? "selected" : ""}>${NOMT[k]}</option>`).join("")}</select></label>
+    <label class="row" style="gap:8px;margin:6px 0"><input type="radio" name="dsM" value="vacio"> Formato vacío (solo nombres)</label>
+    <p id="dsCuenta" class="small" style="margin-top:10px;font-weight:700"></p>`, [["Cancelar", "cancel"], ["Descargar Excel", "keep", "primary"]]);
+  const btn = $('#dlg .dlg-f [data-dlg="keep"]');
+  const sel = () => {
+    const al = document.querySelector('input[name=dsAl]:checked')?.value;
+    return base.filter(([, a]) => al === "todos" || (al === "grado" && String(a.grado) === $("#dsGrado").value) || (al === "grupo" && (a.grado + a.grupos) === $("#dsGrupo").value) || (al === "docente" && a.docenteId === $("#dsDoc")?.value)).map(([id]) => id);
+  };
+  const act = () => { const n = sel().length; $("#dsCuenta").textContent = n ? `${n} concentrado${n === 1 ? "" : "s"} en el archivo` : "No hay concentrados con esa selección."; btn.disabled = !n; };
+  $("#dlg").addEventListener("change", ev => { const t = ev.target; if (t.id === "dsGrado") document.querySelector('input[name=dsAl][value=grado]').checked = true; if (t.id === "dsGrupo") document.querySelector('input[name=dsAl][value=grupo]').checked = true; if (t.id === "dsDoc") document.querySelector('input[name=dsAl][value=docente]').checked = true; act(); });
+  act();
+  btn.addEventListener("click", async () => {
+    const ids = sel(), modo = document.querySelector('input[name=dsM]:checked').value === "vacio" ? "vacio" : $("#dsT").value;
+    cerrarDialogo();
+    if (modo !== "vacio" && !await confirmarBloqueo(ids, +modo, "descargar")) return;
+    await exportarConcentrado(ids, modo);
+  });
+}
 async function confirmarBloqueo(aIds, T, accion) {
   const ts = [1, 2, 3].filter(t => t <= T), pend = aIds.filter(id => esMia(id) && ts.some(t => !bloqueado(id, t)));
   if (!pend.length) return true;
@@ -1854,8 +1889,11 @@ function vAvance(main) {
   });
   const tot = sum(filas.map(f => f.n)), totCap = tot ? sum(filas.map(f => f.c[T] * f.n / 100)) / tot * 100 : 0;
   const completos = filas.filter(f => f.n && f.c[T] >= 99.9).length;
+  const nBloq = Object.keys(S.asig).filter(id => bloqueado(id, +T)).length;
   let h = `<div class="page-head"><div><h1>Avance de captura</h1><p class="muted">Qué tanto ha subido cada docente en el trimestre seleccionado</p></div>
-    <div class="actions"><div class="seg">${["1", "2", "3"].map(t => `<button data-act="avT" data-t="${t}" class="${T === t ? "on" : ""}">${t}° trimestre</button>`).join("")}</div><button class="btn" data-act="print">${ICON.print}Imprimir</button></div></div>
+    <div class="actions"><div class="seg">${["1", "2", "3"].map(t => `<button data-act="avT" data-t="${t}" class="${T === t ? "on" : ""}">${t}° trimestre</button>`).join("")}</div>
+      ${esAdmin() && nBloq ? `<button class="btn" data-act="desbT" data-all="1" data-t="${T}" title="Abre el ${NOMT[T]} de todos los concentrados bloqueados">${ICON.unlock}Desbloquear ${T}° a todos (${nBloq})</button>` : ""}
+      ${esAdmin() ? `<button class="btn primary" data-act="dlgDescarga" data-all="1">${ICON.xls}Descargar / imprimir…</button>` : ""}<button class="btn" data-act="print">${ICON.print}Imprimir pantalla</button></div></div>
     <p class="filtros-print"><b>Avance de captura · ${T}° trimestre · ${esc(S.cfg.escuela)}</b></p>
     <div class="kpis">
       <div class="card kpi"><span class="k-l">Avance general</span><span class="k-v num">${pct(totCap)}</span><span class="k-s">${T}° trimestre</span></div>
@@ -1866,10 +1904,10 @@ function vAvance(main) {
   for (const f of filas) {
     h += `<tr><td><b>${esc(nombreDocente(f.d))}</b>${f.sinAl ? `<div class="small" style="color:var(--warn)">${f.sinAl} sin alumnos</div>` : ""}</td><td class="n">${f.ids.length}</td><td class="n">${f.n}</td>
       ${[1, 2, 3].map(t => `<td><div class="mbar"><div class="bar"><i style="width:${f.c[t].toFixed(0)}%;${f.c[t] >= 99.9 ? "" : "background:" + (t == T ? "var(--warn)" : "var(--line-2)")}"></i></div><span class="num small">${f.c[t].toFixed(0)}%</span></div></td>`).join("")}
-      <td><button class="btn sm no-print" data-act="toggleAv" data-d="${esc(f.d)}">Detalle</button></td></tr>
+      <td class="no-print" style="white-space:nowrap">${esAdmin() && f.ids.some(id => bloqueado(id, +T)) ? `<button class="btn sm" data-act="desbT" data-d="${esc(f.d)}" data-t="${T}" title="Abre el ${NOMT[T]} de todos sus concentrados">${ICON.unlock}Desbloquear ${T}°</button> ` : ""}<button class="btn sm" data-act="toggleAv" data-d="${esc(f.d)}">Detalle</button></td></tr>
       <tr data-av="${esc(f.d)}" hidden><td colspan="7" style="background:var(--surface-2)">
         <table class="dt"><tbody>${f.prs.map(([id, p]) => { const a = S.asig[id]; return `<tr><td>${esc(a.materia)} · ${esc(tituloAsig(a))} <span class="badge ${a.tipo}">${a.tipo === "taller" ? "Taller" : "Asig."}</span></td><td class="n">${p.n} alumnos</td>${[1, 2, 3].map(t => `<td class="n">${p["p" + t].toFixed(0)}%${bloqueado(id, t) ? " 🔒" : ""}</td>`).join("")}
-          <td class="no-print">${esAdmin() ? `<button class="btn sm" data-go="captura/${id}">Abrir</button> ` : ""}<button class="btn sm" data-act="xls" data-ids="${id}" data-modo="T" data-t="${T}">${ICON.xls}Excel ${T}° trim.</button></td></tr>`; }).join("")}</tbody></table>
+          <td class="no-print">${esAdmin() && bloqueado(id, +T) ? `<button class="btn sm" data-act="desbT" data-a="${id}" data-t="${T}" title="Abre el ${NOMT[T]} de este concentrado">${ICON.unlock}Desbloquear</button> ` : ""}${esAdmin() ? `<button class="btn sm" data-go="captura/${id}">Abrir</button> ` : ""}<button class="btn sm" data-act="xls" data-ids="${id}" data-modo="T" data-t="${T}">${ICON.xls}Excel ${T}° trim.</button></td></tr>`; }).join("")}</tbody></table>
       </td></tr>`;
   }
   h += `</tbody></table></div></div>`;
@@ -2813,6 +2851,16 @@ document.addEventListener("click", async ev => {
         if (modo !== "vacio" && !await confirmarBloqueo(ids, +modo, "descargar")) break;
         b.disabled = true; await exportarConcentrado(ids, modo); b.disabled = false; break;
       }
+      case "desbT": {
+        const t = +d.t; let ids = d.a ? [d.a] : d.all ? Object.keys(S.asig) : Object.entries(S.asig).filter(([, a]) => a.docenteId === d.d).map(([id]) => id);
+        ids = ids.filter(id => bloqueado(id, t));
+        if (!ids.length) { toast("No hay nada bloqueado en ese trimestre."); break; }
+        if (d.all && !await confirmarSimple(`¿Desbloquear el ${NOMT[t]} de ${ids.length} concentrados? Los docentes podrán corregir hasta que vuelvan a imprimir o descargar.`, "Desbloquear a todos")) break;
+        const upd = {}; for (const id of ids) { upd[`bloqueos/${id}/${t}/abierto`] = true; upd[`bloqueos/${id}/${t}/abiertoPor`] = S.perfil?.email || ""; upd[`bloqueos/${id}/${t}/abiertoFecha`] = Date.now(); }
+        await update(ref(db), upd);
+        for (const id of ids) registrar(id, { campo: "bloqueo", detalle: `Se desbloqueó el ${NOMT[t]}`, antes: "Bloqueado", despues: "Abierto", t });
+        toast(ids.length === 1 ? `${NOMT[t]} desbloqueado.` : `${NOMT[t]} desbloqueado en ${ids.length} concentrados.`, "ok"); break; }
+      case "dlgDescarga": dlgDescarga(!!d.all); break;
       case "xls-stats": await exportarStats(); break;
       case "xlsAlumnos": await exportarAlumnos(); break;
       case "importar": prepararImportacion(d.a || null); break;
