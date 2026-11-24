@@ -91,3 +91,9 @@ powered by elprofe chan
 
 ## Lista de alumnos
 - Arrastra el ⠿ o escribe el número de lista para reordenar; los nombres se pueden editar en la hoja de captura (✎) y en «Mi lista de alumnos».
+
+## Dirección y subdirección
+- **Docentes y concentrados**: elige profesor, grado, grupo, asignatura o tipo; abre cualquier concentrado en *solo lectura* y descarga en Excel los seleccionados (o todos los filtrados) con calificaciones hasta el trimestre elegido, o en formato vacío. El director no puede modificar nada.
+- **Estadísticas**: cada indicador es clicable y lleva al detalle. En reprobados / alumnos con reprobadas aparece el desglose por grado, grupo, asignatura y profesor; al hacer clic en una fila se filtra todo el panel por esa opción.
+- **Imprimir / Descargar**: elige periodo, filtros y qué incluir (indicadores, gráficas, tablas), con vista previa, y luego imprime/PDF o descarga un Excel con las tablas y las gráficas como imagen.
+- El menú de la izquierda se pliega y despliega con el botón « / ».

@@ -91,9 +91,50 @@ nav.side a svg{width:18px;height:18px;flex:none}
 nav.side a:hover{background:var(--surface-2)}
 nav.side a.on{background:var(--brand-soft);color:var(--brand)}
 nav.side .foot{margin-top:auto;padding:10px 12px}
+.navtog{align-self:flex-end;border:0;background:var(--surface-2);border-radius:8px;width:30px;height:28px;cursor:pointer;font-size:15px;margin-bottom:6px;color:var(--ink-2);font-weight:800}
+.navtog:hover{background:var(--brand-soft);color:var(--brand)}
+#app{transition:grid-template-columns .18s}
+#app.mini{grid-template-columns:62px 1fr}
+#app.mini nav.side{padding:16px 6px;align-items:center}
+#app.mini nav.side a span,#app.mini nav.side .foot{display:none}
+#app.mini nav.side a{justify-content:center;padding:10px}
+#app.mini main{max-width:none}
 main{padding:24px clamp(16px,3vw,32px) 64px;min-width:0;max-width:1400px;width:100%}
+.kpi.click{cursor:pointer;position:relative;transition:transform .12s,box-shadow .12s,border-color .12s}
+.kpi.click:hover{transform:translateY(-2px);border-color:var(--brand);box-shadow:0 6px 18px rgba(0,0,0,.08)}
+.kpi .k-more{font-size:11px;font-weight:700;color:var(--brand);margin-top:6px;opacity:.85}
+.drill-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:4px 0 16px}
+.drill-card{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--surface)}
+.drill-card h4{margin:0 0 6px;font-size:13px}
+table.dr{width:100%;border-collapse:collapse;font-size:12.5px}
+table.dr th{text-align:left;font-size:11px;color:var(--muted);font-weight:700;padding:4px 6px;border-bottom:1px solid var(--line)}
+table.dr td{padding:5px 6px;border-bottom:1px solid var(--line)}
+table.dr th.n,table.dr td.n{text-align:right}
+table.dr tr[data-drill]{cursor:pointer}table.dr tr[data-drill]:hover td{background:var(--brand-soft)}
+.pill-r{display:inline-block;min-width:44px;text-align:center;border-radius:999px;padding:1px 8px;font-weight:700;font-size:11.5px;background:#fdeaea;color:#b3261e}
+.rep-grid{display:grid;grid-template-columns:300px minmax(0,1fr);gap:16px;align-items:start}
+.rep-panel{position:sticky;top:70px;max-height:calc(100vh - 90px);overflow:auto}
+.rep-panel h4{margin:14px 0 4px;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);display:flex;justify-content:space-between}
+.rep-panel h4 a{font-size:11px;text-transform:none;letter-spacing:0;cursor:pointer;color:var(--brand);font-weight:700}
+.rep-chk{display:flex;gap:8px;align-items:flex-start;font-size:13px;padding:3px 0;cursor:pointer}
+.rep-prev{background:#e9e8e2;border-radius:12px;padding:18px;min-width:0}
+.rep-prev>small{display:block;margin:0 0 8px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.05em;font-size:11px}
+.rep-doc{background:#fff;max-width:860px;margin:0 auto;padding:26px 30px;box-shadow:0 2px 14px rgba(0,0,0,.15);min-height:300px}
+.rep-hd{display:flex;gap:14px;align-items:center;border-bottom:2px solid var(--brand);padding-bottom:10px;margin-bottom:14px;font-size:12px;line-height:1.45}
+.rep-hd b{font-size:15px}
+.rep-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
+.rep-k{border:1px solid #d8d7d0;border-radius:8px;padding:8px 10px;display:flex;flex-direction:column}
+.rep-k span{font-size:10.5px;color:#555;font-weight:700}.rep-k b{font-size:20px}.rep-k small{font-size:10px;color:#777}
+.rep-charts{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+.rep-ch{border:1px solid #d8d7d0;border-radius:8px;padding:8px 10px;break-inside:avoid}.rep-ch h4{margin:0 0 4px;font-size:12px}
+.rep-sec{margin-bottom:14px}.rep-sec h3{font-size:13px;margin:0 0 6px;color:var(--brand)}
+.rep-doc .dt-wrap{max-height:none;overflow-x:auto}
+.rep-doc table.dt{font-size:10.5px}.rep-doc table.dt th,.rep-doc table.dt td{padding:4px 5px}
+@media (max-width:1000px){.rep-grid{grid-template-columns:1fr}.rep-panel{position:static;max-height:none}}
 @media (max-width:900px){
-  #app{grid-template-columns:1fr}
+  #app,#app.mini{grid-template-columns:1fr}
+  .navtog{display:none}
+  #app.mini nav.side a span{display:block}#app.mini nav.side a{padding:6px 4px}
   nav.side{position:fixed;bottom:0;top:auto;left:0;right:0;height:auto;flex-direction:row;justify-content:space-around;border-right:0;border-top:1px solid var(--line);padding:6px;z-index:30}
   nav.side a{flex-direction:column;gap:2px;font-size:10.5px;padding:6px 4px;text-align:center}
   nav.side .foot{display:none}
@@ -205,7 +246,7 @@ table.dt th{text-align:left;font-size:11px;text-transform:uppercase;letter-spaci
 table.dt td{padding:7px 10px;vertical-align:top;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
 table.dt td.n, table.dt th.n{text-align:right}
 table.dt tr:hover td{background:#fafbf7}
-.dt-wrap{max-height:560px;overflow:auto;border:1px solid var(--line);border-radius:10px}
+.dt-wrap{max-height:max(560px,calc(100vh - 160px));overflow:auto;border:1px solid var(--line);border-radius:10px}
 .pill-bad{color:var(--bad);font-weight:700}
 .pill-ok{color:#1d5aa3;font-weight:700}
 .mbar{display:flex;align-items:center;gap:8px;min-width:140px}
@@ -335,6 +376,12 @@ table.h-tab{width:100%;border-collapse:collapse;table-layout:fixed;font-size:12p
   .capsec{break-inside:auto}
 
   body.imp-hoja main>*:not(.hoja-wrap){display:none!important}
+  body.imp-rep main>*:not(.rep-grid){display:none!important}
+  body.imp-rep .rep-grid{display:block}
+  .rep-prev{background:none;padding:0;border-radius:0}.rep-prev>small{display:none}
+  .rep-doc{box-shadow:none;max-width:none;padding:0;min-height:0}
+  .rep-sec{break-inside:auto}.rep-sec h3{break-after:avoid}
+  .rep-doc .dt-wrap{overflow:visible}
   body.imp-inf main>*:not(.inf-wrap){display:none!important}
   .inf-wrap{overflow:visible;margin:0;padding:0}
   .inf-hoja{min-width:0;max-width:none;box-shadow:none;border:0;padding:0}
@@ -743,7 +790,7 @@ function navItems() {
   if (!p) return it;
   if (p.esProfesor && p.docenteId) { it.push(["inicio", "Mis concentrados", ICON.book]); it.push(["grupos", "Mis grupos", ICON.users]); }
   if (p.esProfesor && p.docenteId && p.rol !== "admin") it.push(["misstats", "Mis estadísticas", ICON.chart]);
-  if (p.rol === "admin" || p.rol === "director") { it.push(["stats", "Estadísticas", ICON.chart]); it.push(["informe", "Informe trimestral", ICON.doc]); it.push(["avance", "Avance de captura", ICON.check]); }
+  if (p.rol === "admin" || p.rol === "director") { it.push(["stats", "Estadísticas", ICON.chart]); it.push(["docentes", "Docentes y concentrados", ICON.users]); it.push(["imprimir", "Imprimir / Descargar", ICON.print]); it.push(["informe", "Informe trimestral", ICON.doc]); it.push(["avance", "Avance de captura", ICON.check]); }
   if (p.rol === "secretaria") it.push(["secre", "Concentrados de mis grupos", ICON.folder]);
   if (p.rol === "admin") it.push(["admin", "Administración", ICON.gear]);
   if (p.rol === "admin" || (p.esProfesor && p.docenteId)) it.push(["historial", "Historial de cambios", ICON.hist]);
@@ -759,7 +806,7 @@ function scheduleRender(fromData) {
   clearTimeout(rTimer);
   rTimer = setTimeout(() => render(fromData), 90);
 }
-const VISTAS_ESTABLES = ["stats", "misstats", "avance", "secre", "informe", "historial"];
+const VISTAS_ESTABLES = ["stats", "misstats", "avance", "secre", "informe", "historial", "imprimir"];
 function render(fromData = false) {
   if (!S.perfil || $("#app").hidden) return;
   if (!S.ready) {
@@ -769,7 +816,7 @@ function render(fromData = false) {
   }
   renderTop();
   const items = navItems();
-  const permitidas = items.map(i => i[0]).concat(S.perfil.esProfesor || esAdmin() ? ["captura"] : []);
+  const permitidas = items.map(i => i[0]).concat(S.perfil.esProfesor || esAdmin() || S.perfil.rol === "director" ? ["captura"] : []);
   let [v, arg] = parseHash();
   if (!permitidas.includes(v)) { v = S.perfil.esProfesor && S.perfil.docenteId && !misAsignaciones().length ? "grupos" : items[0][0]; arg = undefined; history.replaceState(null, "", "#/" + v); }
   renderNav(v);
@@ -802,8 +849,10 @@ function renderTop() {
   $("#topEsc").textContent = `Esc. Sec. Gral. "${S.cfg.escuela}" · Ciclo ${S.cfg.ciclo}`;
   requestAnimationFrame(medirTop);
 }
+const navMini = () => { try { return localStorage.getItem("navMini") === "1"; } catch { return false; } };
 function renderNav(v) {
-  $("#nav").innerHTML = navItems().map(([k, t, ic]) => `<a href="#/${k}" class="${k === v || (v === "captura" && k === "inicio") ? "on" : ""}">${ic}<span>${t}</span></a>`).join("") + '<div class="foot powered">powered by elprofe chan</div>';
+  const mini = navMini(); $("#app").classList.toggle("mini", mini);
+  $("#nav").innerHTML = `<button class="navtog" data-act="navTog" title="${mini ? "Mostrar" : "Ocultar"} el menú" aria-label="Plegar o desplegar el menú">${mini ? "»" : "«"}</button>` + navItems().map(([k, t, ic]) => `<a href="#/${k}" title="${esc(t)}" class="${k === v || (v === "captura" && k === "inicio") ? "on" : ""}">${ic}<span>${t}</span></a>`).join("") + '<div class="foot powered">powered by elprofe chan</div>';
 }
 
 /* =====================================================================
@@ -1347,7 +1396,7 @@ function capturaFirma(aId) {
 }
 function vCaptura(main, aId) {
   const a = S.asig[aId];
-  if (!a || !puedeEditar(aId)) { main.innerHTML = `<div class="card empty"><b>Concentrado no disponible</b>No existe o no pertenece a tu cuenta. <p><a href="#/inicio">Volver</a></p></div>`; return; }
+  if (!a || !(puedeEditar(aId) || S.perfil?.rol === "director")) { main.innerHTML = `<div class="card empty"><b>Concentrado no disponible</b>No existe o no pertenece a tu cuenta. <p><a href="#/inicio">Volver</a></p></div>`; return; }
   const T = +S.capT, secs = secciones(aId), total = sum(secs.map(s => s.alumnos.length)), cfg = S.cfg;
   const opAdm = LETRAS.map(l => `<option value="${l}" ${admvoLetra(a) === l ? "selected" : ""}>${l} · ${esc(cfg.secretarias[l])}</option>`).join("");
   let h = `<div class="no-print">
@@ -1406,6 +1455,10 @@ function vCaptura(main, aId) {
   </div></div>
   <p class="save-status no-print" id="saveStatus">Los cambios se guardan solos al salir de cada casilla. Enter o ↑ ↓ para moverte.</p>`;
   main.innerHTML = h;
+  if (!puedeEditar(aId)) {
+    main.querySelectorAll("button[data-act],select[data-act]").forEach(el => { if (!["xls", "print", "capT"].includes(el.dataset.act)) el.disabled = true; });
+    main.insertAdjacentHTML("afterbegin", `<div class="card pad no-print" style="margin-bottom:10px;border-color:var(--lime)"><b>Vista de solo lectura.</b> <span class="muted">Puedes revisar, imprimir y descargar este concentrado, pero no modificarlo.</span></div>`);
+  }
   refrescarCalculos();
 }
 const fmtVal = v => v == null ? "" : String(v);
@@ -1429,6 +1482,7 @@ function refrescarCalculos() {
     if (!off && f.startsWith("t") && k < 3 && num(d["er" + k]) != null) { off = true; tach = true; }
     const lk = bloqueado(aId, k) && d[f] != null && d[f] !== "";
     if (!off && lk && !esAdmin()) off = true;
+    if (!puedeEditar(aId)) off = true;
     el.classList.toggle("lock", lk);
     el.title = lk ? (esAdmin() ? "Trimestre bloqueado (como administrador puedes corregirlo)" : "Trimestre bloqueado") : "";
     if (el !== document.activeElement) el.disabled = off;
@@ -1508,7 +1562,7 @@ const confirmarSimple = async (msg, boton) => (await abrirDialogo("Confirmar", `
 /* Descargar / imprimir concentrados: todos, por grado, por grupo (o por docente) */
 function dlgDescarga(todos) {
   const base = (todos && esAdmin()) ? Object.entries(S.asig) : misAsignaciones();
-  const grados = [...new Set(base.map(([, a]) => a.grado))].sort(), grupos = [...new Set(base.map(([, a]) => a.grado + a.grupos))].sort();
+  const grados = [...new Set(base.map(([, a]) => a.grado))].sort(), grupos = [...new Set(base.flatMap(([, a]) => gruposArr(a).map(g => a.grado + g)))].sort();
   const docs = [...new Set(base.map(([, a]) => a.docenteId))].sort((x, y) => nombreDocente(x).localeCompare(nombreDocente(y)));
   const radio = (v, t, extra = "") => `<label class="row" style="gap:8px;margin:6px 0"><input type="radio" name="dsAl" value="${v}" ${v === "todos" ? "checked" : ""}> <span>${t}</span> ${extra}</label>`;
   abrirDialogo(todos && esAdmin() ? "Descargar / imprimir concentrados" : "Descargar mis concentrados", `
@@ -1525,7 +1579,7 @@ function dlgDescarga(todos) {
   const btn = $('#dlg .dlg-f [data-dlg="keep"]');
   const sel = () => {
     const al = document.querySelector('input[name=dsAl]:checked')?.value;
-    return base.filter(([, a]) => al === "todos" || (al === "grado" && String(a.grado) === $("#dsGrado").value) || (al === "grupo" && (a.grado + a.grupos) === $("#dsGrupo").value) || (al === "docente" && a.docenteId === $("#dsDoc")?.value)).map(([id]) => id);
+    return base.filter(([, a]) => al === "todos" || (al === "grado" && String(a.grado) === $("#dsGrado").value) || (al === "grupo" && gruposArr(a).some(g => (a.grado + g) === $("#dsGrupo").value)) || (al === "docente" && a.docenteId === $("#dsDoc")?.value)).map(([id]) => id);
   };
   const act = () => { const n = sel().length; $("#dsCuenta").textContent = n ? `${n} concentrado${n === 1 ? "" : "s"} en el archivo` : "No hay concentrados con esa selección."; btn.disabled = !n; };
   $("#dlg").addEventListener("change", ev => { const t = ev.target; if (t.id === "dsGrado") document.querySelector('input[name=dsAl][value=grado]').checked = true; if (t.id === "dsGrupo") document.querySelector('input[name=dsAl][value=grupo]').checked = true; if (t.id === "dsDoc") document.querySelector('input[name=dsAl][value=docente]').checked = true; act(); });
@@ -1736,14 +1790,14 @@ function vStats(main, lockDoc) {
     ${filtrosHTML(F, lockDoc)}
     <p class="filtros-print"><span class="escudo" style="width:46px;height:40px;float:left;margin-right:10px"></span><b>Estadísticas · ${esc(S.cfg.escuela)} · Ciclo ${esc(S.cfg.ciclo)}</b><br>Filtros: ${esc(textoFiltros(F, lockDoc))} · Impreso el ${new Date().toLocaleDateString("es-MX")}</p>
     <div class="kpis">
-      <div class="card kpi"><span class="k-l">Alumnos</span><span class="k-v num">${alumnosU.size}</span><span class="k-s">${uH} hombres · ${uM} mujeres</span></div>
-      <div class="card kpi"><span class="k-l">Evaluaciones capturadas</span><span class="k-v num">${g.n}</span><span class="k-s">de ${g.total} (${pct(g.cap)}) alumno × asignatura</span></div>
-      <div class="card kpi"><span class="k-l"><i class="dot" style="background:var(--ok)"></i>Aprobados</span><span class="k-v num">${g.ap}</span><span class="k-s">${pct(g.pa)} · H ${g.hAp} · M ${g.mAp}</span></div>
-      <div class="card kpi"><span class="k-l"><i class="dot" style="background:var(--bad)"></i>Reprobados</span><span class="k-v num">${g.rp}</span><span class="k-s">${pct(g.pr)} · H ${g.hRp} · M ${g.mRp}</span></div>
-      <div class="card kpi"><span class="k-l">Promedio general</span><span class="k-v num">${g.prom == null ? "—" : f1(g.prom)}</span><span class="k-s">${esc(nomT(F.T))}</span></div>
-      <div class="card kpi"><span class="k-l">Alumnos con al menos una reprobada</span><span class="k-v num">${enRiesgo}</span><span class="k-s">${alumnosU.size ? pct(enRiesgo / alumnosU.size * 100) : "—"} del total</span></div>
-      <div class="card kpi"><span class="k-l">Inasistencias</span><span class="k-v num">${totFal}</span><span class="k-s">${Object.values(falAl).filter(v => v >= 10).length} alumnos con 10 o más</span></div>
-      <div class="card kpi"><span class="k-l"><i class="dot" style="background:var(--warn)"></i>Conducta regular o mala</span><span class="k-v num">${alCondBaja}</span><span class="k-s">alumnos · ${conBaja.length} registros R o M</span></div>
+      <div class="card kpi click" data-kpi="resumen" title="Ver el detalle"><span class="k-l">Alumnos</span><span class="k-v num">${alumnosU.size}</span><span class="k-s">${uH} hombres · ${uM} mujeres</span><span class="k-more">Ver detalle ›</span></div>
+      <div class="card kpi click" data-kpi="grupo" title="Ver el detalle"><span class="k-l">Evaluaciones capturadas</span><span class="k-v num">${g.n}</span><span class="k-s">de ${g.total} (${pct(g.cap)}) alumno × asignatura</span><span class="k-more">Ver detalle ›</span></div>
+      <div class="card kpi click" data-kpi="aprobados" title="Ver el detalle"><span class="k-l"><i class="dot" style="background:var(--ok)"></i>Aprobados</span><span class="k-v num">${g.ap}</span><span class="k-s">${pct(g.pa)} · H ${g.hAp} · M ${g.mAp}</span><span class="k-more">Ver detalle ›</span></div>
+      <div class="card kpi click" data-kpi="reprobados" title="Ver el detalle"><span class="k-l"><i class="dot" style="background:var(--bad)"></i>Reprobados</span><span class="k-v num">${g.rp}</span><span class="k-s">${pct(g.pr)} · H ${g.hRp} · M ${g.mRp}</span><span class="k-more">Ver detalle ›</span></div>
+      <div class="card kpi click" data-kpi="grado" title="Ver el detalle"><span class="k-l">Promedio general</span><span class="k-v num">${g.prom == null ? "—" : f1(g.prom)}</span><span class="k-s">${esc(nomT(F.T))}</span><span class="k-more">Ver detalle ›</span></div>
+      <div class="card kpi click" data-kpi="riesgo" title="Ver el detalle"><span class="k-l">Alumnos con al menos una reprobada</span><span class="k-v num">${enRiesgo}</span><span class="k-s">${alumnosU.size ? pct(enRiesgo / alumnosU.size * 100) : "—"} del total</span><span class="k-more">Ver detalle ›</span></div>
+      <div class="card kpi click" data-kpi="faltas" title="Ver el detalle"><span class="k-l">Inasistencias</span><span class="k-v num">${totFal}</span><span class="k-s">${Object.values(falAl).filter(v => v >= 10).length} alumnos con 10 o más</span><span class="k-more">Ver detalle ›</span></div>
+      <div class="card kpi click" data-kpi="conducta" title="Ver el detalle"><span class="k-l"><i class="dot" style="background:var(--warn)"></i>Conducta regular o mala</span><span class="k-v num">${alCondBaja}</span><span class="k-s">alumnos · ${conBaja.length} registros R o M</span><span class="k-more">Ver detalle ›</span></div>
     </div>`;
   if (!rs.length) {
     h += `<div class="card empty"><b>No hay alumnos para estos filtros</b>Cuando los docentes registren sus listas y calificaciones aparecerán aquí.</div>`;
@@ -1760,9 +1814,10 @@ function vStats(main, lockDoc) {
     <div class="card chart-card"><h3>Inasistencias por grupo</h3><p>Total de faltas registradas</p><div class="chart-box" style="height:240px"><canvas id="chFal"></canvas></div></div>
     <div class="card chart-card"><h3>Evolución por trimestre</h3><p>% de aprobación con los mismos filtros</p><div class="chart-box" style="height:240px"><canvas id="chEvol"></canvas></div></div>
   </div>
-  <div class="card pad">
+  <div class="card pad" id="detalle">
     <div class="tabs">${[["resumen", "Resumen por grupo"], ["grado", "Por grado"], ["grupo", "Por grupo"], ["materia", "Por asignatura"], ...(lockDoc ? [] : [["profesor", "Por profesor"]]), ["reprobados", "Reprobados"], ["aprobados", "Aprobados"], ["riesgo", "Alumnos en riesgo"], ["faltas", "Faltas"], ["conducta", "Conducta"]].map(([k, t]) => `<button data-tab="${k}" class="${tab === k ? "on" : ""}">${t}</button>`).join("")}</div>
     ${["reprobados", "aprobados", "riesgo", "faltas", "conducta"].includes(tab) ? `<div class="row no-print" style="margin-bottom:10px"><input class="in" style="max-width:320px" placeholder="Buscar alumno…" data-filtro="q" value="${esc(F.q)}"></div>` : ""}
+    ${["reprobados", "riesgo"].includes(tab) ? desgloseReprob(rs, lockDoc) : ""}
     <h3 class="filtros-print">${esc(tablas[tab].titulo)}</h3>
     ${htmlTabla(tablas[tab], tab)}
   </div>`;
@@ -1874,6 +1929,134 @@ function dibujarGraficas(rs, F, lockDoc) {
 }
 
 /* =====================================================================
+   DESGLOSE DE REPROBADOS (estadísticas a detalle) · DOCENTES · REPORTES
+   ===================================================================== */
+function desgloseReprob(rs, lockDoc) {
+  const bloque = (titulo, fnKey, fnEtq, drill, fnV) => {
+    const filas = [...agrupar(rs, fnKey)].map(([k, l]) => { const g = agg(l), af = new Set(l.filter(r => r.cal != null && r.cal < 6).map(r => r.alumnoId)).size; return { k, g, af, v: fnV ? fnV(l[0]) : k, etq: fnEtq(l[0], k) }; })
+      .filter(f => f.g.n).sort((a, b) => b.g.pr - a.g.pr || b.g.rp - a.g.rp);
+    return `<div class="drill-card"><h4>${titulo}</h4><table class="dr"><thead><tr><th>${titulo.replace("Por ", "")}</th><th class="n">Evaluados</th><th class="n">Reprob.</th><th class="n">% reprob.</th><th class="n">Alumnos</th></tr></thead><tbody>${
+      filas.map(f => `<tr data-drill="${drill}" data-v="${esc(f.v)}" title="Clic para filtrar por esta opción"><td>${esc(f.etq)}</td><td class="n">${f.g.n}</td><td class="n">${f.g.rp}</td><td class="n"><span class="pill-r">${pct(f.g.pr)}</span></td><td class="n">${f.af}</td></tr>`).join("") || `<tr><td colspan="5" class="muted">Sin datos</td></tr>`}</tbody></table></div>`;
+  };
+  return `<p class="small muted no-print" style="margin:0 0 8px">Haz clic en una fila para filtrar todo el panel por ese grado, grupo, asignatura o profesor.</p><div class="drill-grid">
+    ${bloque("Por grado", r => r.grado, (r) => r.grado + "° grado", "grado", r => String(r.grado))}
+    ${bloque("Por grupo", r => `${r.grado}|${r.grupo}`, (r) => `${r.grado}° ${r.grupo}`, "grupo", r => `${r.grado}|${r.grupo}`)}
+    ${bloque("Por asignatura", r => r.materia, (r, k) => k, "materia")}
+    ${lockDoc ? "" : bloque("Por profesor", r => r.docenteId, (r) => nombreDocente(r.docenteId), "docente")}
+  </div>`;
+}
+
+const asigCoincide = (a, F) => (!F.docente || a.docenteId === F.docente) && (!F.grado || String(a.grado) === F.grado) && (!F.grupo || gruposArr(a).includes(F.grupo)) && (!F.materia || a.materia === F.materia) && (!F.tipo || a.tipo === F.tipo);
+S.dc = { docente: "", grado: "", grupo: "", materia: "", tipo: "", t: "1", sel: new Set() };
+function vDocentes(main) {
+  const F = S.dc, todas = Object.entries(S.asig);
+  const docs = [...new Set(todas.map(([, a]) => a.docenteId))].filter(Boolean).sort((x, y) => nombreDocente(x).localeCompare(nombreDocente(y)));
+  const mats = [...new Set(todas.map(([, a]) => a.materia))].sort();
+  const lista = todas.filter(([, a]) => asigCoincide(a, F)).sort(ordenAsig);
+  for (const id of [...F.sel]) if (!lista.some(([i]) => i === id)) F.sel.delete(id);
+  const nIds = F.sel.size || lista.length, T = +F.t;
+  const sel = (k, lbl, ops) => `<label class="f">${lbl}<select class="in" data-dc="${k}">${ops.map(([v, t]) => `<option value="${esc(v)}" ${F[k] === v ? "selected" : ""}>${esc(t)}</option>`).join("")}</select></label>`;
+  let h = `<div class="page-head"><div><h1>Docentes y concentrados</h1><p class="muted">Consulta los concentrados de cada docente, ábrelos en solo lectura y descárgalos en Excel.</p></div></div>
+    <div class="card filters">
+      ${sel("docente", "Profesor", [["", "Todos los profesores"], ...docs.map(d => [d, nombreDocente(d)])])}
+      ${sel("grado", "Grado", [["", "Todos"], ["1", "1°"], ["2", "2°"], ["3", "3°"]])}
+      ${sel("grupo", "Grupo", [["", "Todos"], ...LETRAS.map(l => [l, l])])}
+      ${sel("materia", "Asignatura", [["", "Todas"], ...mats.map(m => [m, m])])}
+      ${sel("tipo", "Tipo", [["", "Asignaturas y talleres"], ["regular", "Solo asignaturas"], ["taller", "Solo talleres"]])}
+      <button class="btn sm" data-act="dcLimpiar">Limpiar</button>
+    </div>
+    <div class="card pad" style="margin-bottom:14px"><div class="row" style="gap:12px">
+      <b>${lista.length} concentrado${lista.length === 1 ? "" : "s"}</b><span class="muted small">${F.sel.size ? F.sel.size + " seleccionado" + (F.sel.size === 1 ? "" : "s") : "sin selección: se descargan todos los que ves"}</span>
+      <span style="flex:1"></span>
+      <select class="in" data-dc="t" style="width:auto" aria-label="Trimestre">${[1, 2, 3].map(k => `<option value="${k}" ${T === k ? "selected" : ""}>Hasta el ${NOMT[k]}</option>`).join("")}</select>
+      <button class="btn primary" data-act="dcXls" data-modo="T" ${lista.length ? "" : "disabled"}>${ICON.xls}Descargar Excel (${nIds})</button>
+      <button class="btn" data-act="dcXls" data-modo="vacio" ${lista.length ? "" : "disabled"}>Formato vacío</button>
+    </div></div>
+    <div class="card pad"><div class="dt-wrap"><table class="dt"><thead><tr><th><input type="checkbox" data-dcall="1" ${lista.length && F.sel.size === lista.length ? "checked" : ""} aria-label="Seleccionar todos"></th><th>Profesor</th><th>Asignatura</th><th>Grupo</th><th class="n">Alumnos</th><th>1° trim.</th><th>2° trim.</th><th>3° trim.</th><th></th></tr></thead><tbody>`;
+  for (const [id, a] of lista) {
+    const p = progresoAsig(id);
+    h += `<tr><td><input type="checkbox" data-dcsel="${id}" ${F.sel.has(id) ? "checked" : ""}></td><td>${esc(nombreDocente(a.docenteId))}</td><td>${esc(a.materia)} <span class="badge ${a.tipo}">${a.tipo === "taller" ? "Taller" : "Asig."}</span></td><td>${esc(tituloAsig(a))}</td><td class="n">${p.n}</td>
+      ${[1, 2, 3].map(t => `<td><div class="mbar"><div class="bar"><i style="width:${p["p" + t].toFixed(0)}%;${p["p" + t] >= 99.9 ? "" : "background:var(--warn)"}"></i></div><span class="num small">${p["p" + t].toFixed(0)}%${bloqueado(id, t) ? " 🔒" : ""}</span></div></td>`).join("")}
+      <td style="white-space:nowrap">${esAdmin() && bloqueado(id, T) ? `<button class="btn sm" data-act="desbT" data-a="${id}" data-t="${T}">${ICON.unlock}Desbloquear</button> ` : ""}<button class="btn sm" data-go="captura/${id}">Abrir</button> <button class="btn sm" data-act="xls" data-ids="${id}" data-modo="T" data-t="${T}">${ICON.xls}Excel</button></td></tr>`;
+  }
+  if (!lista.length) h += `<tr><td colspan="9" class="muted">No hay concentrados con esos filtros.</td></tr>`;
+  main.innerHTML = h + `</tbody></table></div></div>`;
+}
+
+/* ---------- Imprimir / Descargar (con vista previa) ---------- */
+const REP_ITEMS = [
+  ["Indicadores", [["kpis", "Indicadores generales"]]],
+  ["Gráficas", [["chGrado", "Aprobación por grado"], ["chGrupo", "Aprobación por grupo"], ["chSexo", "Aprobados y reprobados por sexo"], ["chMat", "Reprobación por asignatura"], ["chProf", "Aprobación por profesor"], ["chDist", "Distribución de calificaciones"], ["chCond", "Conducta registrada"], ["chFal", "Inasistencias por grupo"], ["chEvol", "Evolución por trimestre"]]],
+  ["Tablas", [["resumen", "Resumen por grupo y asignatura"], ["grado", "Por grado"], ["grupo", "Por grupo"], ["materia", "Por asignatura"], ["profesor", "Por profesor"], ["riesgo", "Alumnos con asignaturas reprobadas"], ["reprobados", "Alumnos reprobados (detalle)"], ["aprobados", "Alumnos aprobados"], ["faltas", "Inasistencias por alumno"], ["conducta", "Conducta regular o mala"]]]
+];
+const REP_ETQ = Object.fromEntries(REP_ITEMS.flatMap(([, l]) => l));
+S.rp = { T: "1", grado: "", grupo: "", materia: "", docente: "", sexo: "", tipo: "", q: "", sel: new Set(["kpis", "chGrado", "chGrupo", "grado", "grupo", "profesor"]) };
+function kpisRep(rs) {
+  const g = agg(rs), al = new Map(rs.map(r => [r.alumnoId, r.sexo])), enR = new Set(rs.filter(r => r.cal != null && r.cal < 6).map(r => r.alumnoId)).size;
+  const fal = sum(rs.map(r => r.ina || 0)), cb = new Set(rs.filter(r => r.cond.some(esCondBaja)).map(r => r.alumnoId)).size;
+  const k = (l, v, s) => `<div class="rep-k"><span>${l}</span><b>${v}</b><small>${s}</small></div>`;
+  return `<div class="rep-kpis">${k("Alumnos", al.size, `${[...al.values()].filter(x => x === "H").length} H · ${[...al.values()].filter(x => x === "M").length} M`)}${k("Evaluaciones", g.n, `de ${g.total} (${pct(g.cap)})`)}${k("Aprobados", g.ap, pct(g.pa))}${k("Reprobados", g.rp, pct(g.pr))}${k("Promedio", g.prom == null ? "—" : f1(g.prom), "general")}${k("Con reprobadas", enR, "alumnos")}${k("Inasistencias", fal, "total")}${k("Conducta R/M", cb, "alumnos")}</div>`;
+}
+function repDoc(rs, F) {
+  const sel = S.rp.sel;
+  if (!sel.size) return `<div class="empty">Marca a la izquierda lo que quieres incluir.</div>`;
+  if (!rs.length) return `<div class="empty"><b>No hay alumnos para esos filtros</b></div>`;
+  const tablas = tablasStats(rs, F);
+  let h = `<div class="rep-hd"><span class="escudo" style="width:54px;height:48px;flex:none"></span><div><b>${esc(S.cfg.escuela)}</b><br>Reporte de aprovechamiento · Ciclo escolar ${esc(S.cfg.ciclo)}<br><span>${esc(textoFiltros(F, null))}</span><br><small>Generado el ${new Date().toLocaleString("es-MX")}</small></div></div>`;
+  if (sel.has("kpis")) h += kpisRep(rs);
+  const gs = REP_ITEMS[1][1].filter(([k]) => sel.has(k));
+  if (gs.length) h += `<div class="rep-charts">${gs.map(([k, t]) => `<div class="rep-ch" ${["chGrupo", "chMat", "chProf"].includes(k) && gs.length > 1 ? 'style="grid-column:1/-1"' : ""}><h4>${t}</h4><div class="chart-box" ${k === "chMat" ? 'id="bxMat"' : k === "chProf" ? 'id="bxProf"' : 'style="height:200px"'}><canvas id="${k}"></canvas></div></div>`).join("")}</div>`;
+  for (const [k] of REP_ITEMS[2][1]) if (sel.has(k)) h += `<section class="rep-sec"><h3>${esc(tablas[k].titulo)}</h3>${htmlTabla(tablas[k], k)}</section>`;
+  return h;
+}
+function vImprimir(main) {
+  const F = S.rp, rs = registros(F, null);
+  const docs = [...new Set(Object.values(S.asig).map(a => a.docenteId))].filter(Boolean).sort((a, b) => nombreDocente(a).localeCompare(nombreDocente(b)));
+  const mats = [...new Set(Object.values(S.asig).map(a => a.materia))].sort();
+  const sel = (k, lbl, ops) => `<label class="f">${lbl}<select class="in" data-rp="${k}">${ops.map(([v, t]) => `<option value="${esc(v)}" ${F[k] === v ? "selected" : ""}>${esc(t)}</option>`).join("")}</select></label>`;
+  const grupo = ([nom, l]) => `<h4>${nom}<span><a data-act="rpTodo" data-g="${nom}">todo</a> · <a data-act="rpNada" data-g="${nom}">nada</a></span></h4>${l.map(([k, t]) => `<label class="rep-chk"><input type="checkbox" data-rpi="${k}" ${F.sel.has(k) ? "checked" : ""}> <span>${t}</span></label>`).join("")}`;
+  main.innerHTML = `<div class="page-head"><div><h1>Imprimir / Descargar</h1><p class="muted">Elige qué incluir, revisa la vista previa y luego imprime o descarga.</p></div>
+    <div class="actions"><button class="btn" data-go="docentes">${ICON.folder}Concentrados de docentes…</button><button class="btn" data-act="repXls">${ICON.xls}Descargar Excel</button><button class="btn primary" data-act="repPrint">${ICON.print}Imprimir / PDF</button></div></div>
+    <div class="rep-grid"><aside class="card pad rep-panel no-print">
+      <h4 style="margin-top:0">Periodo</h4><div class="seg">${[["1", "1er"], ["2", "2o"], ["3", "3er"], ["F", "Final"]].map(([k, t]) => `<button data-rpt="${k}" class="${F.T === k ? "on" : ""}">${t}</button>`).join("")}</div>
+      <h4>Qué datos</h4>
+      <div class="grid2" style="gap:8px">${sel("grado", "Grado", [["", "Todos"], ["1", "1°"], ["2", "2°"], ["3", "3°"]])}${sel("grupo", "Grupo", [["", "Todos"], ...LETRAS.map(l => [l, l])])}</div>
+      <div style="display:grid;gap:8px;margin-top:8px">${sel("docente", "Profesor", [["", "Todos los profesores"], ...docs.map(d => [d, nombreDocente(d)])])}${sel("materia", "Asignatura", [["", "Todas"], ...mats.map(m => [m, m])])}</div>
+      ${REP_ITEMS.map(grupo).join("")}
+    </aside>
+    <div class="rep-prev"><small>Vista previa de lo que se imprimirá</small><div class="rep-doc" id="repDoc">${repDoc(rs, F)}</div></div></div>`;
+  if (rs.length && REP_ITEMS[1][1].some(([k]) => F.sel.has(k))) dibujarGraficas(rs, F, null);
+}
+async function exportarReporte() {
+  if (!window.ExcelJS) { toast("No se cargó la librería de Excel.", "err"); return; }
+  const F = S.rp, sel = F.sel, rs = registros(F, null);
+  if (!sel.size || !rs.length) { toast("No hay nada que descargar con esa selección."); return; }
+  const tablas = tablasStats(rs, F), g = agg(rs), sub = `${S.cfg.escuela} · Ciclo ${S.cfg.ciclo} · ${textoFiltros(F, null)} · ${new Date().toLocaleString("es-MX")}`;
+  const wb = new ExcelJS.Workbook(); wb.creator = "Concentrado de Calificaciones 21";
+  if (sel.has("kpis")) {
+    const al = new Map(rs.map(r => [r.alumnoId, r.sexo]));
+    hojaTabla(wb, "Resumen", "Reporte de aprovechamiento", sub, ["Indicador", "Valor"], [
+      ["Alumnos", al.size], ["Evaluaciones capturadas", g.n], ["% capturado", g.cap], ["Aprobados", g.ap], ["Reprobados", g.rp], ["% aprobados", g.pa], ["% reprobados", g.pr], ["Promedio general", g.prom],
+      ["Alumnos con al menos una reprobada", new Set(rs.filter(r => r.cal != null && r.cal < 6).map(r => r.alumnoId)).size], ["Inasistencias", sum(rs.map(r => r.ina || 0))]
+    ]).eachRow((row, i) => { if ([4, 7, 8].includes(i)) row.getCell(2).numFmt = '0.0"%"'; });
+  }
+  const nombres = { resumen: "Por grupo y asignatura", grado: "Por grado", faltas: "Faltas", conducta: "Conducta", grupo: "Por grupo", materia: "Por asignatura", profesor: "Por profesor", reprobados: "Reprobados", aprobados: "Aprobados", riesgo: "Alumnos en riesgo" };
+  for (const [k] of REP_ITEMS[2][1]) if (sel.has(k)) hojaTabla(wb, nombres[k], tablas[k].titulo, sub, tablas[k].head, tablas[k].rows, PCT_COLS[k] || []);
+  const imgs = REP_ITEMS[1][1].filter(([k]) => sel.has(k) && document.getElementById(k));
+  if (imgs.length) {
+    const ws = wb.addWorksheet("Gráficas"); let fila = 1;
+    ws.getCell(1, 1).value = "Gráficas · " + textoFiltros(F, null); ws.getCell(1, 1).font = { bold: true, size: 12 }; fila = 3;
+    for (const [k, t] of imgs) {
+      const cv = document.getElementById(k), w = cv.clientWidth || 600, hh = cv.clientHeight || 220;
+      ws.getCell(fila, 1).value = t; ws.getCell(fila, 1).font = { bold: true };
+      ws.addImage(wb.addImage({ base64: cv.toDataURL("image/png"), extension: "png" }), { tl: { col: 0, row: fila }, ext: { width: w, height: hh } });
+      fila += Math.ceil(hh / 20) + 3;
+    }
+  }
+  descargar(new Blob([await wb.xlsx.writeBuffer()], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }), `Reporte_${F.T === "F" ? "FINAL" : "T" + F.T}_${S.cfg.ciclo}.xlsx`);
+}
+
+/* =====================================================================
    VISTA: AVANCE DE CAPTURA
    ===================================================================== */
 function vAvance(main) {
@@ -1907,7 +2090,7 @@ function vAvance(main) {
       <td class="no-print" style="white-space:nowrap">${esAdmin() && f.ids.some(id => bloqueado(id, +T)) ? `<button class="btn sm" data-act="desbT" data-d="${esc(f.d)}" data-t="${T}" title="Abre el ${NOMT[T]} de todos sus concentrados">${ICON.unlock}Desbloquear ${T}°</button> ` : ""}<button class="btn sm" data-act="toggleAv" data-d="${esc(f.d)}">Detalle</button></td></tr>
       <tr data-av="${esc(f.d)}" hidden><td colspan="7" style="background:var(--surface-2)">
         <table class="dt"><tbody>${f.prs.map(([id, p]) => { const a = S.asig[id]; return `<tr><td>${esc(a.materia)} · ${esc(tituloAsig(a))} <span class="badge ${a.tipo}">${a.tipo === "taller" ? "Taller" : "Asig."}</span></td><td class="n">${p.n} alumnos</td>${[1, 2, 3].map(t => `<td class="n">${p["p" + t].toFixed(0)}%${bloqueado(id, t) ? " 🔒" : ""}</td>`).join("")}
-          <td class="no-print">${esAdmin() && bloqueado(id, +T) ? `<button class="btn sm" data-act="desbT" data-a="${id}" data-t="${T}" title="Abre el ${NOMT[T]} de este concentrado">${ICON.unlock}Desbloquear</button> ` : ""}${esAdmin() ? `<button class="btn sm" data-go="captura/${id}">Abrir</button> ` : ""}<button class="btn sm" data-act="xls" data-ids="${id}" data-modo="T" data-t="${T}">${ICON.xls}Excel ${T}° trim.</button></td></tr>`; }).join("")}</tbody></table>
+          <td class="no-print">${esAdmin() && bloqueado(id, +T) ? `<button class="btn sm" data-act="desbT" data-a="${id}" data-t="${T}" title="Abre el ${NOMT[T]} de este concentrado">${ICON.unlock}Desbloquear</button> ` : ""}<button class="btn sm" data-go="captura/${id}">Abrir</button> <button class="btn sm" data-act="xls" data-ids="${id}" data-modo="T" data-t="${T}">${ICON.xls}Excel ${T}° trim.</button></td></tr>`; }).join("")}</tbody></table>
       </td></tr>`;
   }
   h += `</tbody></table></div></div>`;
@@ -2819,7 +3002,7 @@ async function exportarAlumnos() {
 /* =====================================================================
    EVENTOS
    ===================================================================== */
-const VISTAS = { historial: vHistorial, informe: vInforme, grupos: vGrupos, inicio: vInicio, captura: vCaptura, stats: m => vStats(m, null), misstats: m => vStats(m, S.perfil.docenteId), avance: vAvance, secre: vSecre, perfil: vPerfil, admin: vAdmin };
+const VISTAS = { historial: vHistorial, informe: vInforme, grupos: vGrupos, inicio: vInicio, captura: vCaptura, stats: m => vStats(m, null), misstats: m => vStats(m, S.perfil.docenteId), avance: vAvance, docentes: vDocentes, imprimir: vImprimir, secre: vSecre, perfil: vPerfil, admin: vAdmin };
 
 document.addEventListener("click", async ev => {
   const it2 = ev.target.closest("[data-inf-t],[data-inf-turno]");
@@ -2828,6 +3011,12 @@ document.addEventListener("click", async ev => {
   if (gg2) { S.gf.grado = +gg2.dataset.gfgrado; S.gf.grupos = []; render(); return; }
   const goEl = ev.target.closest("[data-go]");
   if (goEl) { ev.preventDefault(); const [v, ...r] = goEl.dataset.go.split("/"); cerrarDialogo(); go(v, r.join("/")); return; }
+  const kp = ev.target.closest("[data-kpi]");
+  if (kp) { const F = S.cur?.view === "misstats" ? S.fm : S.f; F.tab = kp.dataset.kpi; render(); setTimeout(() => $("#detalle")?.scrollIntoView({ behavior: "smooth", block: "start" }), 60); return; }
+  const dr = ev.target.closest("[data-drill]");
+  if (dr) { const F = S.cur?.view === "misstats" ? S.fm : S.f, k = dr.dataset.drill, v = dr.dataset.v; if (k === "grupo") { const [gr, gp] = v.split("|"); F.grado = gr; F.grupo = gp; } else F[k] = v; render(); setTimeout(() => $("#detalle")?.scrollIntoView({ behavior: "smooth", block: "start" }), 60); return; }
+  const rt = ev.target.closest("[data-rpt]");
+  if (rt) { S.rp.T = rt.dataset.rpt; render(); return; }
   const t = ev.target.closest("[data-filtro-t]");
   if (t) { const F = S.cur?.view === "misstats" ? S.fm : S.f; F.T = t.dataset.filtroT; render(); return; }
   const tab = ev.target.closest("[data-tab]");
@@ -2840,6 +3029,18 @@ document.addEventListener("click", async ev => {
     switch (d.act) {
       case "capT": S.capT = d.t; render(); break;
       case "avT": S.avT = d.t; render(); break;
+      case "navTog": { try { localStorage.setItem("navMini", navMini() ? "0" : "1"); } catch {} renderNav(S.cur?.view); setTimeout(() => window.dispatchEvent(new Event("resize")), 220); break; }
+      case "dcLimpiar": Object.assign(S.dc, { docente: "", grado: "", grupo: "", materia: "", tipo: "" }); S.dc.sel.clear(); render(); break;
+      case "dcXls": {
+        const lista = Object.entries(S.asig).filter(([, a]) => asigCoincide(a, S.dc)).map(([i]) => i), ids = S.dc.sel.size ? lista.filter(i => S.dc.sel.has(i)) : lista;
+        const modo = d.modo === "vacio" ? "vacio" : S.dc.t;
+        if (!ids.length) { toast("No hay concentrados con esa selección."); break; }
+        if (modo !== "vacio" && !await confirmarBloqueo(ids, +modo, "descargar")) break;
+        b.disabled = true; await exportarConcentrado(ids, modo); b.disabled = false; break;
+      }
+      case "rpTodo": case "rpNada": { const g = REP_ITEMS.find(x => x[0] === d.g); for (const [k] of g[1]) d.act === "rpTodo" ? S.rp.sel.add(k) : S.rp.sel.delete(k); render(); break; }
+      case "repPrint": { const c = document.body.classList; $("#pgsize").textContent = "@page{size:letter;margin:0}@media print{#app{padding:12mm}}"; c.add("imp-rep"); window.print(); setTimeout(() => c.remove("imp-rep"), 500); break; }
+      case "repXls": b.disabled = true; await exportarReporte(); b.disabled = false; break;
       case "print": {
         const c = document.body.classList, hoja = S.cur?.view === "captura";
         if (hoja && !await confirmarBloqueo([S.cur.arg], +S.capT, "imprimir")) break;
@@ -2972,6 +3173,11 @@ document.addEventListener("change", async ev => {
     if (d.filtro) { const F = S.cur?.view === "misstats" ? S.fm : S.f; F[d.filtro] = el.value; render(); return; }
     if (d.act === "admvo") { registrar(d.a, { campo: "admvo", antes: S.cfg.secretarias[admvoLetra(S.asig[d.a])], despues: S.cfg.secretarias[el.value] }); await update(ref(db, "asignaciones/" + d.a), { admvo: el.value }); toast("Secretaría actualizada.", "ok"); return; }
     if (d.admf) { S[d.admf] = el.value; render(); return; }
+    if (d.dc) { S.dc[d.dc] = el.value; if (d.dc !== "t") S.dc.sel.clear(); render(); return; }
+    if (d.dcsel) { el.checked ? S.dc.sel.add(d.dcsel) : S.dc.sel.delete(d.dcsel); render(); return; }
+    if (d.dcall) { const l = Object.entries(S.asig).filter(([, a]) => asigCoincide(a, S.dc)).map(([i]) => i); S.dc.sel = el.checked ? new Set(l) : new Set(); render(); return; }
+    if (d.rp) { S.rp[d.rp] = el.value; render(); return; }
+    if (d.rpi) { el.checked ? S.rp.sel.add(d.rpi) : S.rp.sel.delete(d.rpi); render(); return; }
     if (d.pos) { const n = parseInt(el.value, 10); if (isNaN(n)) { S.dlgRefresh?.(); return; } await moverAPosicion(d.a, d.gg, d.pos, n - 1); return; }
     if (d.rnombre) { const v = el.value.replace(/\s+/g, " ").trim().toUpperCase(); const ant = S.alumnos[d.gg]?.[d.rnombre]?.nombre; if (v.length > 2 && v !== ant) registrar(ctxAsig(), { campo: "nombre", al: d.rnombre, alumno: v, antes: ant, despues: v }); if (v.length > 2) await update(ref(db, `alumnos/${d.gg}/${d.rnombre}`), { nombre: v }); return; }
     if (d.rsexo) { const x = S.alumnos[d.gg]?.[d.rsexo]; registrar(ctxAsig(), { campo: "sexo", al: d.rsexo, alumno: x?.nombre, antes: x?.sexo, despues: el.value }); await update(ref(db, `alumnos/${d.gg}/${d.rsexo}`), { sexo: el.value }); return; }
