@@ -360,7 +360,7 @@ table.h-tab{width:100%;border-collapse:collapse;table-layout:fixed;font-size:12p
   .h-firmas .fl span i{height:34px}
 }
 </style>
-<style id="pgsize">@page{size:letter;margin:12mm}</style>
+<style id="pgsize">@page{size:letter;margin:0}@media print{#app{padding:12mm}}</style>
 </head>
 <body>
 <div id="boot" class="boot">Cargando plataforma…</div>
@@ -2750,10 +2750,11 @@ function hojaConcentrado(ws, aId, modo, logos = {}) {
   r++;
   area(r, 1, r, 14, "FIRMAS DEL PROFESOR", { size: 11, bold: true }); r++;
   area(r, 2, r, 2, "1er. TRIMESTRE", { bold: true }); area(r, 3, r, 7, "2o. TRIMESTRE", { bold: true }); area(r, 8, r, 14, "3er. TRIMESTRE", { bold: true }); r++;
-  area(r, 2, r + 1, 2, "", { bottom: true }); area(r, 3, r + 1, 7, "", { bottom: true }); area(r, 8, r + 1, 14, "", { bottom: true });
+  area(r, 2, r + 1, 2, "", { bottom: true }); area(r, 4, r + 1, 6, "", { bottom: true }); area(r, 9, r + 1, 13, "", { bottom: true });
   ws.getRow(r).height = 20; ws.getRow(r + 1).height = 20;
   ws.pageSetup = { paperSize: S.cfg.papel === "oficio" ? 5 : 1, orientation: "portrait", fitToPage: true, fitToWidth: 1, fitToHeight: 1, horizontalCentered: true,
     margins: { left: 0.5, right: 0.5, top: 0.6, bottom: 0.6, header: 0.3, footer: 0.3 }, printArea: `A1:N${r + 1}` };
+  ws.headerFooter = { oddHeader: "", oddFooter: "", evenHeader: "", evenFooter: "", differentFirst: false, differentOddEven: false };
 }
 const ABREV = { "FORMACIÓN CÍVICA Y ÉTICA": "FCYE", "EDUCACIÓN FÍSICA": "ED FIS", "MATEMÁTICAS": "MAT", "CIRCUITOS ELÉCTRICOS": "CIRC" };
 async function exportarConcentrado(ids, modo) {
@@ -2842,7 +2843,7 @@ document.addEventListener("click", async ev => {
       case "print": {
         const c = document.body.classList, hoja = S.cur?.view === "captura";
         if (hoja && !await confirmarBloqueo([S.cur.arg], +S.capT, "imprimir")) break;
-        $("#pgsize").textContent = hoja ? `@page{size:${S.cfg.papel === "oficio" ? "legal" : "letter"};margin:9mm}` : "@page{size:letter;margin:12mm}";
+        $("#pgsize").textContent = hoja ? `@page{size:${S.cfg.papel === "oficio" ? "legal" : "letter"};margin:0}@media print{#app{padding:9mm}}` : "@page{size:letter;margin:0}@media print{#app{padding:12mm}}";
         if (hoja) c.add("imp-hoja"); window.print(); setTimeout(() => c.remove("imp-hoja"), 500); break;
       }
       case "xls": {
@@ -2918,7 +2919,7 @@ document.addEventListener("click", async ev => {
       case "nuevoCiclo": await nuevoCiclo(); break;
       case "desbloquear": if (await confirmar(`¿Desbloquear el ${NOMT[d.t]} de este concentrado? El docente podrá volver a modificar esas calificaciones hasta que vuelva a imprimir o descargar.`, "Desbloquear")) { await update(ref(db, `bloqueos/${d.a}/${d.t}`), { abierto: true, abiertoPor: S.perfil?.email || "", abiertoFecha: Date.now() }); registrar(d.a, { campo: "bloqueo", detalle: `Se desbloqueó el ${NOMT[d.t]}`, antes: "Bloqueado", despues: "Abierto" }); toast("Trimestre desbloqueado.", "ok"); } break;
       case "infWord": b.disabled = true; await informeWord(); b.disabled = false; break;
-      case "infPrint": { const c = document.body.classList; $("#pgsize").textContent = "@page{size:letter landscape;margin:9mm}"; c.add("imp-inf"); window.print(); setTimeout(() => c.remove("imp-inf"), 500); break; }
+      case "infPrint": { const c = document.body.classList; $("#pgsize").textContent = "@page{size:letter landscape;margin:0}@media print{#app{padding:9mm}}"; c.add("imp-inf"); window.print(); setTimeout(() => c.remove("imp-inf"), 500); break; }
       case "repGuardar": { await update(ref(db, "config/reporte"), repCfg()); S.rep.local = {}; toast("Datos del informe guardados.", "ok"); break; }
       case "repQuitarLogo": S.rep.local.logo = ""; render(); break;
       case "demoCargar": { b.disabled = true; b.textContent = "Cargando…"; const r = await cargarDemo(); toast(`Listo: ${r.asignaciones} concentrados de ejemplo de ${r.docentes} docentes de ejemplo` + (r.alumnos ? `, ${r.alumnos} alumnos de ejemplo` : "") + (r.reales ? ` (se usaron ${r.reales} alumnos reales en sus grupos)` : "") + ". Míralos en Estadísticas.", "ok"); render(); break; }
