@@ -1,0 +1,146 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "config": {
+      ".read": "auth != null && root.child('usuarios').child(auth.uid).exists()",
+      ".write": "auth != null && root.child('usuarios').child(auth.uid).child('rol').val() === 'admin'"
+    },
+    "docentes": {
+      ".read": "auth != null && root.child('usuarios').child(auth.uid).exists()",
+      ".write": "auth != null && root.child('usuarios').child(auth.uid).child('rol').val() === 'admin'",
+      "$d": {
+        "nombre": {
+          ".write": "auth != null && root.child('usuarios').child(auth.uid).child('docenteId').val() === $d",
+          ".validate": "newData.isString() && newData.val().length > 2 && newData.val().length < 120"
+        },
+        "admvoTaller": {
+          ".write": "auth != null && root.child('usuarios').child(auth.uid).child('docenteId').val() === $d",
+          ".validate": "newData.isString() && newData.val().matches(/^[A-I]$/)"
+        }
+      }
+    },
+    "asignaciones": {
+      ".read": "auth != null && root.child('usuarios').child(auth.uid).exists()",
+      ".write": "auth != null && root.child('usuarios').child(auth.uid).child('rol').val() === 'admin'",
+      "$a": {
+        ".write": "auth != null && root.child('usuarios').child(auth.uid).child('esProfesor').val() === true && root.child('usuarios').child(auth.uid).child('docenteId').exists() && ((!data.exists() && newData.child('docenteId').val() === root.child('usuarios').child(auth.uid).child('docenteId').val()) || (data.child('docenteId').val() === root.child('usuarios').child(auth.uid).child('docenteId').val() && (!newData.exists() || newData.child('docenteId').val() === root.child('usuarios').child(auth.uid).child('docenteId').val())))",
+        ".validate": "newData.hasChildren(['docenteId', 'materia', 'grado', 'grupos', 'tipo'])",
+        "materia": {
+          ".validate": "newData.isString() && newData.val().length > 1 && newData.val().length < 60"
+        },
+        "grado": {
+          ".validate": "newData.val() === 1 || newData.val() === 2 || newData.val() === 3"
+        },
+        "grupos": {
+          ".validate": "newData.isString() && newData.val().matches(/^[A-I](,[A-I])*$/)"
+        },
+        "tipo": {
+          ".validate": "newData.val() === 'regular' || newData.val() === 'taller'"
+        },
+        "admvo": {
+          ".validate": "newData.isString() && newData.val().matches(/^[A-I]$/)"
+        },
+        "turno": {
+          ".validate": "newData.isString() && newData.val().length < 20"
+        }
+      }
+    },
+    "alumnos": {
+      ".read": "auth != null && root.child('usuarios').child(auth.uid).exists()",
+      "$gg": {
+        ".write": "auth != null && (root.child('usuarios').child(auth.uid).child('rol').val() === 'admin' || root.child('usuarios').child(auth.uid).child('esProfesor').val() === true)",
+        "$al": {
+          ".validate": "newData.hasChild('nombre')",
+          "nombre": {
+            ".validate": "newData.isString() && newData.val().length > 2 && newData.val().length < 120"
+          },
+          "sexo": {
+            ".validate": "newData.val() === 'H' || newData.val() === 'M'"
+          },
+          "baja": {
+            ".validate": "newData.isBoolean()"
+          },
+          "matricula": {
+            ".validate": "newData.isString() && newData.val().length < 30"
+          },
+          "n": {
+            ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 200"
+          },
+          "$otro": {
+            ".validate": false
+          }
+        }
+      }
+    },
+    "miembros": {
+      ".read": "auth != null && root.child('usuarios').child(auth.uid).exists()",
+      "$a": {
+        ".write": "auth != null && (root.child('usuarios').child(auth.uid).child('rol').val() === 'admin' || (root.child('usuarios').child(auth.uid).child('docenteId').exists() && root.child('asignaciones').child($a).child('docenteId').val() === root.child('usuarios').child(auth.uid).child('docenteId').val()))"
+      }
+    },
+    "orden": {
+      ".read": "auth != null && root.child('usuarios').child(auth.uid).exists()",
+      "$a": {
+        ".write": "auth != null && (root.child('usuarios').child(auth.uid).child('rol').val() === 'admin' || (root.child('usuarios').child(auth.uid).child('docenteId').exists() && root.child('asignaciones').child($a).child('docenteId').val() === root.child('usuarios').child(auth.uid).child('docenteId').val()))"
+      }
+    },
+    "quitados": {
+      ".read": "auth != null && root.child('usuarios').child(auth.uid).exists()",
+      "$a": {
+        ".write": "auth != null && (root.child('usuarios').child(auth.uid).child('rol').val() === 'admin' || (root.child('usuarios').child(auth.uid).child('docenteId').exists() && root.child('asignaciones').child($a).child('docenteId').val() === root.child('usuarios').child(auth.uid).child('docenteId').val()))"
+      }
+    },
+    "calif": {
+      ".read": "auth != null && (root.child('usuarios').child(auth.uid).child('rol').val() === 'admin' || root.child('usuarios').child(auth.uid).child('rol').val() === 'director' || root.child('usuarios').child(auth.uid).child('rol').val() === 'secretaria')",
+      "$a": {
+        ".read": "auth != null && root.child('usuarios').child(auth.uid).child('docenteId').exists() && root.child('asignaciones').child($a).child('docenteId').val() === root.child('usuarios').child(auth.uid).child('docenteId').val()",
+        ".write": "auth != null && (root.child('usuarios').child(auth.uid).child('rol').val() === 'admin' || ((root.child('usuarios').child(auth.uid).child('docenteId').exists() && root.child('asignaciones').child($a).child('docenteId').val() === root.child('usuarios').child(auth.uid).child('docenteId').val()) && !newData.exists()))",
+        "$al": {
+          "$campo": {
+            ".write": "auth != null && (root.child('usuarios').child(auth.uid).child('docenteId').exists() && root.child('asignaciones').child($a).child('docenteId').val() === root.child('usuarios').child(auth.uid).child('docenteId').val()) && (!data.exists() || !root.child('bloqueos').child($a).child($campo.replace('er', '').replace('t', '').replace('i', '').replace('c', '')).exists() || root.child('bloqueos').child($a).child($campo.replace('er', '').replace('t', '').replace('i', '').replace('c', '')).child('abierto').val() === true)",
+            ".validate": "($campo.matches(/^(t1|t2|t3|er1|er2)$/) && newData.isNumber() && newData.val() >= 5 && newData.val() <= 10) || ($campo.matches(/^(i1|i2|i3)$/) && newData.isNumber() && newData.val() >= 0) || ($campo.matches(/^(c1|c2|c3)$/) && newData.isString() && newData.val().length <= 4)"
+          }
+        }
+      }
+    },
+    "usuarios": {
+      ".read": "auth != null && root.child('usuarios').child(auth.uid).child('rol').val() === 'admin'",
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && (root.child('usuarios').child(auth.uid).child('rol').val() === 'admin' || (auth.uid === $uid && !data.exists() && ((auth.token.email === 'elprofechan@gmail.com' && newData.child('rol').val() === 'admin') || (auth.token.email === 'melchor21@21nov.com' && newData.child('rol').val() === 'director'))))",
+        "nombre": {
+          ".write": "auth != null && auth.uid === $uid",
+          ".validate": "newData.isString() && newData.val().length < 120"
+        }
+      }
+    },
+    "solicitudes": {
+      ".read": "auth != null && root.child('usuarios').child(auth.uid).child('rol').val() === 'admin'",
+      "$uid": {
+        ".write": "auth != null && (auth.uid === $uid || root.child('usuarios').child(auth.uid).child('rol').val() === 'admin')"
+      }
+    },
+    "bloqueos": {
+      ".read": "auth != null && root.child('usuarios').child(auth.uid).exists()",
+      "$a": {
+        ".write": "auth != null && root.child('usuarios').child(auth.uid).child('rol').val() === 'admin'",
+        "$t": {
+          ".write": "auth != null && (root.child('usuarios').child(auth.uid).child('docenteId').exists() && root.child('asignaciones').child($a).child('docenteId').val() === root.child('usuarios').child(auth.uid).child('docenteId').val()) && (!data.exists() || data.child('abierto').val() === true) && newData.exists() && !newData.child('abierto').exists()",
+          ".validate": "$t.matches(/^[123]$/) && newData.hasChildren(['fecha'])"
+        }
+      }
+    },
+    "historial": {
+      ".read": "auth != null && root.child('usuarios').child(auth.uid).child('rol').val() === 'admin'",
+      ".write": "auth != null && root.child('usuarios').child(auth.uid).child('rol').val() === 'admin'",
+      "$a": {
+        ".read": "auth != null && root.child('usuarios').child(auth.uid).child('docenteId').exists() && root.child('asignaciones').child($a).child('docenteId').val() === root.child('usuarios').child(auth.uid).child('docenteId').val()",
+        "$h": {
+          ".write": "auth != null && !data.exists() && newData.child('uid').val() === auth.uid && root.child('usuarios').child(auth.uid).exists()",
+          ".validate": "newData.hasChildren(['t', 'uid', 'campo']) && newData.child('t').isNumber()"
+        }
+      }
+    }
+  }
+}

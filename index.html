@@ -244,6 +244,11 @@ ol.lista,ul.lista{list-style:none;margin:10px 0;padding:0;border:1px solid var(-
 .lista li{display:flex;align-items:center;gap:6px;padding:5px 8px;border-bottom:1px solid var(--line);font-size:13px;background:#fff}
 .lista li:last-child{border-bottom:0}
 .lista .n{width:26px;color:var(--muted);font-size:12px;text-align:right}
+.lista .grip{cursor:grab;touch-action:none;user-select:none;color:var(--muted);font-size:16px;line-height:1;padding:4px 2px}
+.lista li.arrastrando{opacity:.45;background:var(--bg,#f3f6f2)}
+.lista li.destino{box-shadow:inset 0 3px 0 var(--accent,#2f7d32)}
+.lista li.destino-fin{box-shadow:inset 0 -3px 0 var(--accent,#2f7d32)}
+.lista .pos{width:42px;padding:3px 2px;text-align:center;border:1px solid var(--line-2);border-radius:6px;font-size:12px;color:var(--ink-2,#333);background:#fff}
 .lista .nom{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 select.mini{border:1px solid var(--line-2);border-radius:6px;padding:3px 4px;background:#fff;font-size:12px}
 .ib{width:30px;height:28px;border:1px solid var(--line-2);border-radius:7px;background:#fff;cursor:pointer;font-weight:700}
@@ -541,7 +546,7 @@ function secciones(aId) {
     const gg = a.grado + g, roster = S.alumnos[gg] || {};
     const ids = a.tipo === "taller" ? Object.keys(m).filter(id => m[id] === gg && roster[id] && !roster[id].baja)
       : Object.keys(roster).filter(id => !roster[id].baja && !q[id]);
-    const al = ids.map(id => ({ id, ...roster[id] })).sort((x, y) => (o[x.id] ?? 1e9) - (o[y.id] ?? 1e9) || cmpNombre(x, y));
+    const al = ids.map(id => ({ id, ...roster[id] })).sort((x, y) => (o[x.id] ?? 1e9) - (o[y.id] ?? 1e9) || (x.n ?? 1e9) - (y.n ?? 1e9) || cmpNombre(x, y));
     return { gg, g, label: `${GRADOS[a.grado]} "${g}"`, alumnos: al };
   });
 }
@@ -1151,8 +1156,8 @@ function listaHTML(aId) {
   const a = S.asig[aId], taller = a.tipo === "taller", q = S.quitados[aId] || {};
   S.picks ||= new Set(); S.abiertos ||= new Set();
   const intro = taller
-    ? `<p class="small muted">Elige de cada grupo a los alumnos que toman ${esc(a.materia)} contigo. Se quedan guardados en tu lista; puedes ordenarlos con ↑ ↓ o quitarlos con ✕.</p>`
-    : `<p class="small muted">La lista se carga sola con los alumnos del grupo (de Credenciales). Puedes cambiar el orden con ↑ ↓ o quitar de tu lista a quien no corresponda con ✕.</p>`;
+    ? `<p class="small muted">Elige de cada grupo a los alumnos que toman ${esc(a.materia)} contigo. Se quedan guardados en tu lista; puedes ordenarlos arrastrando ⠿, escribiendo el número de lugar o con ↑ ↓, y quitarlos con ✕.</p>`
+    : `<p class="small muted">La lista se carga sola con los alumnos del grupo. Para cambiar el orden, arrastra ⠿ hasta el lugar que quieras, escribe el número de lugar o usa ↑ ↓. Quita de tu lista a quien no corresponda con ✕.</p>`;
   return intro + secciones(aId).map(s => {
     const roster = Object.entries(S.alumnos[s.gg] || {}).map(([id, x]) => ({ id, ...x })).filter(x => !x.baja).sort(cmpNombre);
     const dentro = new Set(s.alumnos.map(x => x.id)), otros = taller ? otrosTalleres(aId, s.gg) : {};
@@ -1160,8 +1165,8 @@ function listaHTML(aId) {
     const kD = aId + s.gg + "d", kN = aId + s.gg + "n";
     return `<section class="card pad lista-sec">
       <div class="row" style="justify-content:space-between"><h3>${esc(s.label)} <span class="small muted">· ${s.alumnos.length} en tu lista</span></h3>
-        ${s.alumnos.length > 1 ? `<button class="btn sm" data-act="lAlfa" data-a="${aId}" data-gg="${s.gg}">Orden alfabético</button>` : ""}</div>
-      ${s.alumnos.length ? `<ol class="lista">${s.alumnos.map((x, i) => `<li><span class="n">${i + 1}</span><span class="nom">${esc(x.nombre)}</span>
+        ${s.alumnos.length > 1 ? `<button class="btn sm" data-act="lAlfa" data-a="${aId}" data-gg="${s.gg}">${s.alumnos.some(x => x.n != null) ? "Orden de la secretaría" : "Orden alfabético"}</button>` : ""}</div>
+      ${s.alumnos.length ? `<ol class="lista">${s.alumnos.map((x, i) => `<li data-fila="${x.id}"><span class="grip" data-drag="${x.id}" title="Arrastra para cambiar de lugar">⠿</span><input class="pos" type="text" inputmode="numeric" value="${i + 1}" data-pos="${x.id}" data-a="${aId}" data-gg="${s.gg}" title="Escribe el lugar al que quieres pasarlo" aria-label="Lugar en la lista"><span class="nom">${esc(x.nombre)}</span>
         <select class="mini" data-rsexo="${x.id}" data-gg="${s.gg}" aria-label="Sexo"><option value="H" ${x.sexo === "H" ? "selected" : ""}>H</option><option value="M" ${x.sexo === "M" ? "selected" : ""}>M</option></select>
         <button class="ib" data-act="lMover" data-dir="-1" data-a="${aId}" data-gg="${s.gg}" data-al="${x.id}" ${i === 0 ? "disabled" : ""} title="Subir">↑</button>
         <button class="ib" data-act="lMover" data-dir="1" data-a="${aId}" data-gg="${s.gg}" data-al="${x.id}" ${i === s.alumnos.length - 1 ? "disabled" : ""} title="Bajar">↓</button>
@@ -1193,6 +1198,43 @@ async function moverAlumno(aId, gg, al, dir) {
   await update(ref(db), upd);
   registrar(aId, { campo: "orden", al, antes: `Lugar ${i + 1}`, despues: `Lugar ${j + 1}` });
 }
+async function moverAPosicion(aId, gg, al, destino) {
+  const s = secciones(aId).find(x => x.gg === gg); if (!s) return;
+  const ids = s.alumnos.map(x => x.id), i = ids.indexOf(al);
+  const j = Math.max(0, Math.min(ids.length - 1, destino));
+  if (i < 0 || i === j) { S.dlgRefresh?.(); return; }
+  ids.splice(i, 1); ids.splice(j, 0, al);
+  const upd = {}; ids.forEach((id, k) => upd[`orden/${aId}/${id}`] = k + 1);
+  await update(ref(db), upd);
+  registrar(aId, { campo: "orden", al, antes: `Lugar ${i + 1}`, despues: `Lugar ${j + 1}` });
+  S.dlgRefresh?.();
+}
+/* Arrastrar un alumno hasta el lugar deseado (funciona con mouse y con el dedo) */
+document.addEventListener("pointerdown", ev => {
+  const g = ev.target.closest?.("[data-drag]"); if (!g) return;
+  const li = g.closest("li"), ol = li.parentElement, body = g.closest(".dlg-b"), inp = li.querySelector("[data-pos]");
+  const a = inp.dataset.a, gg = inp.dataset.gg, al = g.dataset.drag;
+  ev.preventDefault(); li.classList.add("arrastrando");
+  const filas = () => [...ol.children];
+  let destino = filas().indexOf(li);
+  const marca = y => {
+    filas().forEach(f => f.classList.remove("destino", "destino-fin"));
+    const fs = filas(); let k = fs.findIndex(f => { const r = f.getBoundingClientRect(); return y < r.top + r.height / 2; });
+    if (k < 0) { k = fs.length; fs[fs.length - 1].classList.add("destino-fin"); } else fs[k].classList.add("destino");
+    destino = k;
+  };
+  const mover = e => {
+    marca(e.clientY);
+    if (body) { const r = body.getBoundingClientRect(); if (e.clientY < r.top + 40) body.scrollTop -= 14; else if (e.clientY > r.bottom - 40) body.scrollTop += 14; }
+  };
+  const fin = e => {
+    document.removeEventListener("pointermove", mover); document.removeEventListener("pointerup", fin); document.removeEventListener("pointercancel", fin);
+    filas().forEach(f => f.classList.remove("destino", "destino-fin", "arrastrando"));
+    const desde = filas().indexOf(li); let a2 = destino; if (a2 > desde) a2 -= 1;
+    if (e.type !== "pointercancel" && a2 !== desde) moverAPosicion(a, gg, al, a2);
+  };
+  document.addEventListener("pointermove", mover); document.addEventListener("pointerup", fin); document.addEventListener("pointercancel", fin);
+});
 async function quitarDeLista(aId, gg, al) {
   const a = S.asig[aId], x = S.alumnos[gg]?.[al];
   if (Object.keys(S.calif[aId]?.[al] || {}).length && !await confirmar(`${esc(x?.nombre || "")} ya tiene datos capturados en este concentrado. ¿Quitarlo de tu lista? (Sus datos se conservan si lo vuelves a agregar.)`, "Quitar", "danger")) { dlgLista(aId); return; }
@@ -1989,6 +2031,7 @@ const ADM = {
         </div>
         <div class="row" style="margin-top:12px"><button class="btn" data-act="respaldo">Descargar respaldo</button><button class="btn danger" data-act="nuevoCiclo">Borrar e iniciar nuevo ciclo</button></div></div>
       <div class="card pad" style="border-color:var(--lime)"><h2>Alumnos desde Credenciales</h2><p class="small muted">Carga las listas de todos los grupos con el respaldo JSON del sistema de Credenciales (nombre, grado, grupo y matrícula). Puedes repetirlo cuando haya altas o cambios de grupo.</p><button class="btn primary" data-act="credenciales">${ICON.up}Importar alumnos</button></div>
+      <div class="card pad" style="border-color:var(--lime)"><h2>Orden oficial de las listas (secretarías)</h2><p class="small muted">Sube el orden de las listas impresas que usan las secretarías. Cada alumno se reconoce por su nombre y todos los concentrados del grupo se acomodan igual. Las calificaciones no se tocan: se guardan por alumno, no por lugar.</p><button class="btn primary" data-act="ordenOficial">${ICON.up}Cargar orden oficial</button></div>
       <div class="card pad"><h2>Catálogo del horario</h2><p class="small muted">Los docentes del horario “Grupos de alumnos”. Cada docente registra sus propios grupos en “Mis grupos” (el horario se le sugiere). Si prefieres, puedes cargar desde aquí las asignaciones de todos. Solo agrega lo que falte; no borra nada.</p><div class="row"><button class="btn" data-act="semilla">Cargar docentes faltantes</button><button class="btn" data-act="semillaAsig">Cargar asignaciones de todos</button></div></div>
       <div class="card pad"><h2>Respaldo</h2><p class="small muted">Descarga una copia completa (JSON) de configuración, docentes, asignaciones, alumnos y calificaciones.</p><button class="btn" data-act="respaldo">Descargar respaldo</button></div>
       <div class="card pad"><h2>Listas de alumnos</h2><p class="small muted">Excel con todos los alumnos por grupo y su sexo.</p><button class="btn" data-act="xlsAlumnos">${ICON.xls}Exportar alumnos</button></div>
@@ -2303,6 +2346,70 @@ function dlgCredenciales() {
       await update(ref(db), upd);
       cerrarDialogo(); toast(`Listo: ${plan.filas.length} alumnos en las listas de grupo.`, "ok");
     } catch (e) { console.error(e); toast("No se pudo importar: " + msgErr(e), "err"); btn.disabled = false; btn.textContent = "Importar"; }
+  });
+}
+
+/* ---------- orden oficial de las listas (el de las secretarías) ---------- */
+function parsearOrden(txt) {
+  const out = {}; let gg = null;
+  for (let raw of txt.split(/\r?\n/)) {
+    raw = raw.trim(); if (!raw || raw.startsWith("#")) continue;
+    const h = raw.match(/^(?:grupo\s*)?([123])\s*[°º]?\s*[-"']?\s*([A-Ia-i])["']?$/i);
+    if (h) { gg = h[1] + h[2].toUpperCase(); out[gg] ||= []; continue; }
+    if (!gg) continue;
+    const nom = raw.replace(/^\d+\s*[.)-]?\s+/, "").replace(/\bN\.?\s*ING\.?\b/gi, "").replace(/[\/*]/g, " ").replace(/\s+/g, " ").trim();
+    if (nom.length > 2) out[gg].push(nom);
+  }
+  return out;
+}
+function planOrden(porGrupo) {
+  const grupos = [];
+  for (const [gg, nombres] of Object.entries(porGrupo)) {
+    const roster = S.alumnos[gg] || {}, usados = new Map(), ok = [], noEnc = [], dup = [];
+    nombres.forEach((nom, i) => {
+      const id = buscarAlumno(gg, nom);
+      if (!id) noEnc.push(nom);
+      else if (usados.has(id)) dup.push(`${nom} (igual que ${usados.get(id)})`);
+      else { usados.set(id, nom); ok.push({ id, n: i + 1, nom, baja: !!roster[id].baja }); }
+    });
+    const sinLista = Object.entries(roster).filter(([id, x]) => !usados.has(id) && !x.baja).map(([, x]) => x.nombre);
+    grupos.push({ gg, total: nombres.length, ok, noEnc, dup, sinLista, existe: !!Object.keys(roster).length });
+  }
+  return grupos.sort((a, b) => a.gg.localeCompare(b.gg));
+}
+function dlgOrdenOficial() {
+  abrirDialogo("Cargar el orden oficial de las listas", `<p class="small muted">Sube el archivo de texto con el orden de las secretarías (o pega el texto): una línea con el grupo (por ejemplo <b>3A</b>) y debajo los alumnos, uno por renglón. Los nombres se reconocen aunque cambie el orden de apellidos, los acentos o la ortografía. Antes de guardar verás un resumen.</p>
+    <input type="file" id="fOrd" accept=".txt,text/plain" class="in"><textarea id="tOrd" class="in" rows="5" placeholder="3A&#10;APELLIDO APELLIDO NOMBRE&#10;…" style="margin-top:8px;width:100%"></textarea>
+    <div class="row" style="margin-top:8px"><button class="btn sm" id="bOrdVer">Revisar</button></div><div id="ordPrev" style="margin-top:14px"></div>`, [["Cancelar", "cancel"], ["Aplicar orden", "keep", "primary"]]);
+  const btn = $('#dlg .dlg-f [data-dlg="keep"]'); btn.disabled = true;
+  let plan = null;
+  $("#fOrd").addEventListener("change", async ev => { const f = ev.target.files[0]; if (f) { $("#tOrd").value = await f.text(); $("#bOrdVer").click(); } });
+  $("#bOrdVer").addEventListener("click", () => {
+    plan = planOrden(parsearOrden($("#tOrd").value));
+    if (!plan.length) { $("#ordPrev").innerHTML = '<p class="err-msg">No encontré grupos. Cada lista debe empezar con una línea como 3A.</p>'; btn.disabled = true; return; }
+    const ni = plan.reduce((n, g) => n + g.ok.length, 0);
+    $("#ordPrev").innerHTML = `<div class="dt-wrap" style="max-height:none"><table class="dt"><thead><tr><th>Grupo</th><th>En la lista</th><th>Reconocidos</th><th>No encontrados en la plataforma</th><th>En la plataforma y no en la lista</th></tr></thead><tbody>
+      ${plan.map(g => `<tr><td><b>${esc(g.gg)}</b></td><td>${g.total}</td><td>${g.ok.length}${g.ok.some(x => x.baja) ? ` <span class="small muted">(${g.ok.filter(x => x.baja).length} marcado(s) de baja)</span>` : ""}</td>
+        <td>${g.noEnc.length || g.dup.length ? `<span class="pill-bad">${[...g.noEnc, ...g.dup].map(esc).join("<br>")}</span>` : "—"}</td><td>${g.sinLista.length ? g.sinLista.map(esc).join("<br>") : "—"}</td></tr>`).join("")}</tbody></table></div>
+      <p class="small muted" style="margin-top:8px">Los alumnos “no encontrados” no existen en la plataforma (por ejemplo altas recientes): no se crean aquí; agrégalos en la lista del grupo o impórtalos de Credenciales y vuelve a cargar este orden. Los que están en la plataforma y no en la lista quedan al final de la lista del grupo.</p>
+      <label class="row small" style="margin-top:6px"><input type="checkbox" id="ordLimpia" checked> Quitar el orden manual que algún docente haya puesto en estos grupos (así todos quedan con el orden de la secretaría)</label>`;
+    btn.disabled = !ni;
+  });
+  btn.addEventListener("click", async () => {
+    if (!plan) return;
+    btn.disabled = true; btn.textContent = "Aplicando…";
+    try {
+      const upd = {}, limpia = $("#ordLimpia")?.checked;
+      for (const g of plan) {
+        if (!g.existe) continue;
+        const roster = S.alumnos[g.gg] || {}, enLista = new Map(g.ok.map(x => [x.id, x.n]));
+        for (const id of Object.keys(roster)) upd[`alumnos/${g.gg}/${id}/n`] = enLista.get(id) ?? null;
+        if (limpia) for (const [aId, a] of Object.entries(S.asig)) if (a.grado === +g.gg[0] && gruposArr(a).includes(g.gg[1]))
+          for (const id of Object.keys(roster)) if (S.orden[aId]?.[id] != null) upd[`orden/${aId}/${id}`] = null;
+      }
+      await update(ref(db), upd);
+      cerrarDialogo(); toast(`Listo: orden oficial aplicado a ${plan.filter(g => g.existe).length} grupos. Las calificaciones no se modificaron.`, "ok");
+    } catch (e) { console.error(e); toast("No se pudo aplicar: " + msgErr(e), "err"); btn.disabled = false; btn.textContent = "Aplicar orden"; }
   });
 }
 
@@ -2755,6 +2862,7 @@ document.addEventListener("click", async ev => {
       case "demoCargar": { b.disabled = true; b.textContent = "Cargando…"; const r = await cargarDemo(); toast(`Listo: ${r.asignaciones} concentrados de ejemplo de ${r.docentes} docentes de ejemplo` + (r.alumnos ? `, ${r.alumnos} alumnos de ejemplo` : "") + (r.reales ? ` (se usaron ${r.reales} alumnos reales en sus grupos)` : "") + ". Míralos en Estadísticas.", "ok"); render(); break; }
       case "demoBorrar": { if (!await confirmar("¿Eliminar todos los datos de ejemplo? Lo que capturen los docentes no se toca.", "Eliminar", "danger")) break; const n = await borrarDemo(); toast(`Se eliminaron los datos de ejemplo (${n} registros).`, "ok"); render(); break; }
       case "credenciales": dlgCredenciales(); break;
+      case "ordenOficial": dlgOrdenOficial(); break;
       case "aprobar": formCuenta({ uid: d.uid, email: S.solicitudes[d.uid]?.email || "", conPass: false, titulo: "Asignar rol" }); break;
       case "rechazar": await remove(ref(db, "solicitudes/" + d.uid)); break;
       case "quitarUsuario": {
@@ -2801,6 +2909,7 @@ document.addEventListener("change", async ev => {
     if (d.filtro) { const F = S.cur?.view === "misstats" ? S.fm : S.f; F[d.filtro] = el.value; render(); return; }
     if (d.act === "admvo") { registrar(d.a, { campo: "admvo", antes: S.cfg.secretarias[admvoLetra(S.asig[d.a])], despues: S.cfg.secretarias[el.value] }); await update(ref(db, "asignaciones/" + d.a), { admvo: el.value }); toast("Secretaría actualizada.", "ok"); return; }
     if (d.admf) { S[d.admf] = el.value; render(); return; }
+    if (d.pos) { const n = parseInt(el.value, 10); if (isNaN(n)) { S.dlgRefresh?.(); return; } await moverAPosicion(d.a, d.gg, d.pos, n - 1); return; }
     if (d.rnombre) { const v = el.value.replace(/\s+/g, " ").trim(); const ant = S.alumnos[d.gg]?.[d.rnombre]?.nombre; if (v.length > 2 && v !== ant) registrar(ctxAsig(), { campo: "nombre", al: d.rnombre, alumno: v, antes: ant, despues: v }); if (v.length > 2) await update(ref(db, `alumnos/${d.gg}/${d.rnombre}`), { nombre: v }); return; }
     if (d.rsexo) { const x = S.alumnos[d.gg]?.[d.rsexo]; registrar(ctxAsig(), { campo: "sexo", al: d.rsexo, alumno: x?.nombre, antes: x?.sexo, despues: el.value }); await update(ref(db, `alumnos/${d.gg}/${d.rsexo}`), { sexo: el.value }); return; }
     if (d.rmiembro) { await set(ref(db, `miembros/${d.a}/${d.rmiembro}`), el.checked ? d.gg : null); registrar(d.a, { campo: "lista", al: d.rmiembro, antes: el.checked ? "" : "En la lista", despues: el.checked ? "En la lista" : "Quitado" }); return; }
