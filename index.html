@@ -2325,7 +2325,7 @@ function dlgCredenciales() {
       const ggs = Object.keys(porGG).sort();
       $("#credPrev").innerHTML = `<p><b>${plan.filas.length}</b> alumnos en ${ggs.length} grupos · <b>${plan.filas.filter(f => f.nuevo).length}</b> nuevos · ${plan.filas.filter(f => !f.nuevo).length} ya estaban.</p>
         <div class="adm-grid" style="margin-bottom:12px">${ggs.map(gg => `<div class="gtile" style="cursor:default"><b>${gg[0]}° ${gg[1]}</b><span class="small muted">${porGG[gg].n} al. · ${porGG[gg].nuevos} nuevos · H ${porGG[gg].h} · M ${porGG[gg].m}</span></div>`).join("")}</div>
-        <label class="row small"><input type="checkbox" id="credNom" checked> Actualizar el nombre de los alumnos que ya estaban con el de Credenciales</label>
+        <label class="row small"><input type="checkbox" id="credNom" checked> Actualizar el nombre de los alumnos que ya estaban con el de Credenciales (no cambia los grupos que ya tienen el orden oficial)</label>
         <label class="row small" style="margin-top:6px"><input type="checkbox" id="credTur" checked> Actualizar el turno de cada grupo (${Object.entries(plan.turnos).map(([L, t]) => L + ": " + t).join(", ")})</label>
         ${plan.bajas.length ? `<label class="row small" style="margin-top:6px"><input type="checkbox" id="credBaja"> Dar de baja a ${plan.bajas.length} alumnos registrados que no aparecen en Credenciales</label>` : ""}
         <p class="small muted" style="margin-top:10px">El sexo (H/M) se estima por el nombre; cada docente o el administrador puede corregirlo con un clic.</p>`;
@@ -2339,7 +2339,7 @@ function dlgCredenciales() {
       const upd = {}, nom = $("#credNom")?.checked;
       for (const f of plan.filas) {
         if (f.nuevo) upd[`alumnos/${f.gg}/${f.id}`] = { nombre: f.nombre, sexo: f.sexo, matricula: f.mat };
-        else { upd[`alumnos/${f.gg}/${f.id}/matricula`] = f.mat; if (nom) upd[`alumnos/${f.gg}/${f.id}/nombre`] = f.nombre; }
+        else { upd[`alumnos/${f.gg}/${f.id}/matricula`] = f.mat; if (nom && S.alumnos[f.gg][f.id].n == null) upd[`alumnos/${f.gg}/${f.id}/nombre`] = f.nombre; }
       }
       if ($("#credTur")?.checked) for (const [L, t] of Object.entries(plan.turnos)) if (["MATUTINO", "VESPERTINO", "MIXTO"].includes(t)) upd["config/turnos/" + L] = t;
       if ($("#credBaja")?.checked) for (const b of plan.bajas) upd[`alumnos/${b.gg}/${b.id}/baja`] = true;
@@ -2370,7 +2370,7 @@ function planOrden(porGrupo) {
       const id = buscarAlumno(gg, nom);
       if (!id) noEnc.push(nom);
       else if (usados.has(id)) dup.push(`${nom} (igual que ${usados.get(id)})`);
-      else { usados.set(id, nom); ok.push({ id, n: i + 1, nom, baja: !!roster[id].baja }); }
+      else { usados.set(id, nom); ok.push({ id, n: i + 1, nom, baja: !!roster[id].baja, cambia: (roster[id].nombre || "").trim().toUpperCase() !== nom.toUpperCase() }); }
     });
     const sinLista = Object.entries(roster).filter(([id, x]) => !usados.has(id) && !x.baja).map(([, x]) => x.nombre);
     grupos.push({ gg, total: nombres.length, ok, noEnc, dup, sinLista, existe: !!Object.keys(roster).length });
@@ -2392,6 +2392,7 @@ function dlgOrdenOficial() {
       ${plan.map(g => `<tr><td><b>${esc(g.gg)}</b></td><td>${g.total}</td><td>${g.ok.length}${g.ok.some(x => x.baja) ? ` <span class="small muted">(${g.ok.filter(x => x.baja).length} marcado(s) de baja)</span>` : ""}</td>
         <td>${g.noEnc.length || g.dup.length ? `<span class="pill-bad">${[...g.noEnc, ...g.dup].map(esc).join("<br>")}</span>` : "—"}</td><td>${g.sinLista.length ? g.sinLista.map(esc).join("<br>") : "—"}</td></tr>`).join("")}</tbody></table></div>
       <p class="small muted" style="margin-top:8px">Los alumnos “no encontrados” no existen en la plataforma (por ejemplo altas recientes): no se crean aquí; agrégalos en la lista del grupo o impórtalos de Credenciales y vuelve a cargar este orden. Los que están en la plataforma y no en la lista quedan al final de la lista del grupo.</p>
+      <label class="row small" style="margin-top:6px"><input type="checkbox" id="ordNombres" checked> Escribir los nombres como en la lista impresa (Apellidos y luego Nombre) — cambiaría el nombre de <b>${plan.reduce((n, g) => n + g.ok.filter(x => x.cambia).length, 0)}</b> alumnos; sus calificaciones no se tocan</label>
       <label class="row small" style="margin-top:6px"><input type="checkbox" id="ordLimpia" checked> Quitar el orden manual que algún docente haya puesto en estos grupos (así todos quedan con el orden de la secretaría)</label>`;
     btn.disabled = !ni;
   });
@@ -2404,6 +2405,7 @@ function dlgOrdenOficial() {
         if (!g.existe) continue;
         const roster = S.alumnos[g.gg] || {}, enLista = new Map(g.ok.map(x => [x.id, x.n]));
         for (const id of Object.keys(roster)) upd[`alumnos/${g.gg}/${id}/n`] = enLista.get(id) ?? null;
+        if ($("#ordNombres")?.checked) for (const x of g.ok) if (x.cambia) upd[`alumnos/${g.gg}/${x.id}/nombre`] = x.nom.toUpperCase();
         if (limpia) for (const [aId, a] of Object.entries(S.asig)) if (a.grado === +g.gg[0] && gruposArr(a).includes(g.gg[1]))
           for (const id of Object.keys(roster)) if (S.orden[aId]?.[id] != null) upd[`orden/${aId}/${id}`] = null;
       }
