@@ -166,6 +166,11 @@ table.cap tr:hover td.nm{background:#fafbf7}
 .cell.err{border-color:var(--bad);background:#fff}
 td.calc{font-weight:700;font-variant-numeric:tabular-nums}
 td.calc.rep{color:var(--bad)}
+.ed{border:1px solid var(--line-2);background:#fff;border-radius:6px;width:26px;height:28px;cursor:pointer;font-size:13px;margin-left:4px;color:var(--muted)}
+.ed:hover{color:var(--ink,#111);background:#f3f6f2}
+input.nm-in{width:100%;min-width:200px;padding:4px 6px;border:1px solid var(--accent,#2f7d32);border-radius:6px;font:inherit;text-transform:uppercase}
+.lista input.nom-in{flex:1;min-width:0;border:1px solid transparent;background:transparent;font:inherit;font-size:13px;padding:3px 4px;border-radius:6px;text-overflow:ellipsis}
+.lista input.nom-in:hover{border-color:var(--line-2);background:#fff}.lista input.nom-in:focus{border-color:var(--accent,#2f7d32);background:#fff;outline:0}
 .sx{border:1px solid var(--line-2);background:#fff;border-radius:6px;width:30px;height:28px;font-weight:700;cursor:pointer;font-size:12px}
 .sx.H{color:#1d5aa3;background:var(--ok-soft);border-color:#cfe0f6}
 .sx.M{color:#9c2f5c;background:#fbe8f0;border-color:#f3cadb}
@@ -1157,7 +1162,7 @@ function listaHTML(aId) {
   S.picks ||= new Set(); S.abiertos ||= new Set();
   const intro = taller
     ? `<p class="small muted">Elige de cada grupo a los alumnos que toman ${esc(a.materia)} contigo. Se quedan guardados en tu lista; puedes ordenarlos arrastrando ⠿, escribiendo el número de lugar o con ↑ ↓, y quitarlos con ✕.</p>`
-    : `<p class="small muted">La lista se carga sola con los alumnos del grupo. Para cambiar el orden, arrastra ⠿ hasta el lugar que quieras, escribe el número de lugar o usa ↑ ↓. Quita de tu lista a quien no corresponda con ✕.</p>`;
+    : `<p class="small muted">La lista se carga sola con los alumnos del grupo. Para corregir un nombre o el orden de sus apellidos, tócalo y escríbelo. Para cambiar el orden, arrastra ⠿ hasta el lugar que quieras, escribe el número de lugar o usa ↑ ↓. Quita de tu lista a quien no corresponda con ✕.</p>`;
   return intro + secciones(aId).map(s => {
     const roster = Object.entries(S.alumnos[s.gg] || {}).map(([id, x]) => ({ id, ...x })).filter(x => !x.baja).sort(cmpNombre);
     const dentro = new Set(s.alumnos.map(x => x.id)), otros = taller ? otrosTalleres(aId, s.gg) : {};
@@ -1166,7 +1171,7 @@ function listaHTML(aId) {
     return `<section class="card pad lista-sec">
       <div class="row" style="justify-content:space-between"><h3>${esc(s.label)} <span class="small muted">· ${s.alumnos.length} en tu lista</span></h3>
         ${s.alumnos.length > 1 ? `<button class="btn sm" data-act="lAlfa" data-a="${aId}" data-gg="${s.gg}">${s.alumnos.some(x => x.n != null) ? "Orden de la secretaría" : "Orden alfabético"}</button>` : ""}</div>
-      ${s.alumnos.length ? `<ol class="lista">${s.alumnos.map((x, i) => `<li data-fila="${x.id}"><span class="grip" data-drag="${x.id}" title="Arrastra para cambiar de lugar">⠿</span><input class="pos" type="text" inputmode="numeric" value="${i + 1}" data-pos="${x.id}" data-a="${aId}" data-gg="${s.gg}" title="Escribe el lugar al que quieres pasarlo" aria-label="Lugar en la lista"><span class="nom">${esc(x.nombre)}</span>
+      ${s.alumnos.length ? `<ol class="lista">${s.alumnos.map((x, i) => `<li data-fila="${x.id}"><span class="grip" data-drag="${x.id}" title="Arrastra para cambiar de lugar">⠿</span><input class="pos" type="text" inputmode="numeric" value="${i + 1}" data-pos="${x.id}" data-a="${aId}" data-gg="${s.gg}" title="Escribe el lugar al que quieres pasarlo" aria-label="Lugar en la lista"><input class="nom-in" data-rnombre="${x.id}" data-gg="${s.gg}" value="${esc(x.nombre)}" title="Toca para corregir el nombre o el orden de los apellidos" aria-label="Nombre del alumno">
         <select class="mini" data-rsexo="${x.id}" data-gg="${s.gg}" aria-label="Sexo"><option value="H" ${x.sexo === "H" ? "selected" : ""}>H</option><option value="M" ${x.sexo === "M" ? "selected" : ""}>M</option></select>
         <button class="ib" data-act="lMover" data-dir="-1" data-a="${aId}" data-gg="${s.gg}" data-al="${x.id}" ${i === 0 ? "disabled" : ""} title="Subir">↑</button>
         <button class="ib" data-act="lMover" data-dir="1" data-a="${aId}" data-gg="${s.gg}" data-al="${x.id}" ${i === s.alumnos.length - 1 ? "disabled" : ""} title="Bajar">↓</button>
@@ -1385,7 +1390,7 @@ function vCaptura(main, aId) {
     const filas = s.alumnos.length ? s.alumnos : [];
     filas.forEach((al, i) => {
       const c = S.calif[aId]?.[al.id] || {};
-      h += `<tr data-al="${al.id}"><td>${i + 1}</td><td class="nm"><span>${esc(al.nombre)}</span><button class="sx ${al.sexo || "q"} no-print" data-act="sexo" data-gg="${s.gg}" data-al="${al.id}" title="Sexo (clic para cambiar)">${al.sexo || "?"}</button></td>
+      h += `<tr data-al="${al.id}"><td>${i + 1}</td><td class="nm"><span>${esc(al.nombre)}</span><button class="sx ${al.sexo || "q"} no-print" data-act="sexo" data-gg="${s.gg}" data-al="${al.id}" title="Sexo (clic para cambiar)">${al.sexo || "?"}</button><button class="ed no-print" data-act="editNom" data-gg="${s.gg}" data-al="${al.id}" title="Corregir el nombre o el orden de los apellidos">✎</button></td>
         ${campos.map(f => f === "PROM" ? `<td class="prom ${cls("PROM")}" data-prom="${al.id}"></td>`
           : `<td class="${cls(f)}"><input class="cell" data-a="${aId}" data-al="${al.id}" data-f="${f}" value="${triDe(f) <= T ? esc(fmtVal(c[f])) : ""}" ${f.startsWith("c") ? 'list="dl-conducta" autocapitalize="characters" maxlength="4"' : 'inputmode="numeric" maxlength="2"'} aria-label="${esc(f)} de ${esc(al.nombre)}"></td>`).join("")}</tr>`;
     });
@@ -2813,6 +2818,13 @@ document.addEventListener("click", async ev => {
       case "importar": prepararImportacion(d.a || null); break;
       case "alumnos": dlgLista(d.a); break;
       case "llenar": await rellenar(d.a); break;
+      case "editNom": {
+        const td = d.al && ev.target.closest("td.nm"); if (!td || td.querySelector("input")) break;
+        const sp = td.querySelector("span"), v = S.alumnos[d.gg]?.[d.al]?.nombre || sp.textContent;
+        const inp = document.createElement("input"); inp.className = "nm-in"; inp.value = v; inp.dataset.rnombre = d.al; inp.dataset.gg = d.gg; inp.dataset.orig = v;
+        inp.addEventListener("keydown", e => { if (e.key === "Enter") inp.blur(); if (e.key === "Escape") { inp.dataset.orig = "x"; inp.value = v; inp.blur(); } });
+        inp.addEventListener("blur", () => setTimeout(() => { if (inp.isConnected) render(); }, 250));
+        sp.replaceWith(inp); inp.focus(); inp.select(); break; }
       case "sexo": { const al = S.alumnos[d.gg]?.[d.al]; registrar(ctxAsig(), { campo: "sexo", al: d.al, alumno: al?.nombre, antes: al?.sexo, despues: al?.sexo === "H" ? "M" : "H" }); await update(ref(db, `alumnos/${d.gg}/${d.al}`), { sexo: al?.sexo === "H" ? "M" : "H" }); break; }
       case "limpiar": { const F = S.cur?.view === "misstats" ? S.fm : S.f; Object.assign(F, { grado: "", grupo: "", materia: "", docente: "", sexo: "", tipo: "", q: "" }); render(); break; }
       case "toggleAv": { const tr = $(`tr[data-av="${CSS.escape(d.d)}"]`); if (tr) tr.hidden = !tr.hidden; break; }
@@ -2912,7 +2924,7 @@ document.addEventListener("change", async ev => {
     if (d.act === "admvo") { registrar(d.a, { campo: "admvo", antes: S.cfg.secretarias[admvoLetra(S.asig[d.a])], despues: S.cfg.secretarias[el.value] }); await update(ref(db, "asignaciones/" + d.a), { admvo: el.value }); toast("Secretaría actualizada.", "ok"); return; }
     if (d.admf) { S[d.admf] = el.value; render(); return; }
     if (d.pos) { const n = parseInt(el.value, 10); if (isNaN(n)) { S.dlgRefresh?.(); return; } await moverAPosicion(d.a, d.gg, d.pos, n - 1); return; }
-    if (d.rnombre) { const v = el.value.replace(/\s+/g, " ").trim(); const ant = S.alumnos[d.gg]?.[d.rnombre]?.nombre; if (v.length > 2 && v !== ant) registrar(ctxAsig(), { campo: "nombre", al: d.rnombre, alumno: v, antes: ant, despues: v }); if (v.length > 2) await update(ref(db, `alumnos/${d.gg}/${d.rnombre}`), { nombre: v }); return; }
+    if (d.rnombre) { const v = el.value.replace(/\s+/g, " ").trim().toUpperCase(); const ant = S.alumnos[d.gg]?.[d.rnombre]?.nombre; if (v.length > 2 && v !== ant) registrar(ctxAsig(), { campo: "nombre", al: d.rnombre, alumno: v, antes: ant, despues: v }); if (v.length > 2) await update(ref(db, `alumnos/${d.gg}/${d.rnombre}`), { nombre: v }); return; }
     if (d.rsexo) { const x = S.alumnos[d.gg]?.[d.rsexo]; registrar(ctxAsig(), { campo: "sexo", al: d.rsexo, alumno: x?.nombre, antes: x?.sexo, despues: el.value }); await update(ref(db, `alumnos/${d.gg}/${d.rsexo}`), { sexo: el.value }); return; }
     if (d.rmiembro) { await set(ref(db, `miembros/${d.a}/${d.rmiembro}`), el.checked ? d.gg : null); registrar(d.a, { campo: "lista", al: d.rmiembro, antes: el.checked ? "" : "En la lista", despues: el.checked ? "En la lista" : "Quitado" }); return; }
     if (d.docnom) { const v = el.value.trim().toUpperCase(); if (v) { await update(ref(db, "docentes/" + d.docnom), { nombre: v }); toast("Nombre actualizado.", "ok"); } return; }
