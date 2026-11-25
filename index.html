@@ -2583,7 +2583,7 @@ function parsearOrden(txt) {
     const h = raw.match(/^(?:grupo\s*)?([123])\s*[°º]?\s*[-"']?\s*([A-Ia-i])["']?$/i);
     if (h) { gg = h[1] + h[2].toUpperCase(); out[gg] ||= []; continue; }
     if (!gg) continue;
-    const nom = raw.replace(/^\d+\s*[.)-]?\s+/, "").replace(/\bN\.?\s*ING\.?\b/gi, "").replace(/[\/*]/g, " ").replace(/\s+/g, " ").trim();
+    const nom = raw.replace(/^\d+\s*[.)-]?\s+/, "").replace(/\bN\.?\s*ING\.?\b/gi, "").replace(/\bN\.\s*I\.?(?=\s|$)/gi, "").replace(/[\/*]/g, " ").replace(/\s+/g, " ").trim();
     if (nom.length > 2) out[gg].push(nom);
   }
   return out;
