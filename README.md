@@ -31,7 +31,7 @@ Es un solo archivo (`index.html`) que usa Firebase Authentication y Realtime Dat
 3. **Administración → Secretarías**: escribe el nombre completo de cada secretaría (Víctor = A, Julia = B, Zulma = C, Daza = D, Lafit = E, Ruth = F, Leonor = G, Carmelita = H, Carlos = I). Ese nombre sale en el renglón **ADMVO.**
 4. **Administración → Docentes → Eliminar**: cuando hay cambios de personal, quitas al docente y su acceso. Sus concentrados (con lo capturado) pueden pasar al docente que lo sustituye, o eliminarse.
 5. **Administración → Escuela**: tamaño de hoja del concentrado (Carta por defecto, u Oficio). Cada grupo sale en su propia hoja.
-6. **Administración → Usuarios → Nueva cuenta**: crea las cuentas de las secretarías con el rol *Secretaría* y su letra.
+6. **Administración → Usuarios → Nueva cuenta**: crea las cuentas de las secretarías con el rol *Secretaría* y su letra .
 
 **Orden oficial de las listas (secretarías):** en Administración → Datos, “Cargar orden oficial” recibe un archivo de texto con el orden de las listas impresas (una línea con el grupo, por ejemplo 3A, y debajo los alumnos, uno por renglón). Muestra un resumen por grupo (reconocidos, no encontrados y los que están en la plataforma pero no en la lista) y, al aplicar, todos los concentrados de ese grupo quedan en ese orden. Solo se guarda un número de lugar en cada alumno: las calificaciones no se mueven ni se pierden. Los alumnos que falten en la plataforma no se crean; los que no vienen en la lista quedan al final. El archivo con nombres no debe subirse al repositorio.
 
