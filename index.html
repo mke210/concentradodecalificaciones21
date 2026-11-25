@@ -340,7 +340,8 @@ table.inf{width:100%;border-collapse:collapse;font-size:11px;table-layout:fixed}
 .inf-firmas i{display:block;width:70%;height:40px;border-bottom:1px solid #000}
 /* ---------- hoja (formato oficial) ---------- */
 .hoja-wrap{overflow-x:auto;margin:0 -4px 14px;padding:4px}
-.hoja{background:#fff;color:#000;font-family:Arial,Helvetica,sans-serif;min-width:860px;max-width:1040px;margin:0 auto;padding:30px 34px 40px;box-shadow:0 2px 16px rgba(0,0,0,.09);border:1px solid var(--line);border-radius:4px}
+.hoja{position:relative;background:#fff;color:#000;font-family:Arial,Helvetica,sans-serif;min-width:860px;max-width:1040px;margin:0 auto;padding:30px 34px 40px;box-shadow:0 2px 16px rgba(0,0,0,.09);border:1px solid var(--line);border-radius:4px}
+.h-esc{position:absolute;left:0;top:0;width:76px;height:66px}.h-ie{position:absolute;right:0;top:0;width:66px;height:66px;object-fit:contain}
 .h-enc{text-align:center;display:flex;flex-direction:column;gap:2px;margin-bottom:10px}
 .h-enc b{font-size:13px}.h-enc .l1{font-size:14px}.h-enc .sm{font-size:11.5px}.h-enc .l7{font-size:16.5px;margin-top:4px}
 table.h-tab{width:100%;border-collapse:collapse;table-layout:fixed;font-size:12px}
@@ -415,7 +416,9 @@ table.h-tab{width:100%;border-collapse:collapse;table-layout:fixed;font-size:12p
   .h-tab td.cur,.h-tab td.cur2,.h-tab td.fut{background:none!important}
   .h-tab th.fut,.h-tab th.cur,.h-tab th.cur2{background:#92D050!important;color:#000!important}
   .h-tab input.cell{width:100%!important;height:15px;color:#000!important;-webkit-text-fill-color:#000!important;text-decoration:none!important;font-weight:400!important;background:none!important}
-  .h-tab td.rep{color:#000;-webkit-text-fill-color:#000}
+  .h-tab td.rep,.h-tab input.cell.rep{color:#c62828!important;-webkit-text-fill-color:#c62828!important;font-weight:700!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .escudo,.h-ie{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .h-tab tr,.h-firmas{break-inside:avoid}
   .h-tab input.cell.cm{color:#c62828!important;-webkit-text-fill-color:#c62828!important;font-weight:700!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .h-tab tr.h-sum td,.h-tab td.lbl{font-size:8pt}
   .h-tab td.nm{white-space:normal;font-size:8pt;line-height:1.1}
@@ -483,7 +486,7 @@ table.h-tab{width:100%;border-collapse:collapse;table-layout:fixed;font-size:12p
 
 <dialog id="dlg"></dialog>
 <div id="toasts"></div>
-<datalist id="dl-conducta"><option value="E"><option value="MB"><option value="B"><option value="R"><option value="M"></datalist>
+<datalist id="dl-conducta"><option value="B" label="Buena"><option value="R" label="Regular"><option value="M" label="Mala"></datalist>
 
 <script type="module">
 import { initializeApp, deleteApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -1446,6 +1449,7 @@ function vCaptura(main, aId) {
   const W = [5, 32, 6, 5, 6, 5, 6, 8, 5, 5, 5, 5, 5, 5];
   const cls = f => { if (f === "PROM") return T === 3 ? "cur" : "fut"; const k = triDe(f); if (k > T) return "fut"; if (k === T) return /^(t|er)/.test(f) ? "cur" : "cur2"; return ""; };
   h += `<div class="hoja-wrap"><div class="hoja" id="hoja">
+    <span class="escudo h-esc" aria-hidden="true"></span><img class="h-ie" src="${LOGO_IEEPO}" alt="">
     <div class="h-enc"><b class="l1">${esc(cfg.instituto)}</b><b>${esc(cfg.unidad)}</b><b>${esc(cfg.supervision)}</b><b>${esc(cfg.escuela)}</b><b class="sm" style="white-space:pre">${esc(cfg.clave)}</b><b class="sm">CICLO ESCOLAR: ${esc(cfg.ciclo)}</b><b class="l7">CONCENTRADO DE CALIFICACIONES</b></div>
     <table class="h-tab"><colgroup>${W.map(w => `<col style="width:${(w / 103 * 100).toFixed(2)}%">`).join("")}</colgroup><tbody>
     <tr class="h-meta"><td colspan="6">PROFR.:&nbsp;&nbsp;&nbsp;&nbsp;${esc(nombreDocente(a.docenteId))}</td><td colspan="8">ASIGNATURA:&nbsp;&nbsp;&nbsp;&nbsp;${esc(a.materia)}</td></tr>
@@ -1543,7 +1547,11 @@ async function guardarCelda(el) {
     } else if (f.startsWith("i")) {
       if (!/^\d{1,3}$/.test(raw)) { el.classList.add("err"); toast("Inasistencias: escribe un número entero.", "err"); el.value = fmtVal(anterior); return; }
       val = +raw;
-    } else val = raw.toUpperCase().slice(0, 4);
+    } else {
+      const u = raw.toUpperCase(), mapa = { B: "B", BUENA: "B", BUENO: "B", E: "B", MB: "B", R: "R", REGULAR: "R", M: "M", MALA: "M", MALO: "M" };
+      val = mapa[u];
+      if (!val) { el.classList.add("err"); toast("Conducta: escribe B (buena), R (regular) o M (mala).", "err"); el.value = fmtVal(anterior); return; }
+    }
   }
   el.value = fmtVal(val);
   if (anterior === val) { refrescarCalculos(); return; }
@@ -1750,7 +1758,8 @@ function tablasStats(rs, F) {
       .map(r => [r.nombre, `${r.grado}° ${r.grupo}`, r.sexo, r.materia, nombreDocente(r.docenteId), r.cond.join(", ")]) };
   return T;
 }
-const COND_ORD = ["E", "MB", "B", "R", "M"];
+const COND_ORD = ["B", "R", "M"];
+const normCond = v => ["E", "MB", "B"].includes(v) ? "B" : v;
 const esCondBaja = v => !["E", "MB", "B"].includes(v);
 const PCT_COLS = { resumen: [9, 10], grupo: [10], grado: [10], materia: [10], profesor: [4, 7] };
 function celdaTabla(v, i, key) {
@@ -1828,7 +1837,7 @@ function vStats(main, lockDoc) {
     <div class="card chart-card"><h3>Reprobación por asignatura</h3><p>% de evaluaciones reprobadas, de mayor a menor</p><div class="chart-box" id="bxMat"><canvas id="chMat"></canvas></div></div>
     <div class="card chart-card"><h3>Distribución de calificaciones</h3><p>${esc(nomT(F.T))}</p><div class="chart-box" style="height:240px"><canvas id="chDist"></canvas></div></div>
     ${lockDoc ? "" : `<div class="card chart-card"><h3>Aprobación por profesor</h3><p>% de evaluaciones aprobadas</p><div class="chart-box" id="bxProf"><canvas id="chProf"></canvas></div></div>`}
-    <div class="card chart-card"><h3>Conducta registrada</h3><p>Número de registros (E, MB, B, R, M)</p><div class="chart-box" style="height:240px"><canvas id="chCond"></canvas></div></div>
+    <div class="card chart-card"><h3>Conducta registrada</h3><p>Número de registros: Buena (B), Regular (R), Mala (M)</p><div class="chart-box" style="height:240px"><canvas id="chCond"></canvas></div></div>
     <div class="card chart-card"><h3>Inasistencias por grupo</h3><p>Total de faltas registradas</p><div class="chart-box" style="height:240px"><canvas id="chFal"></canvas></div></div>
     <div class="card chart-card"><h3>Evolución por trimestre</h3><p>% de aprobación con los mismos filtros</p><div class="chart-box" style="height:240px"><canvas id="chEvol"></canvas></div></div>
   </div>
@@ -1920,7 +1929,7 @@ function dibujarGraficas(rs, F, lockDoc) {
     barrasH("chProf", "bxProf", pp.map(([k]) => nombreDocente(k)), pp.map(([, g]) => g.pa), COL.ok, c => { const g = pp[c.dataIndex][1]; return ` ${pct(c.raw)} aprobados (${g.ap} de ${g.n})`; });
   }
   // conducta
-  const cc = {}; for (const r of rs) for (const v of r.cond) cc[v] = (cc[v] || 0) + 1;
+  const cc = {}; for (const r of rs) for (const v0 of r.cond) { const v = normCond(v0); cc[v] = (cc[v] || 0) + 1; }
   const etiqC = [...COND_ORD, ...Object.keys(cc).filter(v => !COND_ORD.includes(v))];
   chart("chCond", {
     type: "bar",
@@ -3033,7 +3042,7 @@ function hojaConcentrado(ws, aId, modo, logos = {}) {
       for (let k = 1; k <= 14; k++) st(ws.getCell(r, k), { border: true, h: k === 2 ? "left" : "center", wrap: false, fmt: k >= 3 && k <= 11 ? "0" : undefined });
       if (al || vacio) ws.getCell(r, 1).value = i + 1;
       if (al) ws.getCell(r, 2).value = al.nombre;
-      CAMPOS.forEach((f, j) => { if (f && triDe(f) <= Tm && c[f] != null && c[f] !== "") { const ce = ws.getCell(r, j + 3); ce.value = c[f]; if (f.startsWith("c") && String(c[f]).toUpperCase() === "M") ce.font = { name: "Arial", size: 9, bold: true, color: { argb: "FFC00000" } }; } });
+      CAMPOS.forEach((f, j) => { if (f && triDe(f) <= Tm && c[f] != null && c[f] !== "") { const ce = ws.getCell(r, j + 3); ce.value = c[f]; if (f.startsWith("c") && String(c[f]).toUpperCase() === "M") ce.font = { name: "Arial", size: 9, bold: true, color: { argb: "FFC00000" } }; else if (/^(t|er)/.test(f) && +c[f] < 6) ce.font = { ...(ce.font || { name: "Arial", size: 9 }), bold: true, color: { argb: "FFC00000" } }; } });
       if (vacio || Tm === 3) {
         const X = `(IF(D${r}<>"",D${r},C${r})+IF(F${r}<>"",F${r},E${r})+G${r})/3`;
         const p = al && !vacio ? promFinal(c) : null;
@@ -3042,6 +3051,7 @@ function hojaConcentrado(ws, aId, modo, logos = {}) {
       r++;
     });
     const fin = r - 1;
+    ws.addConditionalFormatting({ ref: `C${ini}:H${fin}`, rules: [{ type: "expression", priority: 1, formulae: [`AND(ISNUMBER(C${ini}),C${ini}<6)`], style: { font: { bold: true, color: { argb: "FFC00000" } } } }] });
     const h = s.alumnos.filter(x => x.sexo === "H").length, m = s.alumnos.filter(x => x.sexo === "M").length;
     const filas = ["HOMBRES", "MUJERES", "TOTAL", "APROBADOS", "REPROBADOS", "% APROBADOS", "% REPROBADOS", "SUMA", "PROMEDIO"];
     const rH = r, rTot = r + 2, rAp = r + 3, rRp = r + 4, rSum = r + 7;
@@ -3192,7 +3202,12 @@ document.addEventListener("click", async ev => {
         const c = document.body.classList, hoja = S.cur?.view === "captura";
         if (hoja && !await confirmarBloqueo([S.cur.arg], +S.capT, "imprimir")) break;
         $("#pgsize").textContent = hoja ? `@page{size:${S.cfg.papel === "oficio" ? "legal" : "letter"};margin:0}@media print{#app{padding:9mm}}` : "@page{size:letter;margin:0}@media print{#app{padding:12mm}}";
-        if (hoja) c.add("imp-hoja"); window.print(); setTimeout(() => c.remove("imp-hoja"), 500); break;
+        const hz = hoja ? $("#hoja") : null;
+        if (hz) { // ajusta a una sola hoja: alto aprox. = 562 + 18.6 px por alumno (carta u oficio)
+          const n = hz.querySelectorAll("tr[data-al]").length, util = S.cfg.papel === "oficio" ? 1240 : 960, z = Math.min(1, util / (562 + 18.6 * n));
+          if (z < 1) { hz.style.zoom = z.toFixed(3); }
+        }
+        if (hoja) c.add("imp-hoja"); window.print(); setTimeout(() => { c.remove("imp-hoja"); if (hz) hz.style.zoom = ""; }, 500); break;
       }
       case "xls": {
         const ids = d.ids === "*" ? misAsignaciones().map(([id]) => id) : d.ids.split(",");
